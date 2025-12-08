@@ -9,8 +9,10 @@ app.get("/", (req, res) => {
   });
 });
 
-app.listen(port, () => {
-  console.log("Listening on " + port);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log("Listening on " + port);
+  });
+}
 
 module.exports = app;
