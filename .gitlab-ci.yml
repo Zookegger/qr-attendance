@@ -1,0 +1,95 @@
+stages:
+  - test
+  - build
+  - deploy
+
+# Global cache for node_modules
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - node_modules/
+
+# ---------------------------------------------------------------------------
+# SERVER JOBS (Node.js)
+# ---------------------------------------------------------------------------
+
+server_test:
+  stage: test
+  image: node:18
+  script:
+    - echo "Installing server dependencies..."
+    - npm install
+    - echo "Running server tests..."
+    - npm test
+  only:
+    - merge_requests
+    - branches
+
+# ---------------------------------------------------------------------------
+# CLIENT JOBS (Flutter)
+# ---------------------------------------------------------------------------
+
+client_test:
+  stage: test
+  image: ghcr.io/cirruslabs/flutter:stable
+  before_script:
+    - cd client
+    - flutter pub get
+  script:
+    - echo "Running Flutter unit tests..."
+    - flutter test
+  only:
+    - merge_requests
+    - branches
+
+client_build_web:
+  stage: build
+  image: ghcr.io/cirruslabs/flutter:stable
+  before_script:
+    - cd client
+    - flutter pub get
+  script:
+    - echo "Building Flutter Web application..."
+    - flutter build web
+  artifacts:
+    name: "flutter-web-build-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - client/build/web/
+    expire_in: 1 week
+  only:
+    - merge_requests
+    - main
+
+# ---------------------------------------------------------------------------
+# DEPLOYMENT JOBS
+# ---------------------------------------------------------------------------
+
+deploy_staging:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - echo "Deploying to Staging Server..."
+    - echo "Simulating file transfer..."
+    - sleep 2
+    - echo "Deployment complete!"
+  environment:
+    name: staging
+    url: https://staging.qr-attendance.example.com
+  only:
+    - merge_requests
+    - main
+
+deploy_production:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - echo "Deploying to Production Server..."
+    - echo "Simulating secure deployment..."
+    - sleep 2
+    - echo "Deployment complete!"
+  environment:
+    name: production
+    url: https://qr-attendance.example.com
+  when: manual
+  only:
+    - main
