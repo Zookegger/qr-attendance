@@ -17,6 +17,7 @@ server_test:
   stage: test
   image: node:18
   script:
+    - cd server
     - echo "Installing server dependencies..."
     - npm install
     - echo "Running server tests..."
