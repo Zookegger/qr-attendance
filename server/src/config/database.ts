@@ -12,7 +12,7 @@ const DB_HOST: string = process.env.DB_HOST || "127.0.0.1";
 const DB_PORT: number = Number(process.env.DB_PORT) || 3306;
 const DB_USER: string = process.env.DB_USER || "root";
 const DB_PASS: string = process.env.DB_PASS || "";
-const DB_NAME: string = process.env.DB_NAME || "bus_station_db";
+const DB_NAME: string = process.env.DB_NAME || "qr_attendance_db";
 const DB_DIALECT: Dialect = (process.env.DB_DIALECT as Dialect) || "mysql";
 const DB_LOGGING: boolean = process.env.DB_LOGGING === "true";
 
@@ -65,3 +65,5 @@ export const createTempConnection = (): Sequelize => {
 		},
 	);
 };
+
+export default sequelize;
