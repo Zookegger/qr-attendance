@@ -1,0 +1,59 @@
+name: qr_attendance_frontend
+description: "A new Flutter project."
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+    sdk: ^3.10.1
+
+dependencies:
+    flutter:
+        sdk: flutter
+    cupertino_icons: ^1.0.8
+
+    # --- 1. Architecture & State Management (Clean Architecture) ---
+    # [cite_start]Required for "Business Logic Layer: BLoC" [cite: 55]
+    flutter_bloc: ^8.1.6
+    equatable: ^2.0.5 # Helps compare states in BLoC efficiently
+
+    # --- 2. Hardware & Sensors (The "Meat" of the project) ---
+    # [cite_start]Required for "Camera quét mã QR động" [cite: 21]
+    mobile_scanner: ^5.0.0
+
+    # [cite_start]Required for "Định vị GPS thực" & validation [cite: 22, 23]
+    geolocator: ^11.0.0
+
+    # Required to ask for Camera & Location permissions gracefully
+    permission_handler: ^11.3.0
+
+    # [cite_start]Required for "Ràng buộc thiết bị" (Check UUID/Model) [cite: 12]
+    device_info_plus: ^10.1.0
+
+    # --- 3. Networking & Security ---
+    # [cite_start]Required for "RESTful API" connection [cite: 51]
+    dio: ^5.4.1
+
+    # [cite_start]Required for "Bảo mật" - storing tokens and device UUIDs safely [cite: 10]
+    flutter_secure_storage: ^9.0.0
+
+    # [cite_start]Required for Real-time updates (optional but recommended for "Thông báo" [cite: 30])
+    socket_io_client: ^2.0.3
+
+    # --- 4. UI & Visuals ---
+    # [cite_start]Required for "Vẽ biểu đồ (Pie/Bar Chart)" [cite: 24]
+    fl_chart: ^0.66.2
+
+    # [cite_start]Required for "Xem bảng công" (Calendar View) [cite: 25]
+    table_calendar: ^3.1.1
+
+    # Helper for formatting dates (e.g., "dd/MM/yyyy") in logs/calendar
+    intl: ^0.19.0
+
+dev_dependencies:
+    flutter_test:
+        sdk: flutter
+    flutter_lints: ^3.0.1 # Note: Downgraded to v3 to match sdk ^3.10.1 (v4+ requires Dart 3.2+)
+
+flutter:
+    uses-material-design: true

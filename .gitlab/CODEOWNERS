@@ -1,0 +1,17 @@
+# Code Owners file
+# This file defines who owns which files in the repository.
+# GitLab uses this to automatically assign reviewers.
+
+# Default owner for everything
+* @project-manager
+
+# Frontend Team owns the client application
+/client/ @frontend-lead @frontend-team
+
+# Backend Team owns the server and database
+/server/ @backend-lead @backend-team
+/database/ @backend-lead
+
+# DevOps owns CI/CD configuration
+.gitlab-ci.yml @devops-lead
+Dockerfile @devops-lead
