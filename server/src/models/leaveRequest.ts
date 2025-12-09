@@ -15,17 +15,17 @@ interface LeaveRequestAttributes {
 interface LeaveRequestCreationAttributes extends Optional<LeaveRequestAttributes, 'id' | 'admin_comment'> {}
 
 export class LeaveRequest extends Model<LeaveRequestAttributes, LeaveRequestCreationAttributes> implements LeaveRequestAttributes {
-  public id!: string;
-  public user_id!: string;
-  public start_date!: string;
-  public end_date!: string;
-  public type!: 'Late' | 'Day Off' | 'Sick' | 'Vacation';
-  public reason!: string;
-  public status!: 'Pending' | 'Approved' | 'Rejected';
-  public admin_comment!: string | null;
+  declare public id: string;
+  declare public user_id: string;
+  declare public start_date: string;
+  declare public end_date: string;
+  declare public type: 'Late' | 'Day Off' | 'Sick' | 'Vacation';
+  declare public reason: string;
+  declare public status: 'Pending' | 'Approved' | 'Rejected';
+  declare public admin_comment: string | null;
 
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 }
 
 LeaveRequest.init(

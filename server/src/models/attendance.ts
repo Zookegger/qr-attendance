@@ -30,21 +30,21 @@ export class Attendance
 	extends Model<AttendanceAttributes, AttendanceCreationAttributes>
 	implements AttendanceAttributes
 {
-	public id!: string;
-	public user_id!: string;
-	public date!: string;
-	public check_in_time!: Date | null;
-	public check_out_time!: Date | null;
-	public status!: "Present" | "Late" | "Absent";
-	public check_in_location!: object | null;
-	public check_out_location!: object | null;
-	public check_in_method!: "QR" | "Manual" | null;
-	public check_out_method!: "QR" | "Manual" | null;
+	declare public id: string;
+	declare public user_id: string;
+	declare public date: string;
+	declare public check_in_time: Date | null;
+	declare public check_out_time: Date | null;
+	declare public status: "Present" | "Late" | "Absent";
+	declare public check_in_location: object | null;
+	declare public check_out_location: object | null;
+	declare public check_in_method: "QR" | "Manual" | null;
+	declare public check_out_method: "QR" | "Manual" | null;
 
-	public readonly user?: User;
+	declare public readonly user?: User;
 
-	public readonly createdAt!: Date;
-	public readonly updatedAt!: Date;
+	declare public readonly createdAt: Date;
+	declare public readonly updatedAt: Date;
 }
 
 Attendance.init(

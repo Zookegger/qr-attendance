@@ -21,17 +21,17 @@ export class User
 	extends Model<UserAttributes, UserCreationAttributes>
 	implements UserAttributes
 {
-	public id!: string;
-	public name!: string;
-	public email!: string;
-	public password_hash!: string;
-	public role!: "admin" | "user";
-	public device_uuid!: string | null;
-	public position!: string | null;
-	public department!: string | null;
+	declare public id: string;
+	declare public name: string;
+	declare public email: string;
+	declare public password_hash: string;
+	declare public role: "admin" | "user";
+	declare public device_uuid: string | null;
+	declare public position: string | null;
+	declare public department: string | null;
 
-	public readonly createdAt!: Date;
-	public readonly updatedAt!: Date;
+	declare public readonly createdAt: Date;
+	declare public readonly updatedAt: Date;
 }
 
 User.init(

@@ -16,32 +16,45 @@ const DB_NAME: string = process.env.DB_NAME || "qr_attendance_db";
 const DB_DIALECT: Dialect = (process.env.DB_DIALECT as Dialect) || "mysql";
 const DB_LOGGING: boolean = process.env.DB_LOGGING === "true";
 
+const isTest = process.env.NODE_ENV === "test";
+
+const sequelizeConfig = isTest
+	? {
+			dialect: "sqlite" as Dialect,
+			storage: ":memory:",
+			logging: false,
+		}
+	: {
+			host: DB_HOST,
+			port: DB_PORT,
+			dialect: DB_DIALECT,
+			logging: DB_LOGGING,
+			pool: {
+				max: 10,
+				min: 0,
+				acquire: 30000,
+				idle: 10000,
+			},
+			define: {
+				timestamps: true,
+				engine: "InnoDB",
+				charset: "utf8mb4",
+				collate: "utf8mb4_unicode_ci",
+			},
+		};
+
 /**
  * Configured Sequelize instance for database operations.
  *
  * This is the main database connection instance used throughout the application.
  * It is configured with MySQL dialect, connection pooling, and default table options.
  */
-export const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASS, {
-	host: DB_HOST,
-	port: DB_PORT,
-	dialect: DB_DIALECT,
-	logging: DB_LOGGING,
-
-	pool: {
-		max: 10, // Maximum number of connections to create
-		min: 0, // Minimum number of connections to keep open
-		acquire: 30000, // Maximum time (in ms) to get a connection
-		idle: 10000, // Maximum time (in ms) a connection can be unused
-	},
-
-	define: {
-		timestamps: true, // Automatically add created_at and updated_at fields
-		engine: "InnoDB",
-		charset: "utf8mb4",
-		collate: "utf8mb4_unicode_ci",
-	},
-});
+export const sequelize = new Sequelize(
+	isTest ? "sqlite::memory:" : DB_NAME,
+	isTest ? "" : DB_USER,
+	isTest ? "" : DB_PASS,
+	sequelizeConfig,
+);
 
 /**
  * Creates a temporary Sequelize connection without specifying a database.

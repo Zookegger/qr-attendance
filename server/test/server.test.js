@@ -1,5 +1,5 @@
 import request from "supertest";
-import app from "../src/app.js";
+import app from "../src/app.ts";
 
 describe("GET /api/health", () => {
 	it("should return status OK", (done) => {
