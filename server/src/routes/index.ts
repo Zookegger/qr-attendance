@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { AuthController } from '../controllers/auth.controller';
-import { AttendanceController } from '../controllers/attendance.controller';
-import { AdminController } from '../controllers/admin.controller';
-import { authenticate, authorize } from '../middlewares/auth.middleware';
-import { HealthController } from '../controllers/health.controller';
+import { AuthController } from '@controllers/auth.controller';
+import { AttendanceController } from '@controllers/attendance.controller';
+import { AdminController } from '@controllers/admin.controller';
+import { authenticate, authorize } from '@middlewares/auth.middleware';
+import { HealthController } from '@controllers/health.controller';
 
 const router = Router();
 const healthController = new HealthController();

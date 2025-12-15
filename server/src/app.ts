@@ -1,10 +1,13 @@
 import express, { Application } from "express";
 import cors from "cors";
-import routes from "./routes";
-import { errorHandler } from "./middlewares/error.middleware";
-import { logger } from "./utils/logger";
-import { initCronJobs } from "./services/cron.service";
-import { sequelize } from "./config/database";
+import routes from "@routes";
+import { errorHandler } from "@middlewares/error.middleware";
+import logger from "@utils/logger";
+import { initCronJobs } from "@services/cron.service";
+import { sequelize } from "@config/database";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;

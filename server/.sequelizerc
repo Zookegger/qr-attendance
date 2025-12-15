@@ -1,8 +1,11 @@
-const path = require('path');
+const path = require("path");
+
+require("ts-node/register");
+require("dotenv").config();
 
 module.exports = {
-  'config': path.resolve(__dirname, 'config', 'config.js'),
-  'models-path': path.resolve(__dirname, 'models'),
-  'seeders-path': path.resolve(__dirname, '..', 'database', 'seedings'),
-  'migrations-path': path.resolve(__dirname, '..', 'database', 'migrations')
+	config: path.resolve("src/config/sequelize-cli-config.js"),
+	"models-path": path.resolve("src/models"),
+	"seeders-path": path.resolve("src/seeders"),
+	"migrations-path": path.resolve("src/migrations"),
 };

@@ -8,12 +8,19 @@
 	"scripts": {
 		"test": "NODE_ENV=test mocha --import=tsx test/**/*.test.js",
 		"start": "node dist/app.js",
-		"dev": "tsx watch src/app.ts",
+		"dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
+		"db:migrate": "npx sequelize-cli db:migrate",
+		"db:migrate:undo": "npx sequelize-cli db:migrate:undo",
+		"db:seed": "npx sequelize-cli db:seed:all",
+		"test:watch": "jest --watch",
+		"test:coverage": "jest --coverage",
+		"test:verbose": "jest --verbose",
 		"build": "tsc && tsc-alias"
 	},
 	"dependencies": {
 		"bcryptjs": "^3.0.3",
 		"cors": "^2.8.5",
+		"date-fns": "^4.1.0",
 		"dotenv": "^16.3.1",
 		"exceljs": "^4.4.0",
 		"express": "^4.18.2",
@@ -23,8 +30,8 @@
 		"node-cron": "^4.2.1",
 		"passport": "^0.7.0",
 		"sequelize": "^6.33.0",
-		"sqlite3": "^5.1.7",
-		"uuid": "^13.0.0"
+		"socket.io": "^4.8.1",
+		"sqlite3": "^5.1.7"
 	},
 	"devDependencies": {
 		"@types/bcryptjs": "^2.4.6",

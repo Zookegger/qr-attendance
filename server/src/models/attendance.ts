@@ -1,11 +1,11 @@
 import { Model, DataTypes, Optional } from "sequelize";
-import { sequelize } from "../config/database";
+import { sequelize } from "@config/database";
 import { User } from "./user";
 
 interface AttendanceAttributes {
 	id: string;
 	user_id: string;
-	date: string; // YYYY-MM-DD
+	date: Date;
 	check_in_time?: Date | null;
 	check_out_time?: Date | null;
 	status: "Present" | "Late" | "Absent";
@@ -32,7 +32,7 @@ export class Attendance
 {
 	declare public id: string;
 	declare public user_id: string;
-	declare public date: string;
+	declare public date: Date;
 	declare public check_in_time: Date | null;
 	declare public check_out_time: Date | null;
 	declare public status: "Present" | "Late" | "Absent";
