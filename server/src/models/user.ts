@@ -12,26 +12,27 @@ interface UserAttributes {
 	department?: string | null;
 }
 
-interface UserCreationAttributes extends Optional<
-	UserAttributes,
-	"id" | "device_uuid" | "position" | "department"
-> {}
+interface UserCreationAttributes
+	extends Optional<
+		UserAttributes,
+		"id" | "device_uuid" | "position" | "department"
+	> {}
 
 export class User
 	extends Model<UserAttributes, UserCreationAttributes>
 	implements UserAttributes
 {
-	declare public id: string;
-	declare public name: string;
-	declare public email: string;
-	declare public password_hash: string;
-	declare public role: "admin" | "user";
-	declare public device_uuid: string | null;
-	declare public position: string | null;
-	declare public department: string | null;
+	public declare id: string;
+	public declare name: string;
+	public declare email: string;
+	public declare password_hash: string;
+	public declare role: "admin" | "user";
+	public declare device_uuid: string | null;
+	public declare position: string | null;
+	public declare department: string | null;
 
-	declare public readonly createdAt: Date;
-	declare public readonly updatedAt: Date;
+	public declare readonly createdAt: Date;
+	public declare readonly updatedAt: Date;
 }
 
 User.init(
@@ -79,5 +80,5 @@ User.init(
 	{
 		sequelize,
 		tableName: "users",
-	},
+	}
 );
