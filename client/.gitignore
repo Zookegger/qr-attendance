@@ -45,4 +45,4 @@ app.*.map.json
 /android/app/release
 
 # Do not commit environment-specific Firebase config for web. Create firebase_config.js from the sample.
-/client/web/firebase_config.js
+web/firebase_config.js
