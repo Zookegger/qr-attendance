@@ -12,24 +12,25 @@ interface RefreshTokenAttributes {
 	updated_at: Date;
 }
 
-interface RefreshTokenCreationAttributes extends Optional<
-	RefreshTokenAttributes,
-	"id" | "device_uuid" | "created_at" | "updated_at"
-> {}
+interface RefreshTokenCreationAttributes
+	extends Optional<
+		RefreshTokenAttributes,
+		"id" | "device_uuid" | "created_at" | "updated_at"
+	> {}
 
 export class RefreshToken
 	extends Model<RefreshTokenAttributes | RefreshTokenCreationAttributes>
 	implements RefreshTokenAttributes
 {
-	declare public id: string;
-	declare public user_id: string;
-	declare public token_hash: string;
-	declare public device_uuid?: string | null | undefined;
-	declare public revoked: boolean;
-	declare public expires_at: Date;
+	public declare id: string;
+	public declare user_id: string;
+	public declare token_hash: string;
+	public declare device_uuid?: string | null;
+	public declare revoked: boolean;
+	public declare expires_at: Date;
 
-	declare public readonly created_at: Date;
-	declare public readonly updated_at: Date;
+	public declare readonly created_at: Date;
+	public declare readonly updated_at: Date;
 }
 
 RefreshToken.init(
