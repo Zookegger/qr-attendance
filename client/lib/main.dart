@@ -2,11 +2,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_attendance_frontend/src/services/notification.service.dart';
 import 'src/app.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-
-// If you used the FlutterFire CLI, this file is generated at
-// `lib/firebase_options.dart` and contains `DefaultFirebaseOptions`.
-// Run `flutterfire configure` to generate it if missing.
 import 'firebase_options.dart';
 
 void main() async {

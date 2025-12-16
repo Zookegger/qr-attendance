@@ -35,28 +35,26 @@
 </head>
 
 <body>
+  <script src="firebase_config.js"></script>
+
   <script type="module">
     // Import the functions you need from the SDKs you need
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-analytics.js";
-    // TODO: Add SDKs for Firebase products that you want to use
-    // https://firebase.google.com/docs/web/setup#available-libraries
 
-    // Your web app's Firebase configuration
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-    const firebaseConfig = {
-      apiKey: "AIzaSyCSNkiBxAA9S-SNzIe3zoIt6Exg5igSGUs",
-      authDomain: "qr-attendance-f689c.firebaseapp.com",
-      projectId: "qr-attendance-f689c",
-      storageBucket: "qr-attendance-f689c.firebasestorage.app",
-      messagingSenderId: "371189020840",
-      appId: "1:371189020840:web:adec8f6b8d3956aba52a9d",
-      measurementId: "G-WDCGX0KPK6"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
+    // Firebase config should be provided by an environment-specific `firebase_config.js`
+    // Create one by copying `firebase_config.sample.js` and filling real values.
+    const firebaseConfig = window.FIREBASE_CONFIG || null;
+    if (!firebaseConfig) {
+      console.warn('Firebase config not found. Copy firebase_config.sample.js to firebase_config.js and provide values.');
+    } else {
+      const app = initializeApp(firebaseConfig);
+      try {
+        const analytics = getAnalytics(app);
+      } catch (e) {
+        // Analytics may fail in unsupported environments; ignore.
+      }
+    }
   </script>
 
   <script src="flutter_bootstrap.js" async></script>
