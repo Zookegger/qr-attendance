@@ -10,6 +10,7 @@ interface UserAttributes {
 	device_uuid?: string | null;
 	position?: string | null;
 	department?: string | null;
+	fcm_token?: string | null;
 }
 
 interface UserCreationAttributes
@@ -30,6 +31,7 @@ export class User
 	public declare device_uuid: string | null;
 	public declare position: string | null;
 	public declare department: string | null;
+	public declare fcm_token: string | null;
 
 	public declare readonly createdAt: Date;
 	public declare readonly updatedAt: Date;
@@ -67,6 +69,11 @@ User.init(
 			type: DataTypes.STRING,
 			allowNull: true,
 			comment: "Unique device ID for device binding",
+		},
+		fcm_token: {
+			type: DataTypes.STRING,
+			allowNull: true,
+			comment: "Firebase Cloud Messaging Token for Push Notifications",
 		},
 		position: {
 			type: DataTypes.STRING,
