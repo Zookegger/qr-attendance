@@ -97,8 +97,8 @@ class NotificationService {
       }
     });
 
-		// 6. Get the Token
-		final fcmToken = await _firebaseMessaging.getToken();
+    // 6. Get the Token
+    final fcmToken = await _firebaseMessaging.getToken();
     debugPrint("============================================");
     debugPrint("YOUR FCM TOKEN: $fcmToken");
     debugPrint("============================================");
@@ -120,7 +120,6 @@ class NotificationService {
         importance: Importance.max,
         priority: Priority.high,
         ticker: 'Urgent Alert',
-        additionalFlags: Int32List.fromList(<int>[4]),
       );
     } else {
       // Use Default Channel
