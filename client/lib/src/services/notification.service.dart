@@ -113,13 +113,14 @@ class NotificationService {
 
     if (type == 'urgent') {
       // Use High Importance Channel
-      androidDetails = const AndroidNotificationDetails(
+      androidDetails = AndroidNotificationDetails(
         _channelHighId,
         _channelHighName,
         channelDescription: _channelHighDesc,
         importance: Importance.max,
         priority: Priority.high,
         ticker: 'Urgent Alert',
+        additionalFlags: Int32List.fromList(<int>[4]),
       );
     } else {
       // Use Default Channel
