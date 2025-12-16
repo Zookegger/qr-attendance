@@ -51,6 +51,13 @@ dependencies:
   # Helper for formatting dates (e.g., "dd/MM/yyyy") in logs/calendar
   intl: ^0.20.2
 
+  # --- 5. Notifications ---
+  firebase_messaging: ^16.1.0
+
+  flutter_local_notifications: ^18.0.1
+
+  firebase_core: ^4.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
