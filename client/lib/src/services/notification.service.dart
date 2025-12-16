@@ -9,7 +9,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 class NotificationService {
   // --- CHANNELS CONFIGURATION ---
-  static const String _channelHighId = 'high_importance_channel';
+  static const String _channelHighId = 'high_importance_channel_v2';
   static const String _channelHighName = 'Urgent Alerts';
   static const String _channelHighDesc =
       'Notifications that require immediate attention.';

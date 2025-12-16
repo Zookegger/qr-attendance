@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -10,8 +11,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   // Mock Data
-  final String userName = "User";
-  final int notificationCount = 3;
+  String userName = "User";
+  int notificationCount = 3;
 
   // Shift Data
   final String checkInTime = "08:02 AM";
@@ -23,6 +24,31 @@ class _HomePageState extends State<HomePage> {
   final int daysOff = 1;
   final String overtimeHours = "4h";
   final int lateArrivals = 3;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupNotificationListener();
+  }
+
+  void _setupNotificationListener() {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (mounted) {
+        setState(() {
+          notificationCount++;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message.notification?.title ?? "New Notification"),
+            action: SnackBarAction(label: 'View', onPressed: () {}),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.blueAccent,
+          ),
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +224,8 @@ class _HomePageState extends State<HomePage> {
                 builder: (_) => AlertDialog(
                   title: const Text("Yêu cầu quyền"),
                   content: const Text(
-                      "Ứng dụng cần quyền Camera và Vị trí để chấm công."),
+                    "Ứng dụng cần quyền Camera và Vị trí để chấm công.",
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),

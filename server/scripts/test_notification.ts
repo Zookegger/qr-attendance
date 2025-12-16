@@ -14,7 +14,7 @@ admin.initializeApp({
 
 // 2. PASTE YOUR TOKEN HERE
 const YOUR_DEVICE_TOKEN =
-	"egcmr3oZQLCBfwu5C_GcOf:APA91bFtGIuXzdPp1dK2wt_1RHST41IUGF-xF_cwp8p4hONQR1zfx4xw3XzdkYBvqd3TPhNp_mzYu3ErKqyAFuzmqFBG_urIwc3Nb5bSahw1cEBWyKKKXqQ";
+	"e_Lh6eL-QcOTNb2Wg7w5Ke:APA91bEWw3xii3ICd30UmzSuRpQkfvOjilR0cYe1XvcrJniD-M3L08YAZrV0TJBqqOOAkCvLjhmZGPRkDUb49qCpdhenXtgUwWWz6GzSNyuf6emuaR6mgIU";
 
 async function sendTestNotification() {
 	const message = {
