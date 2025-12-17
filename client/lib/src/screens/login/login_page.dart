@@ -29,7 +29,7 @@ class _LoginPageState extends State<LoginPage> {
       debugPrint("Logging in with $login and $password");
 
       // TODO: Call API to Node.JS server
-      
+
       await Future.delayed(const Duration(seconds: 3));
 
       if (!mounted) return;
@@ -80,6 +80,7 @@ class _LoginPageState extends State<LoginPage> {
                   // Email Input
                   TextFormField(
                     controller: _loginController,
+                    keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       labelText: "Email / Employee ID",
                       labelStyle: TextStyle(color: Colors.grey[600]),
@@ -115,6 +116,7 @@ class _LoginPageState extends State<LoginPage> {
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _isObscured,
+                    keyboardType: TextInputType.visiblePassword,
                     decoration: InputDecoration(
                       labelText: "Password",
                       labelStyle: TextStyle(color: Colors.grey[600]),

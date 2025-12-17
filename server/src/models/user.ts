@@ -8,6 +8,9 @@ interface UserAttributes {
 	password_hash: string;
 	role: "admin" | "user";
 	device_uuid?: string | null;
+	device_name?: string | null;
+	device_model?: string | null;
+	device_os_version?: string | null;
 	position?: string | null;
 	department?: string | null;
 	fcm_token?: string | null;
@@ -16,7 +19,7 @@ interface UserAttributes {
 interface UserCreationAttributes
 	extends Optional<
 		UserAttributes,
-		"id" | "device_uuid" | "position" | "department"
+		"id" | "device_uuid" | "device_name" | "device_model" | "device_os_version" | "position" | "department"
 	> {}
 
 export class User
@@ -29,6 +32,9 @@ export class User
 	public declare password_hash: string;
 	public declare role: "admin" | "user";
 	public declare device_uuid: string | null;
+	public declare device_name: string | null;
+	public declare device_model: string | null;
+	public declare device_os_version: string | null;
 	public declare position: string | null;
 	public declare department: string | null;
 	public declare fcm_token: string | null;
@@ -69,6 +75,21 @@ User.init(
 			type: DataTypes.STRING,
 			allowNull: true,
 			comment: "Unique device ID for device binding",
+		},
+		device_name: {
+			type: DataTypes.STRING,
+			allowNull: true,
+			comment: "Device name (e.g. John's iPhone)",
+		},
+		device_model: {
+			type: DataTypes.STRING,
+			allowNull: true,
+			comment: "Device model (e.g. iPhone 13)",
+		},
+		device_os_version: {
+			type: DataTypes.STRING,
+			allowNull: true,
+			comment: "Device OS version (e.g. iOS 15.0)",
 		},
 		fcm_token: {
 			type: DataTypes.STRING,
