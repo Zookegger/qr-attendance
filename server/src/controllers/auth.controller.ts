@@ -1,110 +1,49 @@
-import { Request, Response } from "express";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { User } from "@models";
+import { NextFunction, Request, Response } from "express";
+import { AuthService } from "../services/auth.service";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key";
-
-async function register(req: Request, res: Response) {
+async function register(req: Request, res: Response, next: NextFunction) {
 	try {
-		const { name, email, password, role, position, department } = req.body;
-
-		const existingUser = await User.findOne({ where: { email } });
-		if (existingUser) {
-			return res.status(400).json({ message: "User already exists" });
-		}
-
-		const salt = await bcrypt.genSalt(10);
-		const password_hash = await bcrypt.hash(password, salt);
-
-		const user = await User.create({
-			name,
-			email,
-			password_hash,
-			role: role || "user",
-			position,
-			department,
-		});
-
-		return res.status(201).json({
-			message: "User created successfully",
-			user: { id: user.id, email: user.email },
-		});
+		const result = await AuthService.register(req.body);
+		return res.status(201).json(result);
 	} catch (error) {
-		return res.status(500).json({ message: "Server error", error });
+		return next(error);
 	}
 }
 
-async function login(req: Request, res: Response) {
+async function login(req: Request, res: Response, next: NextFunction) {
 	try {
-		const { email, password, device_uuid } = req.body;
-
-		const user = await User.findOne({ where: { email } });
-		if (!user) {
-			return res.status(400).json({ message: "Invalid credentials" });
-		}
-
-		const isMatch = await bcrypt.compare(password, user.password_hash);
-		if (!isMatch) {
-			return res.status(400).json({ message: "Invalid credentials" });
-		}
-
-		// Device Binding Check (Only for non-admin users)
-		if (user.role === "user") {
-			if (!device_uuid) {
-				return res
-					.status(400)
-					.json({ message: "Device UUID is required for login" });
-			}
-
-			if (user.device_uuid && user.device_uuid !== device_uuid) {
-				return res.status(403).json({
-					message: "This account is bound to another device.",
-				});
-			}
-
-			// Bind device if not bound
-			if (!user.device_uuid) {
-				user.device_uuid = device_uuid;
-				await user.save();
-			}
-		}
-
-		const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
-			expiresIn: "1d",
-		});
-
-		return res.json({
-			token,
-			user: {
-				id: user.id,
-				name: user.name,
-				email: user.email,
-				role: user.role,
-				device_uuid: user.device_uuid,
-			},
-		});
+		const result = await AuthService.login(req.body);
+		return res.status(200).json(result);
 	} catch (error) {
-		return res.status(500).json({ message: "Server error", error });
+		return next(error);
 	}
 }
 
-async function me(req: Request, res: Response) {
+async function refresh(req: Request, res: Response, next: NextFunction) {
 	try {
-		const user = req.user;
+		const { refreshToken } = req.body;
+		const result = await AuthService.refresh(refreshToken);
+		return res.status(200).json(result);
+	} catch (error) {
+		return next(error);
+	}
+}
+
+async function me(req: Request, res: Response, next: NextFunction) {
+	try {
+		const user = (req as any).user;
 		if (!user) {
-			return res
-				.status(403)
-				.json({ status: 403, message: "Unauthorized" });
+			return res.status(401).json({ message: "Unauthorized" });
 		}
 		return res.json(user);
 	} catch (error) {
-		return res.status(500).json({ message: "Server error", error });
+		return next(error);
 	}
 }
 
 export const AuthController = {
 	register,
 	login,
+	refresh,
 	me,
 };

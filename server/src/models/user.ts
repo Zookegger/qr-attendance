@@ -1,12 +1,30 @@
 import { Model, DataTypes, Optional } from "sequelize";
 import { sequelize } from "@config/database";
 
+export enum UserStatus {
+	ACTIVE = "ACTIVE",
+	INACTIVE = "INACTIVE",
+	PENDING = "PENDING",
+}
+
+export enum UserRole {
+	ADMIN = "ADMIN",
+	USER = "USER",
+}
+
+export enum Gender {
+	MALE = "MALE",
+	FEMALE = "FEMALE",
+	OTHER = "OTHER",
+}
+
 interface UserAttributes {
 	id: string;
 	name: string;
 	email: string;
+	status: UserStatus;
 	password_hash: string;
-	role: "admin" | "user";
+	role: UserRole;
 	device_uuid?: string | null;
 	device_name?: string | null;
 	device_model?: string | null;
@@ -14,12 +32,27 @@ interface UserAttributes {
 	position?: string | null;
 	department?: string | null;
 	fcm_token?: string | null;
+	date_of_birth?: string | null;
+	phone_number?: string | null;
+	address?: string | null;
+	gender?: Gender | null;
 }
 
 interface UserCreationAttributes
 	extends Optional<
 		UserAttributes,
-		"id" | "device_uuid" | "device_name" | "device_model" | "device_os_version" | "position" | "department"
+		| "id"
+		| "status"
+		| "device_uuid"
+		| "device_name"
+		| "device_model"
+		| "device_os_version"
+		| "position"
+		| "department"
+		| "date_of_birth"
+		| "phone_number"
+		| "address"
+		| "gender"
 	> {}
 
 export class User
@@ -29,8 +62,9 @@ export class User
 	public declare id: string;
 	public declare name: string;
 	public declare email: string;
+	public declare status: UserStatus;
 	public declare password_hash: string;
-	public declare role: "admin" | "user";
+	public declare role: UserRole;
 	public declare device_uuid: string | null;
 	public declare device_name: string | null;
 	public declare device_model: string | null;
@@ -38,6 +72,10 @@ export class User
 	public declare position: string | null;
 	public declare department: string | null;
 	public declare fcm_token: string | null;
+	public declare date_of_birth: string | null;
+	public declare phone_number: string | null;
+	public declare address: string | null;
+	public declare gender: Gender | null;
 
 	public declare readonly createdAt: Date;
 	public declare readonly updatedAt: Date;
@@ -54,6 +92,12 @@ User.init(
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
+		status: {
+			type: DataTypes.ENUM(...Object.values(UserStatus)),
+			defaultValue: UserStatus.ACTIVE,
+			allowNull: false,
+			comment: "Account status for login access and lifecycle management",
+		},
 		email: {
 			type: DataTypes.STRING,
 			allowNull: false,
@@ -67,8 +111,8 @@ User.init(
 			allowNull: false,
 		},
 		role: {
-			type: DataTypes.ENUM("admin", "user"),
-			defaultValue: "user",
+			type: DataTypes.ENUM(...Object.values(UserRole)),
+			defaultValue: UserRole.USER,
 			allowNull: false,
 		},
 		device_uuid: {
@@ -102,6 +146,22 @@ User.init(
 		},
 		department: {
 			type: DataTypes.STRING,
+			allowNull: true,
+		},
+		date_of_birth: {
+			type: DataTypes.DATEONLY,
+			allowNull: true,
+		},
+		phone_number: {
+			type: DataTypes.STRING,
+			allowNull: true,
+		},
+		address: {
+			type: DataTypes.STRING,
+			allowNull: true,
+		},
+		gender: {
+			type: DataTypes.ENUM(...Object.values(Gender)),
 			allowNull: true,
 		},
 	},

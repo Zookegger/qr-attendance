@@ -1,4 +1,4 @@
-import { User } from './user';
+import { User, UserStatus } from './user';
 import { Attendance } from './attendance';
 import { LeaveRequest } from './leaveRequest';
 import { OfficeConfig } from './officeConfig';
@@ -16,6 +16,7 @@ RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 export {
   User,
+  UserStatus,
   Attendance,
   LeaveRequest,
   OfficeConfig,

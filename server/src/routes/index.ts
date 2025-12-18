@@ -13,6 +13,7 @@ router.get('/health', healthController.getHealth);
 // --- Auth Routes ---
 router.post('/auth/register', AuthController.register);
 router.post('/auth/login', AuthController.login);
+router.post('/auth/refresh', AuthController.refresh);
 router.get('/auth/me', authenticate, AuthController.me);
 
 // --- Attendance Routes (Employee) ---
