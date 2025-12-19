@@ -1,6 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'dart:async';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -25,6 +26,8 @@ class _HomePageState extends State<HomePage> {
   final String overtimeHours = "4h";
   final int lateArrivals = 3;
 
+  StreamSubscription<RemoteMessage>? _onMessageSub;
+
   @override
   void initState() {
     super.initState();
@@ -32,7 +35,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _setupNotificationListener() {
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    _onMessageSub?.cancel();
+    _onMessageSub = FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (mounted) {
         setState(() {
           notificationCount++;
@@ -48,6 +52,12 @@ class _HomePageState extends State<HomePage> {
         );
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _onMessageSub?.cancel();
+    super.dispose();
   }
 
   @override
@@ -157,7 +167,7 @@ class _HomePageState extends State<HomePage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey[100] ?? Colors.grey.withOpacity(0.1),
+            color: Colors.grey[100] ?? Colors.grey.withAlpha(26),
             spreadRadius: 5,
             blurRadius: 10,
             offset: const Offset(0, 3),
@@ -300,7 +310,7 @@ class _HomePageState extends State<HomePage> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
+            color: Colors.grey.withAlpha(13),
             spreadRadius: 2,
             blurRadius: 5,
           ),

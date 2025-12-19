@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_attendance_frontend/src/services/notification.service.dart';
@@ -7,13 +9,12 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  await NotificationService().init();
-  
   runApp(const MyApp());
+
+  // Don't block the first frame on notification setup.
+  unawaited(NotificationService().init());
 }
 
 class MyApp extends StatelessWidget {
