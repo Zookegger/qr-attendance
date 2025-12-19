@@ -12,11 +12,9 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
 
 const logout = async (req: Request, res: Response, next: NextFunction) => {
 	try {
-		const user = (req as any).user;
-
-		const isLoggedout = await AuthService.logout(user);
-
-		return res.status(200).json();
+		const { refreshToken } = req.body;
+		await AuthService.logout(refreshToken);
+		return res.status(200).json({ message: "Logged out successfully" });
 	} catch (error) {
 		return next(error);
 	}

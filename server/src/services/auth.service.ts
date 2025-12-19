@@ -1,12 +1,12 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import crypto from "crypto";
-import { User, RefreshToken } from "@models";
+import { User } from "@models";
 import { UserRole } from "@models/user";
-import { LoginDTO, AuthResponse, LogoutDTO } from "@my-types/auth";
-
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key";
-const REFRESH_TOKEN_DAYS = Number(process.env.REFRESH_TOKEN_DAYS) || 30;
+import { LoginDTO, AuthResponse } from "@my-types/auth";
+import {
+	generateRefreshToken,
+	rotateRefreshToken,
+	revokeRefreshToken,
+} from "./refreshToken.service";
 
 export class AuthService {
 	static async login(dto: LoginDTO): Promise<AuthResponse> {
@@ -37,136 +37,46 @@ export class AuthService {
 			}
 		}
 
-		return this.generateAuthResponse(user, dto.device_uuid || null);
+		// Use RefreshTokenService to generate tokens
+		const { accessToken, refreshToken } = await generateRefreshToken(user, {
+			id: user.id,
+			role: user.role,
+		});
+
+		return {
+			accessToken,
+			refreshToken,
+			user: {
+				id: user.id,
+				name: user.name,
+				email: user.email,
+				role: user.role,
+				device_uuid: user.device_uuid,
+			},
+		};
 	}
 
-	static async logout(dto: LogoutDTO): Promise<boolean> {
-		if (
-			dto &&
-			typeof dto === "object" &&
-			typeof dto.refreshToken === "string"
-		) {
-			const parts = dto.refreshToken.split(".");
-
-			if (parts.length === 2) {
-				const [tokenId] = parts;
-
-				const refreshTokenRecord = await RefreshToken.findByPk(tokenId);
-
-				if (refreshTokenRecord && !refreshTokenRecord.revoked) {
-					refreshTokenRecord.revoked = true;
-					await refreshTokenRecord.save();
-				}
-			}
-		}
-
-		if (
-			!dto ||
-			!(typeof dto === "object") ||
-			!(typeof dto.refreshToken === "string")
-		) {
-			throw new Error("");
-		}
+	static async logout(refreshToken: string): Promise<void> {
+		if (!refreshToken) return;
+		await revokeRefreshToken(refreshToken);
 	}
 
 	static async refresh(tokenString: string): Promise<AuthResponse> {
-		try {
-			const parts = tokenString.split(".");
-			if (parts.length !== 2) {
-				throw new Error("Invalid refresh token format");
-			}
+		// Use RefreshTokenService to rotate tokens
+		const { accessToken, refreshToken, user } = await rotateRefreshToken(
+			tokenString
+		);
 
-			const [tokenId, tokenSecret] = parts;
-
-			if (!tokenId || !tokenSecret) {
-				throw new Error("Invalid refresh token format");
-			}
-
-			const refreshTokenRecord = await RefreshToken.findByPk(tokenId);
-			if (!refreshTokenRecord) {
-				throw new Error("Invalid refresh token");
-			}
-
-			if (refreshTokenRecord.revoked) {
-				// Token reuse detection could go here (revoke all user tokens)
-				throw new Error("Refresh token revoked");
-			}
-
-			if (new Date() > refreshTokenRecord.expires_at) {
-				throw new Error("Refresh token expired");
-			}
-
-			const isValid = await bcrypt.compare(
-				tokenSecret,
-				refreshTokenRecord.token_hash
-			);
-			if (!isValid) {
-				throw new Error("Invalid refresh token");
-			}
-
-			// Rotate Token: Revoke the old one
-			await refreshTokenRecord.update({ revoked: true });
-
-			const user = await User.findByPk(refreshTokenRecord.user_id);
-			if (!user) {
-				throw new Error("User not found");
-			}
-
-			// Create a new one
-			return this.generateAuthResponse(
-				user,
-				refreshTokenRecord.device_uuid || null
-			);
-		} catch (err) {
-			throw err;
-		}
-	}
-
-	private static async generateAuthResponse(
-		user: User,
-		deviceUuid: string | null
-	): Promise<AuthResponse> {
-		try {
-			// Issue short-lived access token
-			const accessToken = jwt.sign(
-				{ id: user.id, role: user.role },
-				JWT_SECRET,
-				{
-					expiresIn: "15m",
-				}
-			);
-
-			// Generate Refresh Token
-			const randomSecret = crypto.randomBytes(32).toString("hex");
-			const tokenHash = await bcrypt.hash(randomSecret, 10);
-			const expiresAt = new Date(
-				Date.now() + REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000
-			);
-
-			const refreshTokenRecord = await RefreshToken.create({
-				user_id: user.id,
-				token_hash: tokenHash,
-				device_uuid: deviceUuid,
-				revoked: false,
-				expires_at: expiresAt,
-			});
-
-			// Composite Key: [db_id].[random_secret]
-			const compositeRefreshToken = `${refreshTokenRecord.id}.${randomSecret}`;
-
-			return {
-				accessToken,
-				refreshToken: compositeRefreshToken,
-				user: {
-					id: user.id,
-					name: user.name,
-					email: user.email,
-					role: user.role,
-					device_uuid: user.device_uuid,
-				},
-			};
-		} catch (err) {
-			throw err;
-		}
+		return {
+			accessToken,
+			refreshToken,
+			user: {
+				id: user.id,
+				name: user.name,
+				email: user.email,
+				role: user.role,
+				device_uuid: user.device_uuid,
+			},
+		};
 	}
 }
