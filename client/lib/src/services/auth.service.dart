@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
 import '../models/user.dart';
+import 'api/api_client.dart';
 
 class AuthException implements Exception {
   final String message;
@@ -35,24 +36,20 @@ class AuthSession {
 // NOTE: Server requires `device_uuid` on login for non-admin users.
 class AuthenticationService {
   AuthenticationService._internal({
-    http.Client? httpClient,
     FlutterSecureStorage? storage,
-    String? baseUrl,
     DeviceInfoPlugin? deviceInfo,
-  }) : _http = httpClient ?? http.Client(),
-       _storage = storage ?? const FlutterSecureStorage(),
-       _baseUrl = (baseUrl ?? const String.fromEnvironment('API_BASE_URL'))
-           .trim(),
-       _deviceInfo = deviceInfo ?? DeviceInfoPlugin();
+    Dio? dio,
+  }) : _storage = storage ?? const FlutterSecureStorage(),
+       _deviceInfo = deviceInfo ?? DeviceInfoPlugin(),
+       _dio = dio ?? ApiClient().client;
 
   static final AuthenticationService _instance =
       AuthenticationService._internal();
 
   factory AuthenticationService() => _instance;
 
-  final http.Client _http;
+  final Dio _dio;
   final FlutterSecureStorage _storage;
-  final String _baseUrl;
   final DeviceInfoPlugin _deviceInfo;
 
   static const _accessTokenKey = 'auth_access_token';
@@ -95,82 +92,56 @@ class AuthenticationService {
     required String email,
     required String password,
   }) async {
-    _ensureBaseUrl();
-
     final deviceUuid = await getOrCreateDeviceUuid();
 
-    final uri = Uri.parse('$_baseUrl/auth/login');
-    final res = await _http.post(
-      uri,
-      headers: const {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-        'device_uuid': deviceUuid,
-      }),
-    );
+    try {
+      final res = await _dio.post(
+        '/auth/login',
+        data: {'email': email, 'password': password, 'device_uuid': deviceUuid},
+      );
 
-    final body = _tryDecodeJson(res.body);
-    if (res.statusCode < 200 || res.statusCode >= 300) {
+      return _persistAndReturnSession(
+        res.data,
+        invalidMessage: 'Login succeeded but response was invalid.',
+      );
+    } on DioException catch (e) {
       throw AuthException(
-        _extractMessage(body) ?? 'Login failed',
-        res.statusCode,
+        _extractMessage(e.response?.data) ?? 'Login failed',
+        e.response?.statusCode,
       );
     }
-
-    return _persistAndReturnSession(
-      body,
-      invalidMessage: 'Login succeeded but response was invalid.',
-    );
   }
 
   Future<AuthSession> refresh() async {
-    _ensureBaseUrl();
-
     final refreshToken = await getRefreshToken();
     if (refreshToken == null || refreshToken.trim().isEmpty) {
       throw AuthException('Missing refresh token. Please login again.');
     }
 
-    final uri = Uri.parse('$_baseUrl/auth/refresh');
-    final res = await _http.post(
-      uri,
-      headers: const {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: jsonEncode({'refreshToken': refreshToken}),
-    );
+    try {
+      final res = await _dio.post(
+        '/auth/refresh',
+        data: {'refreshToken': refreshToken},
+      );
 
-    final body = _tryDecodeJson(res.body);
-    if (res.statusCode < 200 || res.statusCode >= 300) {
+      return _persistAndReturnSession(
+        res.data,
+        invalidMessage: 'Refresh succeeded but response was invalid.',
+      );
+    } on DioException catch (e) {
       await logout();
       throw AuthException(
-        _extractMessage(body) ?? 'Token refresh failed',
-        res.statusCode,
+        _extractMessage(e.response?.data) ?? 'Token refresh failed',
+        e.response?.statusCode,
       );
     }
-
-    return _persistAndReturnSession(
-      body,
-      invalidMessage: 'Refresh succeeded but response was invalid.',
-    );
   }
 
   Future<User> me({bool attemptRefreshOn401 = true}) async {
-    _ensureBaseUrl();
-
-    Future<http.Response> doRequest(String token) {
-      final uri = Uri.parse('$_baseUrl/auth/me');
-      return _http.get(
-        uri,
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+    Future<Response> doRequest(String token) {
+      return _dio.get(
+        '/auth/me',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
     }
 
@@ -179,42 +150,51 @@ class AuthenticationService {
       throw AuthException('Not authenticated (missing access token).');
     }
 
-    var res = await doRequest(accessToken);
-    if (res.statusCode == 401 && attemptRefreshOn401) {
-      final session = await refresh();
-      accessToken = session.accessToken;
-      res = await doRequest(accessToken);
-    }
+    try {
+      var res = await doRequest(accessToken);
+      final body = res.data;
 
-    final body = _tryDecodeJson(res.body);
-    if (res.statusCode < 200 || res.statusCode >= 300) {
-      if (res.statusCode == 401) {
+      if (body is! Map<String, dynamic>) {
+        throw AuthException('Unexpected /auth/me response format.');
+      }
+
+      final user = User.fromJson(body);
+      await _storage.write(key: _userKey, value: jsonEncode(user.toJson()));
+      return user;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401 && attemptRefreshOn401) {
+        try {
+          final session = await refresh();
+          final res = await doRequest(session.accessToken);
+          final body = res.data;
+          if (body is! Map<String, dynamic>) {
+            throw AuthException('Unexpected /auth/me response format.');
+          }
+          final user = User.fromJson(body);
+          await _storage.write(key: _userKey, value: jsonEncode(user.toJson()));
+          return user;
+        } on AuthException {
+          rethrow;
+        } catch (_) {
+          await logout();
+          throw AuthException(
+            'Failed to fetch current user after refresh',
+            401,
+          );
+        }
+      }
+
+      if (e.response?.statusCode == 401) {
         await logout();
       }
       throw AuthException(
-        _extractMessage(body) ?? 'Failed to fetch current user',
-        res.statusCode,
+        _extractMessage(e.response?.data) ?? 'Failed to fetch current user',
+        e.response?.statusCode,
       );
     }
-
-    if (body is! Map<String, dynamic>) {
-      throw AuthException('Unexpected /auth/me response format.');
-    }
-
-    final user = User.fromJson(body);
-    await _storage.write(key: _userKey, value: jsonEncode(user.toJson()));
-    return user;
   }
 
   // ---- Internals ----
-  void _ensureBaseUrl() {
-    if (_baseUrl.isEmpty) {
-      throw AuthException(
-        'API baseUrl is empty. Provide API_BASE_URL via --dart-define.',
-      );
-    }
-  }
-
   Object? _tryDecodeJson(String s) {
     try {
       if (s.trim().isEmpty) return null;

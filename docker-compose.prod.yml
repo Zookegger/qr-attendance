@@ -5,7 +5,7 @@ services:
         restart: always
         environment:
             MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-123456789}
-            MYSQL_DATABASE: ${DB_NAME:-qr_attendance_dev}
+            MYSQL_DATABASE: ${DB_NAME:-qr_attendance_prod}
             MYSQL_USER: ${DB_USER:-user}
             MYSQL_PASSWORD: ${DB_PASSWORD:-123456789}
         ports:
@@ -34,18 +34,18 @@ services:
         build:
             context: ./server
             dockerfile: Dockerfile
-        container_name: qr_attendance_server
+        container_name: qr_attendance_server_prod
         restart: always
         ports:
             - "5000:5000"
         environment:
             - PORT=5000
-            - NODE_ENV=development
+            - NODE_ENV=production
             - DB_HOST=mysql
             - DB_PORT=3306
             - DB_USER=root
             - DB_PASS=${DB_PASSWORD:-123456789}
-            - DB_NAME=${DB_NAME:-qr_attendance_dev}
+            - DB_NAME=${DB_NAME:-qr_attendance_prod}
             - DB_DIALECT=mysql
             - REDIS_HOST=redis
             - REDIS_PORT=6379
@@ -54,15 +54,6 @@ services:
                 condition: service_healthy
             redis:
                 condition: service_healthy
-        develop:
-            watch:
-                - action: sync
-                  path: ./server
-                  target: /usr/src/app
-                  ignore:
-                    - node_modules/
-                - action: rebuild
-                  path: ./server/package.json
 
     adminer:
         image: adminer
