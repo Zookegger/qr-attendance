@@ -3,7 +3,7 @@ import assert from "node:assert";
 import app from "../src/app.ts";
 import { sequelize } from "../src/config/database.ts";
 import { User } from "../src/models/index.ts";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key";

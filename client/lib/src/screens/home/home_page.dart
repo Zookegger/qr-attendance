@@ -1,6 +1,10 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'dart:async';
+
+import '../../models/user.dart';
+import '../../services/auth.service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,9 +14,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Mock Data
-  String userName = "User";
-  int notificationCount = 3;
+  User? _user;
+  int notificationCount = 0;
 
   // Shift Data
   final String checkInTime = "08:02 AM";
@@ -25,14 +28,40 @@ class _HomePageState extends State<HomePage> {
   final String overtimeHours = "4h";
   final int lateArrivals = 3;
 
+  StreamSubscription<RemoteMessage>? _onMessageSub;
+
   @override
   void initState() {
     super.initState();
+    _loadUser();
     _setupNotificationListener();
+  }
+  
+  Future<void> _handleLogout() async {
+    await AuthenticationService().logout();
+    if (!mounted) return;
+    Navigator.of(context)
+        .pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
+  }
+  
+  void _openProfile() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Profile screen is not available yet.'),
+      ),
+    );
+  }
+
+  Future<void> _loadUser() async {
+    final cached = await AuthenticationService().getCachedUser();
+    if (mounted) {
+      setState(() => _user = cached);
+    }
   }
 
   void _setupNotificationListener() {
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    _onMessageSub?.cancel();
+    _onMessageSub = FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (mounted) {
         setState(() {
           notificationCount++;
@@ -48,6 +77,12 @@ class _HomePageState extends State<HomePage> {
         );
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _onMessageSub?.cancel();
+    super.dispose();
   }
 
   @override
@@ -79,14 +114,30 @@ class _HomePageState extends State<HomePage> {
   Widget _buildHeader() {
     return Row(
       children: [
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: Colors.purple.shade100,
-          child: const Icon(Icons.person_outline, color: Colors.purple),
+        PopupMenuButton<String>(
+          onSelected: (value) {
+            switch (value) {
+              case 'profile':
+                _openProfile();
+                break;
+              case 'logout':
+                _handleLogout();
+                break;
+            }
+          },
+          itemBuilder: (context) => const [
+            PopupMenuItem(value: 'profile', child: Text('View profile')),
+            PopupMenuItem(value: 'logout', child: Text('Logout')),
+          ],
+          child: CircleAvatar(
+            radius: 24,
+            backgroundColor: Colors.purple.shade100,
+            child: const Icon(Icons.person_outline, color: Colors.purple),
+          ),
         ),
         const SizedBox(width: 12),
         Text(
-          "Chào $userName",
+          "Hello ${_user?.name ?? 'User'}",
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const Spacer(),
@@ -116,6 +167,7 @@ class _HomePageState extends State<HomePage> {
               ),
           ],
         ),
+        const SizedBox(width: 8),
       ],
     );
   }
@@ -124,28 +176,52 @@ class _HomePageState extends State<HomePage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildActionButton(Icons.bar_chart, "Lịch sử", Colors.blue),
-        _buildActionButton(Icons.calendar_month, "Lịch làm", Colors.blue),
-        _buildActionButton(Icons.receipt_long, "Bảng lương", Colors.orange),
+        _buildActionButton(
+          Icons.bar_chart,
+          "History",
+          Colors.blue,
+          onTap: () => Navigator.pushNamed(context, '/history'),
+        ),
+        _buildActionButton(
+          Icons.calendar_month,
+          "Schedule",
+          Colors.blue,
+          onTap: () => Navigator.pushNamed(context, '/schedule'),
+        ),
+        _buildActionButton(
+          Icons.receipt_long,
+          "Payroll",
+          Colors.orange,
+          onTap: () {},
+        ),
       ],
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label, Color color) {
-    return Column(
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(12),
+  Widget _buildActionButton(
+    IconData icon,
+    String label,
+    Color color, {
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 30),
           ),
-          child: Icon(icon, color: color, size: 30),
-        ),
-        const SizedBox(height: 8),
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-      ],
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+        ],
+      ),
     );
   }
 
@@ -157,7 +233,7 @@ class _HomePageState extends State<HomePage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey[100] ?? Colors.grey.withOpacity(0.1),
+            color: Colors.grey[100] ?? Colors.grey.withAlpha(26),
             spreadRadius: 5,
             blurRadius: 10,
             offset: const Offset(0, 3),
@@ -170,7 +246,7 @@ class _HomePageState extends State<HomePage> {
           const Row(
             children: [
               Text(
-                "Ca làm hôm nay",
+                "Today's shift",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               SizedBox(width: 8),
@@ -178,12 +254,12 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           const SizedBox(height: 16),
-          _buildTimeRow("Giờ vào: $checkInTime"),
+          _buildTimeRow("Check-in: $checkInTime"),
           const SizedBox(height: 8),
-          _buildTimeRow("Giờ ra: $checkOutTime"),
+          _buildTimeRow("Check-out: $checkOutTime"),
           const SizedBox(height: 16),
           Text(
-            "Tổng thời gian: $totalTime",
+            "Total time: $totalTime",
             style: const TextStyle(fontWeight: FontWeight.w500),
           ),
         ],
@@ -222,9 +298,9 @@ class _HomePageState extends State<HomePage> {
               showDialog(
                 context: context,
                 builder: (_) => AlertDialog(
-                  title: const Text("Yêu cầu quyền"),
+                  title: const Text("Permission needed"),
                   content: const Text(
-                    "Ứng dụng cần quyền Camera và Vị trí để chấm công.",
+                    "Camera and Location permissions are required to check in.",
                   ),
                   actions: [
                     TextButton(
@@ -253,7 +329,7 @@ class _HomePageState extends State<HomePage> {
             Icon(Icons.qr_code_scanner, color: Colors.white),
             SizedBox(width: 12),
             Text(
-              "Quét QR để chấm công",
+              "Scan QR to check in",
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 16,
@@ -278,14 +354,14 @@ class _HomePageState extends State<HomePage> {
         _buildStatCard(
           Icons.access_time,
           daysWorked.toString(),
-          "Số ngày đi làm",
+          "Days worked",
         ),
-        _buildStatCard(Icons.access_time, daysOff.toString(), "Số ngày nghỉ"),
-        _buildStatCard(Icons.access_time, overtimeHours, "Giờ tăng ca"),
+        _buildStatCard(Icons.access_time, daysOff.toString(), "Days off"),
+        _buildStatCard(Icons.access_time, overtimeHours, "Overtime"),
         _buildStatCard(
           Icons.access_time,
           lateArrivals.toString(),
-          "Số lần đi muộn",
+          "Late arrivals",
         ),
       ],
     );
@@ -300,7 +376,7 @@ class _HomePageState extends State<HomePage> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
+            color: Colors.grey.withAlpha(13),
             spreadRadius: 2,
             blurRadius: 5,
           ),

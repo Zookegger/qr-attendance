@@ -1,12 +1,14 @@
-import { Router } from 'express';
-import { AuthController } from '../controllers/auth.controller';
-import { authenticate } from '@middlewares/auth.middleware';
+import { Router } from "express";
+import { AuthController } from "@controllers/auth.controller";
+import { authenticate } from "@middlewares/auth.middleware";
+import { errorHandler } from "@middlewares/error.middleware";
 
 const authRouter = Router();
 
 // --- Auth Routes ---
-authRouter.post('/auth/register', AuthController.register);
-authRouter.post('/auth/login', AuthController.login);
-authRouter.get('/auth/me', authenticate, AuthController.me);
+authRouter.post("/auth/login", AuthController.login, errorHandler);
+authRouter.post("/auth/logout", authenticate, AuthController.logout, errorHandler);
+authRouter.post("/auth/refresh", authenticate, AuthController.refresh, errorHandler);
+authRouter.get("/auth/me", authenticate, AuthController.me, errorHandler);
 
 export default authRouter;
