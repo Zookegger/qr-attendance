@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:qr_attendance_frontend/src/consts/api_endpoints.dart';
 import '../models/user.dart';
 import 'api/api_client.dart';
 
@@ -72,11 +74,24 @@ class AuthenticationService {
   }
 
   Future<void> logout() async {
-    await Future.wait([
-      _storage.delete(key: _accessTokenKey),
-      _storage.delete(key: _refreshTokenKey),
-      _storage.delete(key: _userKey),
-    ]);
+    try {
+      final refreshToken = await getRefreshToken();
+
+      if (refreshToken != null && refreshToken.trim().isNotEmpty) {
+        await _dio.post(
+          ApiEndpoints.logout,
+          data: {'refreshToken': refreshToken},
+        );
+      }
+    } catch (e) {
+      debugPrint('Logout request failed: $e');
+    } finally {
+      await Future.wait([
+        _storage.delete(key: _accessTokenKey),
+        _storage.delete(key: _refreshTokenKey),
+        _storage.delete(key: _userKey),
+      ]);
+    }
   }
 
   Future<String> getOrCreateDeviceUuid() async {
@@ -96,9 +111,11 @@ class AuthenticationService {
 
     try {
       final res = await _dio.post(
-        '/auth/login',
+        ApiEndpoints.login,
         data: {'email': email, 'password': password, 'device_uuid': deviceUuid},
       );
+
+      debugPrint(res.toString());
 
       return _persistAndReturnSession(
         res.data,
@@ -120,7 +137,7 @@ class AuthenticationService {
 
     try {
       final res = await _dio.post(
-        '/auth/refresh',
+        ApiEndpoints.refresh,
         data: {'refreshToken': refreshToken},
       );
 
@@ -140,7 +157,7 @@ class AuthenticationService {
   Future<User> me({bool attemptRefreshOn401 = true}) async {
     Future<Response> doRequest(String token) {
       return _dio.get(
-        '/auth/me',
+        ApiEndpoints.me,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
     }

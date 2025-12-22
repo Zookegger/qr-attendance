@@ -14,7 +14,7 @@ const logout = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const { refreshToken } = req.body;
 		await AuthService.logout(refreshToken);
-		return res.status(200).json({ message: "Logged out successfully" });
+		return res.status(200).json({ success: true, message: "Logged out successfully" });
 	} catch (error) {
 		return next(error);
 	}

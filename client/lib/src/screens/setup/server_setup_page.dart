@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:dio/dio.dart';
 import '../../services/config.service.dart';
 
 class ServerSetupPage extends StatefulWidget {
@@ -111,26 +112,68 @@ class _ServerSetupPageState extends State<ServerSetupPage> {
 
   Future<void> _connectToServer(String host) async {
     if (_isConnecting) return;
-    setState(() => _isConnecting = true);
 
-    await ConfigService().setBaseUrl(host);
+    final normalizedHost =
+        '${host.endsWith('/') ? host.substring(0, host.length - 1) : host}/api';
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Connected to $host"),
-        backgroundColor: Colors.green,
-      ),
-    );
-    Navigator.of(context).pushReplacementNamed('/login');
+    try {
+      setState(() => _isConnecting = true);
+      final dio = Dio(
+        BaseOptions(
+          baseUrl: normalizedHost,
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+          headers: const {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      final response = await dio.get('/health');
+
+      if (response.statusCode != 200) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Unexpected status code ${response.statusCode}',
+        );
+      }
+
+      await ConfigService().setBaseUrl(normalizedHost);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Connected to $normalizedHost"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.of(context).pushReplacementNamed('/login');
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Failed to connect. Please check the address and try again.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isConnecting = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Connect to Server"),
-      ),
+      appBar: AppBar(title: const Text("Connect to Server")),
       body: _isScanMode ? _buildScannerView() : _buildManualView(),
     );
   }

@@ -13,6 +13,7 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
+    // Ensure navigation happens after the build phase is complete.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkState();
     });

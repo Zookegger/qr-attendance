@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:qr_attendance_frontend/src/services/api/api_client.dart';
+import 'package:qr_attendance_frontend/src/services/auth.service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,34 +18,49 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
 
   Future<void> _handleLogin() async {
-    // 1. Trigger loading state immediately
-    setState(() {
-      _isLoading = true;
-    });
+    // 1. Validate form
+    if (!_formKey.currentState!.validate()) return;
 
-    // 2. Validate form
-    if (_formKey.currentState!.validate()) {
-      final login = _loginController.text;
-      final password = _passwordController.text;
+    // 2. Trigger loading state
+    setState(() => _isLoading = true);
 
-      debugPrint("Logging in with $login and $password");
+    final login = _loginController.text.trim();
+    final password = _passwordController.text;
 
-      // TODO: Call API to Node.JS server
-
-      await Future.delayed(const Duration(seconds: 3));
+    try {
+      final session = await AuthenticationService().login(
+        email: login,
+        password: password,
+      );
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Success!")));
-    }
+      debugPrint('Logged in as ${session.user.email}');
+      Navigator.of(context).pushReplacementNamed('/home');
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
 
-    // 3. Reset state safely
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
+      final errorMessage = ApiClient().parseErrorMessage(error);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

@@ -40,7 +40,7 @@ class User {
       id: json['id'],
       name: json['name'],
       email: json['email'],
-      status: json['status'],
+      status: json['status'] ?? 'UNKNOWN',
       role: json['role'],
       deviceUuid: json['device_uuid'],
       deviceName: json['device_name'],

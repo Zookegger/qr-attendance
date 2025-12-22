@@ -4,6 +4,8 @@ import 'screens/login/login_page.dart';
 import 'screens/home/home_page.dart';
 import 'screens/attendance/scan_page.dart';
 import 'screens/setup/server_setup_page.dart';
+import 'screens/history/history_page.dart';
+import 'screens/schedule/schedule_page.dart';
 import 'theme/app_theme.dart';
 
 class App extends StatelessWidget {
@@ -21,6 +23,8 @@ class App extends StatelessWidget {
         '/login': (_) => const LoginPage(),
         '/home': (_) => const HomePage(),
         '/scan': (_) => const ScanPage(),
+        '/history': (_) => const HistoryPage(),
+        '/schedule': (_) => const SchedulePage(),
         '/setup': (_) => const ServerSetupPage(),
       },
     );

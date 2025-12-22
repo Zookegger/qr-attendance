@@ -41,4 +41,27 @@ class ApiClient {
   }
 
   Dio get client => _dio;
+
+  // Helper method to keep your main logic clean
+  String parseErrorMessage(Object error) {
+    if (error is DioException && error.response?.data != null) {
+      final data = error.response!.data;
+      
+      // Handle Map (JSON) responses
+      if (data is Map<String, dynamic>) {
+        if (data.containsKey('message')) return data['message'];
+        if (data.containsKey('error')) return data['error'];
+      } 
+      // Handle Plain String responses
+      else if (data is String) {
+        return data;
+      }
+    }
+    if (error.toString().isNotEmpty) {
+      return error.toString();
+    }
+
+    // Fallback for timeouts, no internet, etc.
+    return 'Something went wrong. Please check your connection.';
+  }
 }
