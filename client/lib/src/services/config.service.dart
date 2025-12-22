@@ -14,7 +14,7 @@ class ConfigService {
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
-    _baseUrl = prefs.getString((_kBaseUrlKey)) ?? '';
+    _baseUrl = prefs.getString(_kBaseUrlKey) ?? '';
   }
 
   Future<void> setBaseUrl(String url) async {
