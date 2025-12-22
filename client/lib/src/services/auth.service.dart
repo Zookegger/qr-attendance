@@ -256,9 +256,11 @@ class AuthenticationService {
     final user = User.fromJson(userJson);
 
     // Persist tokens and user
-    _storage.write(key: _accessTokenKey, value: accessToken);
-    _storage.write(key: _refreshTokenKey, value: refreshToken);
-    _storage.write(key: _userKey, value: jsonEncode(user.toJson()));
+    await Future.wait([
+      _storage.write(key: _accessTokenKey, value: accessToken),
+      _storage.write(key: _refreshTokenKey, value: refreshToken),
+      _storage.write(key: _userKey, value: jsonEncode(user.toJson())),
+    ]);
 
     // Best-effort device info fetch (ensures plugin is initialized/used)
     // ignore: discarded_futures
