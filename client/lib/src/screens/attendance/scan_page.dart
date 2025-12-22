@@ -18,7 +18,10 @@ class _ScanPageState extends State<ScanPage> {
 
   void _recordAttendance(String code, String mode) {
     if (_attendanceLog.contains(code)) {
-      _showMessage('Attendance already recorded for this code!', color: Colors.orange);
+      _showMessage(
+        'Attendance already recorded for this code!',
+        color: Colors.orange,
+      );
       return;
     }
 
@@ -49,7 +52,10 @@ class _ScanPageState extends State<ScanPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 24),
-            Text('Total Attendance: ${_attendanceLog.length}', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Total Attendance: ${_attendanceLog.length}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 32),
 
             // Buttons: Check-In / Check-Out
@@ -63,7 +69,10 @@ class _ScanPageState extends State<ScanPage> {
                     openScanner: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ScannerView(onDetected: (code) => _recordAttendance(code, 'Check-In')),
+                        builder: (_) => ScannerView(
+                          onDetected: (code) =>
+                              _recordAttendance(code, 'Check-In'),
+                        ),
                       ),
                     ),
                   ),
@@ -88,7 +97,10 @@ class _ScanPageState extends State<ScanPage> {
                     openScanner: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ScannerView(onDetected: (code) => _recordAttendance(code, 'Check-Out')),
+                        builder: (_) => ScannerView(
+                          onDetected: (code) =>
+                              _recordAttendance(code, 'Check-Out'),
+                        ),
                       ),
                     ),
                   ),
@@ -102,13 +114,18 @@ class _ScanPageState extends State<ScanPage> {
 
             const SizedBox(height: 32),
 
-            const Text('Recent codes:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Recent codes:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             Expanded(
               child: ListView(
                 children: _attendanceLog.isEmpty
                     ? [const Text('No attendance logged yet.')]
-                    : _attendanceLog.map((c) => ListTile(title: Text(c))).toList(),
+                    : _attendanceLog
+                          .map((c) => ListTile(title: Text(c)))
+                          .toList(),
               ),
             ),
           ],
@@ -123,7 +140,12 @@ class CodeEntryPage extends StatefulWidget {
   final void Function(String code) onSubmit;
   final VoidCallback openScanner;
 
-  const CodeEntryPage({super.key, required this.mode, required this.onSubmit, required this.openScanner});
+  const CodeEntryPage({
+    super.key,
+    required this.mode,
+    required this.onSubmit,
+    required this.openScanner,
+  });
 
   @override
   State<CodeEntryPage> createState() => _CodeEntryPageState();
@@ -141,7 +163,9 @@ class _CodeEntryPageState extends State<CodeEntryPage> {
   void _submit() {
     final code = _controller.text.trim();
     if (code.length != 4) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a 4-digit code')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a 4-digit code')),
+      );
       return;
     }
     widget.onSubmit(code);
@@ -167,12 +191,18 @@ class _CodeEntryPageState extends State<CodeEntryPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 24),
-            Text('Enter 4-digit code to ${widget.mode.toLowerCase()}:', style: Theme.of(context).textTheme.bodyLarge),
+            Text(
+              'Enter 4-digit code to ${widget.mode.toLowerCase()}:',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: _controller,
               keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(4),
+              ],
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 hintText: 'e.g. 1234',
@@ -205,14 +235,19 @@ class _ScannerViewState extends State<ScannerView> {
   DateTime? _lastScanTime;
   final Duration _throttleDuration = const Duration(seconds: 2);
 
+  final ValueNotifier<String?> _lastCodeNotifier = ValueNotifier<String?>(null);
+
   @override
   void initState() {
     super.initState();
-    _controller = MobileScannerController(detectionSpeed: DetectionSpeed.normal);
+    _controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+    );
   }
 
   @override
   void dispose() {
+    _lastCodeNotifier.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -246,17 +281,21 @@ class _ScannerViewState extends State<ScannerView> {
 
                 final now = DateTime.now();
 
-                if (code == _lastScannedCode && _lastScanTime != null && now.difference(_lastScanTime!) < _throttleDuration) {
+                if (code == _lastScannedCode &&
+                    _lastScanTime != null &&
+                    now.difference(_lastScanTime!) < _throttleDuration) {
                   return;
                 }
 
-                setState(() {
-                  _lastScannedCode = code;
-                  _lastScanTime = now;
-                });
+                _lastScannedCode = code;
+                _lastScanTime = now;
+                _lastCodeNotifier.value = code;
 
                 widget.onDetected(code);
-                _showScanMessage('Attendance recorded for: $code', color: Colors.green);
+                _showScanMessage(
+                  'Attendance recorded for: $code',
+                  color: Colors.green,
+                );
               },
               extendBodyBehindAppBar: true,
               appBarBuilder: (context, controller) {
@@ -270,7 +309,9 @@ class _ScannerViewState extends State<ScannerView> {
                         valueListenable: controller,
                         builder: (context, state, child) {
                           return Icon(
-                            state.torchState == TorchState.on ? Icons.flash_on : Icons.flash_off,
+                            state.torchState == TorchState.on
+                                ? Icons.flash_on
+                                : Icons.flash_off,
                             color: Colors.white,
                           );
                         },
@@ -282,7 +323,9 @@ class _ScannerViewState extends State<ScannerView> {
                         valueListenable: controller,
                         builder: (context, state, child) {
                           return Icon(
-                            state.cameraDirection == CameraFacing.front ? Icons.camera_front : Icons.camera_rear,
+                            state.cameraDirection == CameraFacing.front
+                                ? Icons.camera_front
+                                : Icons.camera_rear,
                             color: Colors.white,
                           );
                         },
@@ -297,11 +340,22 @@ class _ScannerViewState extends State<ScannerView> {
 
           Container(
             color: Colors.black,
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 12.0,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Last Code: ${_lastScannedCode ?? 'N/A'}', style: const TextStyle(color: Colors.white70)),
+                ValueListenableBuilder<String?>(
+                  valueListenable: _lastCodeNotifier,
+                  builder: (context, value, child) {
+                    return Text(
+                      'Last Code: ${value ?? 'N/A'}',
+                      style: const TextStyle(color: Colors.white70),
+                    );
+                  },
+                ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.check, color: Colors.white),
