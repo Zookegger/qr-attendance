@@ -81,7 +81,9 @@ class _ServerSetupPageState extends State<ServerSetupPage> {
     final input = _urlController.text.trim();
     if (input.isEmpty) return;
     String url = input;
-    if (!url.startsWith('http')) url = 'http://$url';
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://$url';
+    }
     _connectToServer(url);
   }
 
