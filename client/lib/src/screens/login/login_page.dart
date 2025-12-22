@@ -166,6 +166,17 @@ class _LoginPageState extends State<LoginPage> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your password';
                       }
+
+                      // Basic password strength checks
+                      if (value.length < 8) {
+                        return 'Password must be at least 8 characters long';
+                      }
+
+                      final hasLetter = RegExp(r'[A-Za-z]').hasMatch(value);
+                      final hasDigit = RegExp(r'\d').hasMatch(value);
+                      if (!hasLetter || !hasDigit) {
+                        return 'Password must contain at least one letter and one number';
+                      }
                       return null;
                     },
                   ),
