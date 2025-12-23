@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_attendance_frontend/src/screens/splash/splash_screen.dart';
 import 'screens/login/login_page.dart';
 import 'screens/home/home_page.dart';
-import 'screens/attendance/scan_page.dart';
+import 'screens/attendance/attendance_page.dart';
 import 'screens/setup/server_setup_page.dart';
 import 'screens/history/history_page.dart';
 import 'screens/schedule/schedule_page.dart';
@@ -22,7 +22,7 @@ class App extends StatelessWidget {
         '/splash': (_) => const SplashPage(),
         '/login': (_) => const LoginPage(),
         '/home': (_) => const HomePage(),
-        '/scan': (_) => const ScanPage(),
+        '/attendance': (_) => const AttendancePage(),
         '/history': (_) => const HistoryPage(),
         '/schedule': (_) => const SchedulePage(),
         '/setup': (_) => const ServerSetupPage(),
