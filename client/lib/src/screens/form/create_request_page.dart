@@ -289,7 +289,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                 children: [
                   const Icon(Icons.camera_alt_outlined),
                   const SizedBox(width: 6),
-                  Text('Upload image'),
+                  const Text('Upload image'),
                 ],
               ),
             ),
