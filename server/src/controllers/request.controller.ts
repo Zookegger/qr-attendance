@@ -1,7 +1,5 @@
 import { Request, Response } from 'express';
 import { RequestModel } from '@models/request';
-import { v4 as uuidv4 } from 'uuid';
-
 
 export async function createRequest(req: Request, res: Response) {
   try {
@@ -21,7 +19,6 @@ export async function createRequest(req: Request, res: Response) {
 
     // (Optional) validate other fields here, map client type strings -> allowed values if needed
     const created = await RequestModel.create({
-      id: uuidv4(),
       user_id: user.id,
       type,
       from_date: from_date || null,

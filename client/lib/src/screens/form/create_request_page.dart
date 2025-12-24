@@ -88,8 +88,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
 
   // ================= IMAGE UPLOAD (MOCK) =================
   Future<String> uploadImage(File image) async {
-    await Future.delayed(const Duration(seconds: 1));
-    return 'https://example.com/image.jpg';
+    // TODO: Implement multer file formdata upload
+    throw UnimplementedError("Upload is not implemented");
   }
 
   // ================= SUBMIT REQUEST =================
@@ -283,7 +283,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
             InkWell(
               onTap: _pickImage,
               child: Row(
-                children: const [
+                children: [
                   Icon(Icons.camera_alt_outlined),
                   SizedBox(width: 6),
                   Text('Upload image'),
