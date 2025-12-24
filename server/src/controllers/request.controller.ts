@@ -10,8 +10,16 @@ export async function createRequest(req: Request, res: Response) {
 
     const { type, from_date, to_date, reason, image_url } = req.body;
 
-    // (Optional) validate fields here, map client type strings -> allowed values if needed
+    // Validate request type against a predefined list of allowed values
+    const ALLOWED_REQUEST_TYPES = ['vacation', 'sick', 'personal', 'other'];
+    if (typeof type !== 'string' || !ALLOWED_REQUEST_TYPES.includes(type)) {
+      return res.status(400).json({
+        message: 'Invalid request type',
+        allowedTypes: ALLOWED_REQUEST_TYPES,
+      });
+    }
 
+    // (Optional) validate other fields here, map client type strings -> allowed values if needed
     const created = await RequestModel.create({
       id: uuidv4(),
       user_id: user.id,
