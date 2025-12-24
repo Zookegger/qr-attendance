@@ -1,4 +1,6 @@
 import bcrypt from "bcrypt";
+import crypto from "crypto";
+import { Op } from "sequelize";
 import { User } from "@models";
 import { UserRole } from "@models/user";
 import { LoginDTO, AuthResponse } from "@my-types/auth";
@@ -7,6 +9,8 @@ import {
 	rotateRefreshToken,
 	revokeRefreshToken,
 } from "./refreshToken.service";
+import { emailQueue } from "@utils/queues/emailQueue";
+import { EmailService } from "./email.service";
 
 export class AuthService {
 	static async login(dto: LoginDTO): Promise<AuthResponse> {
@@ -59,6 +63,76 @@ export class AuthService {
 	static async logout(refreshToken: string): Promise<void> {
 		if (!refreshToken) return;
 		await revokeRefreshToken(refreshToken);
+	}
+
+	static async forgotPassword(email: string): Promise<void> {
+		// TODO: Implement Email Queue
+
+		if (!email) {
+			throw { status: 400, message: "" };
+		}
+
+		const user = await User.findOne({ where: { email } });
+		if (!user) {
+			// avoid leaking which emails exist if desired — adjust message accordingly
+			throw { status: 404, message: "User not found" };
+		}
+
+		// generate a one-time token and persist it (adjust fields to your schema)
+		const token = crypto.randomBytes(32).toString("hex");
+		const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
+
+		// persist token — update to match your DB model (example fields)
+		// if your User model doesn't have these fields, create a PasswordReset table instead
+		(user as any).password_reset_token = token;
+		(user as any).password_reset_expires = expiresAt;
+		await user.save();
+
+		const resetLink = `${process.env.API_URL}/auth/reset-password?token=${token}&email=${encodeURIComponent(
+			email
+		)}`;
+
+		await emailQueue.add(
+			"send", // job name
+			{
+				to: email,
+				subject: "Password reset request",
+				html: EmailService.generateResetPasswordHTML(
+					user.name ?? "User",
+					resetLink
+				),
+				text: `Reset your password: ${resetLink}`,
+			},
+			{
+				attempts: 3,
+				backoff: { type: "exponential", delay: 60_000 },
+				removeOnComplete: { age: 3600 },
+			}
+		);
+	}
+
+	static async resetPassword(
+		email: string,
+		token: string,
+		newPassword: string
+	): Promise<void> {
+		const user = await User.findOne({
+			where: {
+				email,
+				password_reset_token: token,
+				password_reset_expires: { [Op.gt]: new Date() },
+			},
+		});
+
+		if (!user) {
+			throw { status: 400, message: "Invalid or expired password reset token" };
+		}
+
+		const salt = await bcrypt.genSalt(10);
+		user.password_hash = await bcrypt.hash(newPassword, salt);
+		user.password_reset_token = null;
+		user.password_reset_expires = null;
+		await user.save();
 	}
 
 	static async refresh(tokenString: string): Promise<AuthResponse> {

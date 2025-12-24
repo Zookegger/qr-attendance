@@ -8,6 +8,7 @@ class ApiEndpoints {
   static const String logout = '/auth/logout';
   static const String me = '/auth/me';
   static const String refresh = '/auth/refresh';
+  static const String resetPassword = '/auth/reset-password';
 
   // Attendance Routes
   static const String checkIn = '/attendance/check-in';

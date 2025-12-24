@@ -291,4 +291,26 @@ class AuthenticationService {
       // ignore errors
     }
   }
+
+  Future<void> resetPassword({
+    required String email,
+    required String token,
+    required String newPassword,
+  }) async {
+    try {
+      await _dio.post(
+        ApiEndpoints.resetPassword,
+        data: {
+          'email': email,
+          'token': token,
+          'newPassword': newPassword,
+        },
+      );
+    } on DioException catch (e) {
+      final msg = e.response?.data['message'] ?? 'Failed to reset password';
+      throw AuthException(msg, e.response?.statusCode);
+    } catch (e) {
+      throw AuthException('An unexpected error occurred: $e');
+    }
+  }
 }

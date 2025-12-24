@@ -6,6 +6,17 @@
 	<string>Camera required to scan QR codes for attendance</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Location required to verify attendance location</string>
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>qrattendance</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
