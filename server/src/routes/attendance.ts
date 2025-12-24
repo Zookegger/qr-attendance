@@ -26,7 +26,7 @@ attendanceRouter.get(
 	errorHandler
 );
 attendanceRouter.post(
-	"/attendance/requests",
+	"/attendance/request",
 	authenticate,
 	createRequest,
 	errorHandler
