@@ -287,7 +287,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
               onTap: _pickImage,
               child: Row(
                 children: [
-                  Icon(Icons.camera_alt_outlined),
+                  const Icon(Icons.camera_alt_outlined),
                   const SizedBox(width: 6),
                   Text('Upload image'),
                 ],
