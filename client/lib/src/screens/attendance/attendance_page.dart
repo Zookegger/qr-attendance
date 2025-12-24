@@ -2,14 +2,14 @@ import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class ScanPage extends StatefulWidget {
-  const ScanPage({super.key});
+class AttendancePage extends StatefulWidget {
+  const AttendancePage({super.key});
 
   @override
-  State<ScanPage> createState() => _ScanPageState();
+  State<AttendancePage> createState() => _AttendancePageState();
 }
 
-class _ScanPageState extends State<ScanPage> {
+class _AttendancePageState extends State<AttendancePage> {
   // Shared attendance log for the session
   final Set<String> _attendanceLog = {};
 
