@@ -26,10 +26,10 @@ attendanceRouter.get(
 	errorHandler
 );
 attendanceRouter.post(
-  "/attendance/requests",
+	"/attendance/requests",
 	authenticate,
 	createRequest,
-  errorHandler
+	errorHandler
 );
 
 export default attendanceRouter;
