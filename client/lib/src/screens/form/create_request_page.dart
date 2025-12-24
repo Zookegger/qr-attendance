@@ -4,8 +4,14 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:qr_attendance_frontend/src/models/request.dart';
+import 'package:qr_attendance_frontend/src/models/user.dart';
+import 'package:qr_attendance_frontend/src/services/RequestService.dart';
+
 class CreateRequestPage extends StatefulWidget {
-  const CreateRequestPage({super.key});
+  final User user;
+
+  const CreateRequestPage({super.key, required this.user});
 
   @override
   State<CreateRequestPage> createState() => _CreateRequestPageState();
@@ -15,12 +21,41 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   DateTime? _fromDate;
   DateTime? _toDate;
 
-  Future<void> _pickDate({required bool isFromDate}) async {
-    final initialDate = DateTime.now();
+  bool _isLoading = false;
 
+  String? _selectedType;
+  String? _imageUrl;
+
+  final TextEditingController _reasonController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+
+  final ImagePicker _picker = ImagePicker();
+  File? _selectedImage;
+
+  final List<String> _requestTypes = [
+    'Leave request',
+    'Sick leave',
+    'Unpaid leave',
+    'Late arrival / early leave',
+    'Overtime request (OT)',
+    'Business trip',
+    'Shift change request',
+    'Remote work request',
+    'Equipment request',
+    'System account request',
+    'Salary advance request',
+    'Payment / reimbursement request',
+    'Attendance confirmation request',
+    'Attendance adjustment request',
+    'Explanation request',
+    'Other...',
+  ];
+
+  // ================= DATE PICKER =================
+  Future<void> _pickDate({required bool isFromDate}) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: initialDate,
+      initialDate: DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
@@ -39,8 +74,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     }
   }
 
-  final ImagePicker _picker = ImagePicker();
-  File? _selectedImage;
+  // ================= IMAGE PICK =================
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(
       source: ImageSource.gallery,
@@ -48,43 +82,72 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     );
 
     if (image != null) {
-      setState(() {
-        _selectedImage = File(image.path);
-      });
+      setState(() => _selectedImage = File(image.path));
     }
   }
 
-  String? _selectedType;
-  final TextEditingController _reasonController = TextEditingController();
+  // ================= IMAGE UPLOAD (MOCK) =================
+  Future<String> uploadImage(File image) async {
+    await Future.delayed(const Duration(seconds: 1));
+    return 'https://example.com/image.jpg';
+  }
 
-  final TextEditingController _searchController = TextEditingController();
+  // ================= SUBMIT REQUEST =================
+  Future<void> submitRequest() async {
+    if (_selectedType == null || _reasonController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all required fields')),
+      );
+      return;
+    }
 
-  final List<String> _requestTypes = [
-    'Đơn nghỉ phép',
-    'Đơn nghỉ ốm',
-    'Đơn nghỉ không lương',
-    'Đơn đi trễ / về sớm',
-    'Đơn làm thêm giờ (OT)',
-    'Đơn công tác',
-    'Đơn đổi ca làm',
-    'Đơn xin làm việc từ xa',
-    'Đơn xin cấp thiết bị',
-    'Đơn xin cấp tài khoản hệ thống',
-    'Đơn xin tạm ứng lương',
-    'Đơn xin thanh toán / hoàn ứng',
-    'Đơn xin xác nhận công',
-    'Đơn xin điều chỉnh chấm công',
-    'Đơn giải trình',
-    'Khác...',
-  ];
+    try {
+      setState(() => _isLoading = true);
 
+      if (_selectedImage != null) {
+        _imageUrl = await uploadImage(_selectedImage!);
+      }
+
+      final request = Request(
+        userId: widget.user.id,
+        type: _selectedType!,
+        fromDate: _fromDate,
+        toDate: _toDate,
+        reason: _reasonController.text.trim(),
+        imageUrl: _imageUrl,
+      );
+
+      await RequestService().createRequest(request);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Request created successfully')),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      debugPrint('Error: $e' as String?);
+      debugPrint('USER ID: ${widget.user.id} (${widget.user.id.runtimeType})');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: const BackButton(color: Colors.black),
-        title: const Text('Tạo đơn', style: TextStyle(color: Colors.black)),
+        title: const Text(
+          'Create Request',
+          style: TextStyle(color: Colors.black),
+        ),
         backgroundColor: Colors.white,
         elevation: 0.5,
       ),
@@ -93,82 +156,17 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// 1. Chọn loại đơn
             const Text(
-              '1. Chọn loại đơn',
+              '1. Select request type',
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
 
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton2<String>(
-                  isExpanded: true,
-                  hint: const Text('Chọn loại đơn'),
-                  value: _selectedType,
-                  items: _requestTypes
-                      .map(
-                        (item) => DropdownMenuItem<String>(
-                          value: item,
-                          child: Text(
-                            item,
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() => _selectedType = value);
-                  },
-
-                  // 👇 GIỚI HẠN CHIỀU CAO + SCROLL
-                  dropdownStyleData: DropdownStyleData(
-                    maxHeight: 280,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-
-                  // 👇 SEARCH
-                  dropdownSearchData: DropdownSearchData(
-                    searchController: _searchController,
-                    searchInnerWidgetHeight: 50,
-                    searchInnerWidget: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Tìm loại đơn...',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                    searchMatchFn: (item, searchValue) {
-                      return item.value.toString().toLowerCase().contains(
-                        searchValue.toLowerCase(),
-                      );
-                    },
-                  ),
-
-                  onMenuStateChange: (isOpen) {
-                    if (!isOpen) _searchController.clear();
-                  },
-                ),
-              ),
-            ),
+            _buildDropdown(),
 
             const SizedBox(height: 24),
-
-            /// 2. Thời gian
             const Text(
-              '2. Thời gian',
+              '2. Date range',
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
@@ -176,13 +174,13 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
             Row(
               children: [
                 _buildDateBox(
-                  label: 'Từ ngày',
+                  label: 'From',
                   date: _fromDate,
                   onTap: () => _pickDate(isFromDate: true),
                 ),
                 const SizedBox(width: 12),
                 _buildDateBox(
-                  label: 'Đến ngày',
+                  label: 'To',
                   date: _toDate,
                   onTap: () => _pickDate(isFromDate: false),
                 ),
@@ -190,123 +188,154 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
             ),
 
             const SizedBox(height: 24),
-
-            /// 3. Lý do
             const Text(
-              '3. Lý do',
+              '3. Reason',
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
 
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: TextField(
-                controller: _reasonController,
-                maxLines: 5,
-                decoration: const InputDecoration(
-                  hintText: 'Nhập lý do nghỉ...',
-                  border: InputBorder.none,
-                ),
-              ),
-            ),
+            _buildReasonInput(),
 
             const SizedBox(height: 16),
+            _buildImagePicker(),
 
-            /// Upload hình
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Hình ảnh minh chứng (Nếu có)',
-                    style: TextStyle(color: Colors.black54),
-                  ),
-                ),
-                InkWell(
-                  onTap: _pickImage,
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.camera_alt_outlined, size: 18),
-                        SizedBox(width: 6),
-                        Text('Tải ảnh lên'),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (_selectedImage != null) ...[
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  _selectedImage!,
-                  height: 160,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ],
             const SizedBox(height: 24),
-
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  // TODO: submit form + upload image sau
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  "Gửi đơn",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            /// Tạo đơn mới
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  setState(() {
-                    _selectedImage = null;
-                  });
-                },
-                child: const Text("Tạo đơn mới"),
-              ),
-            ),
+            _buildSubmitButton(),
           ],
         ),
       ),
     );
   }
+
+  // ================= WIDGETS =================
+  Widget _buildDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton2<String>(
+          isExpanded: true,
+          hint: const Text('Select request type'),
+          value: _selectedType,
+          items: _requestTypes
+              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+              .toList(),
+          onChanged: (value) => setState(() => _selectedType = value),
+          dropdownStyleData: DropdownStyleData(
+            maxHeight: 280,
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+          ),
+          dropdownSearchData: DropdownSearchData(
+            searchController: _searchController,
+            searchInnerWidgetHeight: 50,
+            searchInnerWidget: Padding(
+              padding: const EdgeInsets.all(8),
+              child: TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  hintText: 'Search request type',
+                ),
+              ),
+            ),
+            searchMatchFn: (item, value) =>
+                item.value.toString().toLowerCase().contains(value),
+          ),
+          onMenuStateChange: (isOpen) {
+            if (!isOpen) _searchController.clear();
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReasonInput() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: TextField(
+        controller: _reasonController,
+        maxLines: 5,
+        decoration: const InputDecoration(
+          hintText: 'Enter reason...',
+          border: InputBorder.none,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePicker() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Evidence image (optional)',
+                style: TextStyle(color: Colors.black54),
+              ),
+            ),
+            InkWell(
+              onTap: _pickImage,
+              child: Row(
+                children: const [
+                  Icon(Icons.camera_alt_outlined),
+                  SizedBox(width: 6),
+                  Text('Upload image'),
+                ],
+              ),
+            ),
+          ],
+        ),
+        if (_selectedImage != null) ...[
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.file(
+              _selectedImage!,
+              height: 160,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : submitRequest,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.green,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: _isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text(
+                'Submit',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+      ),
+    );
+  }
 }
 
+// ================= DATE BOX =================
 Widget _buildDateBox({
   required String label,
   required DateTime? date,
@@ -315,9 +344,8 @@ Widget _buildDateBox({
   return Expanded(
     child: InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.grey.shade100,
           borderRadius: BorderRadius.circular(8),
@@ -325,8 +353,7 @@ Widget _buildDateBox({
         child: Text(
           date == null
               ? label
-              : '$label: ${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}',
-          style: TextStyle(color: date == null ? Colors.grey : Colors.black),
+              : '$label: ${date.day}/${date.month}/${date.year}',
         ),
       ),
     ),

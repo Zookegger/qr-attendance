@@ -231,10 +231,10 @@ class AuthenticationService {
     return null;
   }
 
-  AuthSession _persistAndReturnSession(
+  Future<AuthSession> _persistAndReturnSession(
     Object? body, {
     required String invalidMessage,
-  }) {
+  }) async {
     if (body is! Map<String, dynamic>) {
       throw AuthException(invalidMessage);
     }
