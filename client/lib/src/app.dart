@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qr_attendance_frontend/src/screens/login/forgot_password_page.dart';
 import 'package:qr_attendance_frontend/src/screens/splash/splash_screen.dart';
 import 'screens/login/login_page.dart';
 import 'screens/home/home_page.dart';
@@ -21,6 +22,7 @@ class App extends StatelessWidget {
       routes: {
         '/splash': (_) => const SplashPage(),
         '/login': (_) => const LoginPage(),
+        '/forgot-password': (_) => const ForgotPasswordPage(),
         '/home': (_) => const HomePage(),
         '/attendance': (_) => const AttendancePage(),
         '/history': (_) => const HistoryPage(),

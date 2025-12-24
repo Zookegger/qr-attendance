@@ -17,6 +17,13 @@ class _LoginPageState extends State<LoginPage> {
   bool _isObscured = true;
   bool _isLoading = false;
 
+  @override
+  void dispose() {
+    _loginController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _handleLogin() async {
     // 1. Validate form
     if (!_formKey.currentState!.validate()) return;
@@ -185,7 +192,8 @@ class _LoginPageState extends State<LoginPage> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: () =>
+                          Navigator.of(context).pushNamed('/forgot-password'),
                       child: const Text(
                         "Forgot Password?",
                         style: TextStyle(

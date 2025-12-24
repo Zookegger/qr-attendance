@@ -129,6 +129,11 @@ class AuthenticationService {
     }
   }
 
+  Future<void> sendPasswordResetEmail(String email) async {
+    // TODO: Implement this
+    throw UnimplementedError("This function hasn't been implemented");
+  }
+
   Future<AuthSession> refresh() async {
     final refreshToken = await getRefreshToken();
     if (refreshToken == null || refreshToken.trim().isEmpty) {

@@ -61,8 +61,84 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _openProfile() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile screen is not available yet.')),
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (BuildContext ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.person),
+                title: const Text('Profile'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Profile screen is not available yet.'),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('Logout'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  showDialog<void>(
+                    context: context,
+                    builder: (BuildContext dctx) {
+                      return AlertDialog(
+                        // Modern shape
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        // Icon for quick visual context
+                        icon: const Icon(
+                          Icons.logout,
+                          color: Colors.redAccent,
+                          size: 32,
+                        ),
+                        title: const Text('Confirm Logout'),
+                        content: const Text(
+                          'Are you sure you want to end your session?',
+                          textAlign: TextAlign.center,
+                        ),
+                        actionsAlignment: MainAxisAlignment
+                            .spaceEvenly, // Spreads buttons out
+                        actions: [
+                          // Neutral Cancel Button
+                          TextButton(
+                            onPressed: () => Navigator.pop(dctx),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                          // Destructive Action Button (Red)
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(dctx);
+                              _handleLogout();
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.red, // The important part
+                            ),
+                            child: const Text(
+                              'Logout',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
