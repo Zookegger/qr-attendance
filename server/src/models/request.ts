@@ -22,7 +22,7 @@ export class RequestModel extends Model<RequestAttributes, RequestCreationAttrib
   declare public to_date: Date | null;
   declare public reason: string | null;
   declare public image_url: string | null;
-  declare public status: 'pending'|'approved'|'rejected';
+  declare public status: 'pending' | 'approved' | 'rejected';
 
   declare public readonly createdAt: Date;
   declare public readonly updatedAt: Date;
