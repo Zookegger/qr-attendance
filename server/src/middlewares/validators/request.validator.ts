@@ -14,9 +14,9 @@ export const createRequestValidator = [
 		.isISO8601()
 		.withMessage("Invalid to_date format"),
 	body("reason")
-		.optional()
 		.isString()
-		.withMessage("Reason must be a string"),
+		.notEmpty()
+		.withMessage("Reason must be a non-empty string"),
 	body("image_url")
 		.optional()
 		.isString()
