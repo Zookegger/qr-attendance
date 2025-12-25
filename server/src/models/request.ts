@@ -2,17 +2,53 @@ import { Model, DataTypes, Optional } from "sequelize";
 import { sequelize } from "@config/database";
 
 export enum RequestType {
-	VACATION = "VACATION",
-	SICK = "SICK",
-	PERSONAL = "PERSONAL",
+	// Standard Leaves
+	LEAVE = "LEAVE", // General/Annual leave
+	SICK = "SICK", // Sick leave
+	UNPAID = "UNPAID", // Unpaid leave
+
+	// Time & Attendance Specifics
+	LATE_EARLY = "LATE_EARLY", // Late arrival / early leave
+	OVERTIME = "OVERTIME", // Overtime request (OT)
+	BUSINESS_TRIP = "BUSINESS_TRIP", // Business trip
+	SHIFT_CHANGE = "SHIFT_CHANGE", // Shift change request
+	REMOTE_WORK = "REMOTE_WORK", // Remote work request
+
+	// Corrections & Admin
+	ATTENDANCE_CONFIRMATION = "ATTENDANCE_CONFIRMATION",
+	ATTENDANCE_ADJUSTMENT = "ATTENDANCE_ADJUSTMENT",
+	EXPLANATION = "EXPLANATION", // Explaining a missing check-in
+
+	// Fallback
 	OTHER = "OTHER",
 }
+
+export const RequestTypeLabels: Record<RequestType, string> = {
+	[RequestType.LEAVE]: "Leave Request",
+	[RequestType.SICK]: "Sick Leave",
+	[RequestType.UNPAID]: "Unpaid Leave",
+	[RequestType.LATE_EARLY]: "Late Arrival / Early Leave",
+	[RequestType.OVERTIME]: "Overtime (OT)",
+	[RequestType.BUSINESS_TRIP]: "Business Trip",
+	[RequestType.SHIFT_CHANGE]: "Shift Change",
+	[RequestType.REMOTE_WORK]: "Remote Work",
+	[RequestType.ATTENDANCE_CONFIRMATION]: "Attendance Confirmation",
+	[RequestType.ATTENDANCE_ADJUSTMENT]: "Attendance Adjustment",
+	[RequestType.EXPLANATION]: "Explanation",
+	[RequestType.OTHER]: "Other",
+};
 
 export enum RequestStatus {
 	PENDING = "PENDING",
 	APPROVED = "APPROVED",
 	REJECTED = "REJECTED",
 }
+
+export const RequestStatusLabels: Record<RequestStatus, string> = {
+	[RequestStatus.APPROVED]: "Approved",
+	[RequestStatus.PENDING]: "Pending",
+	[RequestStatus.REJECTED]: "Rejected",
+};
 
 interface RequestAttributes {
 	id: string;

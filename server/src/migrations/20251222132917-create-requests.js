@@ -20,7 +20,7 @@ module.exports = {
         onDelete: 'CASCADE'
       },
       type: {
-        type: Sequelize.ENUM('VACATION', 'SICK', 'PERSONAL', 'OTHER'),
+        type: Sequelize.ENUM('LEAVE', 'SICK', 'UNPAID', 'LATE_EARLY', 'OVERTIME', 'BUSINESS_TRIP', 'SHIFT_CHANGE', 'REMOTE_WORK', 'ATTENDANCE_CONFIRMATION', 'ATTENDANCE_ADJUSTMENT', 'EXPLANATION', 'OTHER'),
         allowNull: false,
         defaultValue: 'OTHER'
       },
