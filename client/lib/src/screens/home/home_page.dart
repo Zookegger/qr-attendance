@@ -1,6 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:qr_attendance_frontend/src/screens/form/create_request_page.dart';
 import 'dart:async';
 
 import '../../models/user.dart';
@@ -36,19 +37,18 @@ class _HomePageState extends State<HomePage> {
     _loadUser();
     _setupNotificationListener();
   }
-  
+
   Future<void> _handleLogout() async {
     await AuthenticationService().logout();
     if (!mounted) return;
-    Navigator.of(context)
-        .pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
+    Navigator.of(
+      context,
+    ).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
   }
-  
+
   void _openProfile() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Profile screen is not available yet.'),
-      ),
+      const SnackBar(content: Text('Profile screen is not available yet.')),
     );
   }
 
@@ -190,9 +190,18 @@ class _HomePageState extends State<HomePage> {
         ),
         _buildActionButton(
           Icons.receipt_long,
-          "Payroll",
+          "Requests",
           Colors.orange,
-          onTap: () {},
+          onTap: () {
+            if (_user == null) return;
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CreateRequestPage(user: _user!),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -351,11 +360,7 @@ class _HomePageState extends State<HomePage> {
       mainAxisSpacing: 16,
       childAspectRatio: 1.5,
       children: [
-        _buildStatCard(
-          Icons.access_time,
-          daysWorked.toString(),
-          "Days worked",
-        ),
+        _buildStatCard(Icons.access_time, daysWorked.toString(), "Days worked"),
         _buildStatCard(Icons.access_time, daysOff.toString(), "Days off"),
         _buildStatCard(Icons.access_time, overtimeHours, "Overtime"),
         _buildStatCard(

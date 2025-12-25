@@ -31,7 +31,9 @@ class AttendanceRecord {
     final rawDate = json['date'];
     return AttendanceRecord(
       id: rawId is String ? rawId : '',
-      date: rawDate != null ? DateTime.parse(rawDate as String) : DateTime.now(),
+      date: rawDate != null
+          ? DateTime.parse(rawDate as String)
+          : DateTime.now(),
       status: (json['status'] as String?) ?? 'Unknown',
       checkInTime: parseDate(json['check_in_time']),
       checkOutTime: parseDate(json['check_out_time']),
