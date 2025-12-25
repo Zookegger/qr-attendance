@@ -55,10 +55,6 @@ export class RequestService {
 			reviewed_by: reviewer_id,
 		});
 
-		if (!result) {
-			throw { status: 500, message: "Failed to update request" };
-		}
-
 		return result;
 	}
 }

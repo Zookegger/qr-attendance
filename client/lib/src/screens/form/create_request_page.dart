@@ -133,7 +133,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      debugPrint('Error: $e' as String?);
+      debugPrint('Error: $e');
       debugPrint('USER ID: ${widget.user.id} (${widget.user.id.runtimeType})');
     } finally {
       if (mounted) setState(() => _isLoading = false);

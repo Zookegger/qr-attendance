@@ -66,7 +66,7 @@ interface RequestAttributes {
 interface RequestCreationAttributes
 	extends Optional<
 		RequestAttributes,
-		"id" | "status" | "image_url" | "reviewed_by" | "review_note"
+		"id" | "status" | "image_url" | "reviewed_by" | "review_note" | "from_date" | "to_date"
 	> {}
 
 export class RequestModel
