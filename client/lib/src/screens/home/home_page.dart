@@ -52,13 +52,18 @@ class _HomePageState extends State<HomePage> {
     _setupNotificationListener();
   }
 
+
   Future<void> _handleLogout() async {
     await AuthenticationService().logout();
     if (!mounted) return;
     Navigator.of(
       context,
     ).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
+    Navigator.of(
+      context,
+    ).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
   }
+
 
   void _openProfile() {
     showModalBottomSheet<void>(
