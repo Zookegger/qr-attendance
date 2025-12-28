@@ -53,8 +53,7 @@ class _ForgotPasswordState extends State<ForgotPasswordPage> {
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         leading: IconButton(
-          onPressed: () =>
-              Navigator.of(context).pop(), // Use pop, not pushReplacement
+          onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back),
         ),
         title: const Text("Reset password"),

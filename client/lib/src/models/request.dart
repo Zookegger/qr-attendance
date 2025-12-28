@@ -5,7 +5,7 @@ class Request {
   final DateTime? fromDate;
   final DateTime? toDate;
   final String? reason;
-  final String? imageUrl;
+  final String? attachments;
   final String status;
 
   Request({
@@ -15,7 +15,7 @@ class Request {
     this.fromDate,
     this.toDate,
     this.reason,
-    this.imageUrl,
+    this.attachments,
     this.status = 'pending',
   });
 
@@ -29,7 +29,7 @@ class Request {
           : null,
       toDate: json['to_date'] != null ? DateTime.parse(json['to_date']) : null,
       reason: json['reason'],
-      imageUrl: json['image_url'],
+      attachments: json['attachments'],
       status: json['status'] ?? 'pending',
     );
   }
@@ -41,7 +41,6 @@ class Request {
       'from_date': fromDate?.toIso8601String(),
       'to_date': toDate?.toIso8601String(),
       'reason': reason,
-      'image_url': imageUrl,
     };
   }
 }

@@ -46,6 +46,8 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.of(context).pushReplacementNamed('/home');
     } on AuthException catch (e) {
       if (!mounted) return;
+
+      debugPrint(e.toString());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.message),
@@ -236,6 +238,18 @@ class _LoginPageState extends State<LoginPage> {
                                 color: Colors.white,
                               ),
                             ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: () => Navigator.of(context).pushNamed('/setup'),
+                      icon: const Icon(Icons.settings, color: Colors.deepPurple),
+                      label: const Text(
+                        'Setup / Connect to Server',
+                        style: TextStyle(color: Colors.deepPurple),
+                      ),
+                      style: TextButton.styleFrom(foregroundColor: Colors.deepPurple),
                     ),
                   ),
                 ],

@@ -1,6 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'dart:async';
 
 import '../../models/user.dart';
@@ -185,34 +184,293 @@ class _HomePageState extends State<HomePage> {
     // Using a slightly off-white background for better contrast
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      body: SingleChildScrollView(
+      body: _user?.role == 'Manager' || _user?.role == 'Admin'
+          ? _buildManagerView()
+          : _buildStaffView(),
+      floatingActionButton: _user?.role == 'Manager' || _user?.role == 'Admin'
+          ? null
+          : _buildAttendanceButton(context),
+    );
+  }
+
+  Widget _buildStaffView() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          _buildHeader(),
+          Transform.translate(
+            offset: const Offset(0, -40),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildShiftCard(),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle("Quick Actions"),
+                  const SizedBox(height: 24),
+                  _buildQuickActions(),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle("Monthly Overview"),
+                  _buildStatsGrid(),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildManagerView() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          _buildHeader(),
+          Transform.translate(
+            offset: const Offset(0, -40),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildManagerOverviewCard(),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle("Management"),
+                  const SizedBox(height: 24),
+                  _buildManagerQuickActions(),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle("Recent Requests"),
+                  const SizedBox(height: 16),
+                  _buildRecentRequests(),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildManagerOverviewCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(),
-            Transform.translate(
-              offset: const Offset(0, -40),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildShiftCard(),
-                    const SizedBox(height: 24),
-                    _buildSectionTitle("Quick Actions"),
-                    const SizedBox(height: 24),
-                    _buildQuickActions(),
-                    const SizedBox(height: 24),
-                    _buildSectionTitle("Monthly Overview"),
-                    _buildStatsGrid(),
-                  ],
-                ),
+            const Text(
+              "Team Attendance",
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildTeamStat("Present", "18", Colors.green),
+                _buildTeamStat("Late", "3", Colors.orange),
+                _buildTeamStat("Absent", "2", Colors.red),
+              ],
+            ),
+            const SizedBox(height: 20),
+            const Divider(height: 1, color: Color(0xFFEEEEEE)),
+            const SizedBox(height: 16),
+            Center(
+              child: TextButton(
+                onPressed: () {
+                  // Navigate to detailed attendance report
+                },
+                child: const Text("View Full Report"),
               ),
             ),
           ],
         ),
       ),
-      floatingActionButton: _buildAttendanceButton(context),
+    );
+  }
+
+  Widget _buildTeamStat(String label, String count, Color color) {
+    return Column(
+      children: [
+        Text(
+          count,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey.shade600,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildManagerQuickActions() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _buildQuickActionButton(
+          "Approvals",
+          Icons.check_circle_outline,
+          36,
+          Colors.blue,
+          () {},
+        ),
+        _buildQuickActionButton(
+          "Employees",
+          Icons.people_outline,
+          36,
+          Colors.purple,
+          () {},
+        ),
+        _buildQuickActionButton(
+          "Reports",
+          Icons.bar_chart,
+          36,
+          Colors.orange,
+          () {},
+        ),
+        _buildQuickActionButton(
+          "Schedule",
+          Icons.calendar_today,
+          36,
+          Colors.green,
+          () {},
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecentRequests() {
+    // Mock data for requests
+    final requests = [
+      {
+        "name": "Sarah Connor",
+        "type": "Leave Request",
+        "date": "Today, 10:30 AM",
+        "status": "Pending"
+      },
+      {
+        "name": "John Smith",
+        "type": "Overtime",
+        "date": "Yesterday",
+        "status": "Pending"
+      },
+    ];
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: requests.length,
+      separatorBuilder: (ctx, index) => const SizedBox(height: 12),
+      itemBuilder: (ctx, index) {
+        final req = requests[index];
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withValues(alpha: 0.05),
+                spreadRadius: 1,
+                blurRadius: 5,
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Colors.blue.shade50,
+                child: Text(
+                  (req["name"] as String)[0],
+                  style: TextStyle(
+                    color: Colors.blue.shade700,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      req["name"] as String,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      req["type"] as String,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    req["date"] as String,
+                    style: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 10,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      req["status"] as String,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.orange,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

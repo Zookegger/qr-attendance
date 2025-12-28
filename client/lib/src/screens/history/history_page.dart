@@ -65,7 +65,8 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final monthLabel = '${_selectedMonth.month.toString().padLeft(2, '0')}/${_selectedMonth.year}';
+    final monthLabel =
+        '${_selectedMonth.month.toString().padLeft(2, '0')}/${_selectedMonth.year}';
     final stats = _buildStats();
 
     return Scaffold(
@@ -84,7 +85,10 @@ class _HistoryPageState extends State<HistoryPage> {
                 ),
                 Text(
                   monthLabel,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.chevron_right),
@@ -98,10 +102,12 @@ class _HistoryPageState extends State<HistoryPage> {
             _buildStatsRow(stats),
             const SizedBox(height: 12),
             if (_loading)
-              const Center(child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: CircularProgressIndicator(),
-              )),
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -111,7 +117,9 @@ class _HistoryPageState extends State<HistoryPage> {
             if (!_loading && _records.isEmpty && _error == null)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
-                child: Center(child: Text('No attendance data for this month.')),
+                child: Center(
+                  child: Text('No attendance data for this month.'),
+                ),
               ),
           ],
         ),
@@ -122,7 +130,10 @@ class _HistoryPageState extends State<HistoryPage> {
   Widget _buildPie(Map<String, int> stats) {
     final total = stats.values.fold<int>(0, (a, b) => a + b);
     if (total == 0) {
-      return const SizedBox(height: 180, child: Center(child: Text('No data available for the chart.')));
+      return const SizedBox(
+        height: 180,
+        child: Center(child: Text('No data available for the chart.')),
+      );
     }
 
     final sections = <PieChartSectionData>[];
@@ -135,7 +146,10 @@ class _HistoryPageState extends State<HistoryPage> {
           color: color,
           title: '${((value / total) * 100).toStringAsFixed(0)}%',
           radius: 52,
-          titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          titleStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       );
     }
@@ -170,7 +184,7 @@ class _HistoryPageState extends State<HistoryPage> {
                   _legendDot(Colors.orange, 'Late (${stats['Late']})'),
                   _legendDot(Colors.red, 'Absent (${stats['Absent']})'),
                 ],
-              )
+              ),
             ],
           ),
         ),
@@ -197,7 +211,7 @@ class _HistoryPageState extends State<HistoryPage> {
       children: stats.entries
           .map(
             (e) => Chip(
-              backgroundColor: colorFor(e.key).withOpacity(0.15),
+              backgroundColor: colorFor(e.key).withValues(alpha: 0.15),
               label: Text('${e.key}: ${e.value}'),
               labelStyle: TextStyle(color: colorFor(e.key)),
             ),
@@ -212,7 +226,11 @@ class _HistoryPageState extends State<HistoryPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
           const SizedBox(width: 8),
           Text(label),
         ],
@@ -244,7 +262,10 @@ class _HistoryPageState extends State<HistoryPage> {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: ListTile(
-        title: Text(dateLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          dateLabel,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -256,7 +277,7 @@ class _HistoryPageState extends State<HistoryPage> {
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: badgeColor.withOpacity(0.15),
+            color: badgeColor.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(

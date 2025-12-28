@@ -6,7 +6,7 @@ export interface CreateRequestDTO {
 	from_date?: string;
 	to_date?: string;
 	reason: string;
-	image_url?: string | null;
+	attachments?: string | null;
 }
 
 export interface RequestResponse {
@@ -16,7 +16,7 @@ export interface RequestResponse {
 	from_date: Date | null;
 	to_date: Date | null;
 	reason: string;
-	image_url: string | null;
+	attachments: string | null;
 	status: RequestStatus;
 	reviewed_by: string | null;
 	review_note: string | null;

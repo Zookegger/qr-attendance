@@ -57,7 +57,7 @@ interface RequestAttributes {
 	from_date?: Date | null;
 	to_date?: Date | null;
 	reason: string;
-	image_url?: string | null;
+	attachments?: string | null; // JSON array of file paths
 	status: RequestStatus;
 	reviewed_by?: string | null;
 	review_note?: string | null;
@@ -66,7 +66,7 @@ interface RequestAttributes {
 interface RequestCreationAttributes
 	extends Optional<
 		RequestAttributes,
-		"id" | "status" | "image_url" | "reviewed_by" | "review_note" | "from_date" | "to_date"
+		"id" | "status" | "attachments" | "reviewed_by" | "review_note" | "from_date" | "to_date"
 	> {}
 
 export class RequestModel
@@ -79,7 +79,7 @@ export class RequestModel
 	public declare from_date: Date | null;
 	public declare to_date: Date | null;
 	public declare reason: string;
-	public declare image_url: string | null;
+	public declare attachments: string | null;
 	public declare status: RequestStatus;
 	public declare reviewed_by: string | null;
 	public declare review_note: string | null;
@@ -116,8 +116,8 @@ RequestModel.init(
 			type: DataTypes.TEXT,
 			allowNull: false,
 		},
-		image_url: {
-			type: DataTypes.STRING,
+		attachments: {
+			type: DataTypes.TEXT, // JSON array of file paths
 			allowNull: true,
 		},
 		status: {

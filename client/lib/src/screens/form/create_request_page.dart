@@ -1,17 +1,16 @@
 import 'dart:io';
 
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
 import 'package:qr_attendance_frontend/src/models/request.dart';
 import 'package:qr_attendance_frontend/src/models/user.dart';
 import 'package:qr_attendance_frontend/src/services/RequestService.dart';
+import 'package:qr_attendance_frontend/src/services/auth.service.dart';
 
 class CreateRequestPage extends StatefulWidget {
-  final User user;
-
-  const CreateRequestPage({super.key, required this.user});
+  const CreateRequestPage({super.key});
 
   @override
   State<CreateRequestPage> createState() => _CreateRequestPageState();
@@ -24,13 +23,14 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   bool _isLoading = false;
 
   String? _selectedType;
-  String? _imageUrl;
+
+  User? _currentUser;
+  final AuthenticationService _auth = AuthenticationService();
 
   final TextEditingController _reasonController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
 
-  final ImagePicker _picker = ImagePicker();
-  File? _selectedImage;
+  List<PlatformFile> _selectedFiles = [];
 
   final List<String> _requestTypes = [
     'Leave request',
@@ -50,6 +50,28 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     'Explanation request',
     'Other...',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    try {
+      _currentUser = await _auth.getCachedUser();
+      _currentUser ??= await _auth.me();
+      setState(() {});
+    } catch (e) {
+      debugPrint('Failed to load user: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load user. Please log in again.')),
+        );
+        Navigator.of(context).pop();
+      }
+    }
+  }
 
   // ================= DATE PICKER =================
   Future<void> _pickDate({required bool isFromDate}) async {
@@ -77,26 +99,29 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     }
   }
 
-  // ================= IMAGE PICK =================
-  Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 70,
+  // ================= FILE PICK =================
+  Future<void> _pickFiles() async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.any,
     );
 
-    if (image != null) {
-      setState(() => _selectedImage = File(image.path));
+    if (result != null) {
+      setState(() => _selectedFiles = result.files);
     }
   }
 
-  // ================= IMAGE UPLOAD (MOCK) =================
-  Future<String> uploadImage(File image) async {
-    // TODO: Implement multer file formdata upload
-    throw UnimplementedError("Upload is not implemented");
-  }
+
 
   // ================= SUBMIT REQUEST =================
   Future<void> submitRequest() async {
+    if (_currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User not loaded. Please try again.')),
+      );
+      return;
+    }
+
     if (_selectedType == null || _reasonController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all required fields')),
@@ -107,20 +132,17 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     try {
       setState(() => _isLoading = true);
 
-      if (_selectedImage != null) {
-        _imageUrl = await uploadImage(_selectedImage!);
-      }
-
       final request = Request(
-        userId: widget.user.id,
+        userId: _currentUser!.id,
         type: _selectedType!,
         fromDate: _fromDate,
         toDate: _toDate,
         reason: _reasonController.text.trim(),
-        imageUrl: _imageUrl,
       );
 
-      await RequestService().createRequest(request);
+      final files = _selectedFiles.where((f) => f.path != null).map((f) => File(f.path!)).toList();
+
+      await RequestService().createRequest(request, files);
 
       if (!mounted) return;
 
@@ -134,7 +156,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $e')));
       debugPrint('Error: $e');
-      debugPrint('USER ID: ${widget.user.id} (${widget.user.id.runtimeType})');
+      debugPrint('USER ID: ${_currentUser!.id} (${_currentUser!.id.runtimeType})');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -279,32 +301,27 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
           children: [
             const Expanded(
               child: Text(
-                'Evidence image (optional)',
+                'Attachments (optional)',
                 style: TextStyle(color: Colors.black54),
               ),
             ),
             InkWell(
-              onTap: _pickImage,
+              onTap: _pickFiles,
               child: Row(
                 children: [
-                  const Icon(Icons.camera_alt_outlined),
+                  const Icon(Icons.attach_file_outlined),
                   const SizedBox(width: 6),
-                  const Text('Upload image'),
+                  const Text('Upload files'),
                 ],
               ),
             ),
           ],
         ),
-        if (_selectedImage != null) ...[
+        if (_selectedFiles.isNotEmpty) ...[
           const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.file(
-              _selectedImage!,
-              height: 160,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: _selectedFiles.map((file) => Text(file.name)).toList(),
           ),
         ],
       ],

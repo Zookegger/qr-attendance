@@ -1,9 +1,14 @@
 import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+
+// Screens
+import 'package:qr_attendance_frontend/src/screens/splash/splash_screen.dart';
 import 'package:qr_attendance_frontend/src/screens/login/forgot_password_page.dart';
 import 'package:qr_attendance_frontend/src/screens/login/reset_password_confirm_page.dart';
-import 'package:qr_attendance_frontend/src/screens/splash/splash_screen.dart';
+import 'package:qr_attendance_frontend/src/screens/form/create_request_page.dart'; // From snippet 2
+
+// Relative imports (kept as per your existing structure)
 import 'screens/login/login_page.dart';
 import 'screens/home/home_page.dart';
 import 'screens/attendance/attendance_page.dart';
@@ -39,17 +44,18 @@ class _AppState extends State<App> {
   Future<void> _initDeepLinks() async {
     _appLinks = AppLinks();
 
-    // Check initial link
+    // Check initial link (if app was launched via link)
     try {
       final initialLink = await _appLinks.getInitialLink();
       if (initialLink != null) {
         _handleDeepLink(initialLink);
       }
     } catch (e) {
-      // Handle error
+      // Handle error gracefully or log it
+      debugPrint("Deep Link Init Error: $e");
     }
 
-    // Listen to link changes
+    // Listen to link changes (if app is already running in background)
     _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
       _handleDeepLink(uri);
     });
@@ -78,15 +84,24 @@ class _AppState extends State<App> {
       theme: AppTheme.light(),
       initialRoute: '/splash',
       routes: {
+        // Base
         '/splash': (_) => const SplashPage(),
+        '/setup': (_) => const ServerSetupPage(),
+
+        // Auth
         '/login': (_) => const LoginPage(),
         '/forgot-password': (_) => const ForgotPasswordPage(),
-        ResetPasswordConfirmPage.routeName: (_) => const ResetPasswordConfirmPage(),
+        ResetPasswordConfirmPage.routeName: (_) =>
+            const ResetPasswordConfirmPage(),
+
+        // Main
         '/home': (_) => const HomePage(),
         '/attendance': (_) => const AttendancePage(),
         '/history': (_) => const HistoryPage(),
         '/schedule': (_) => const SchedulePage(),
-        '/setup': (_) => const ServerSetupPage(),
+
+        // Requests
+        '/form': (_) => const CreateRequestPage(),
       },
     );
   }

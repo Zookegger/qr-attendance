@@ -65,6 +65,8 @@ class AuthenticationService {
 
   Future<String?> getRefreshToken() => _storage.read(key: _refreshTokenKey);
 
+  
+
   Future<User?> getCachedUser() async {
     final raw = await _storage.read(key: _userKey);
     if (raw == null || raw.trim().isEmpty) return null;

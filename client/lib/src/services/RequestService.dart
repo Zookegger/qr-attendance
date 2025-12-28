@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -14,16 +16,34 @@ class RequestService {
   }
 
   /// CREATE REQUEST (SAFE)
-  Future<void> createRequest(Request request) async {
+  Future<void> createRequest(Request request, List<File> files) async {
     final token = await _getAccessToken();
     if (token == null || token.isEmpty) {
       throw Exception('User not authenticated');
     }
 
     try {
+      final formData = FormData();
+
+      // Add request fields
+      request.toJson().forEach((key, value) {
+        if (value != null) {
+          formData.fields.add(MapEntry(key, value.toString()));
+        }
+      });
+
+      // Add files
+      for (final file in files) {
+        final filename = file.path.split(Platform.pathSeparator).last;
+        formData.files.add(MapEntry(
+          'files',
+          MultipartFile.fromFileSync(file.path, filename: filename),
+        ));
+      }
+
       final response = await _dio.post(
         ApiEndpoints.createRequest,
-        data: request.toJson(),
+        data: formData,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 
