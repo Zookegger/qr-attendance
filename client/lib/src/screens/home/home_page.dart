@@ -1,14 +1,14 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:qr_attendance_frontend/src/screens/form/create_request_page.dart';
 import 'dart:async';
 
 import '../../models/user.dart';
 import '../../services/auth.service.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final bool isPreview;
+
+  const HomePage({super.key, this.isPreview = false});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -20,23 +20,37 @@ class _HomePageState extends State<HomePage> {
 
   // Shift Data
   final String checkInTime = "08:02 AM";
-  final String checkOutTime = "--";
+  final String checkOutTime = "--:--";
   final String totalTime = "1h 39m";
+  final bool isCheckedIn = true; // Simulated status
 
   // Stats Data
-  final int daysWorked = 30;
+  final int daysWorked = 22;
   final int daysOff = 1;
-  final String overtimeHours = "4h";
-  final int lateArrivals = 3;
+  final String overtimeHours = "4.5h";
+  final int lateArrivals = 0;
 
   StreamSubscription<RemoteMessage>? _onMessageSub;
 
   @override
   void initState() {
     super.initState();
+
+    if (widget.isPreview) {
+      _user = User(
+        id: '0',
+        name: 'Alex Johnson',
+        status: 'Active',
+        email: 'alex@demo.com',
+        role: 'Staff',
+      );
+      return;
+    }
+
     _loadUser();
     _setupNotificationListener();
   }
+
 
   Future<void> _handleLogout() async {
     await AuthenticationService().logout();
@@ -44,11 +58,91 @@ class _HomePageState extends State<HomePage> {
     Navigator.of(
       context,
     ).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
+    Navigator.of(
+      context,
+    ).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
   }
 
+
   void _openProfile() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile screen is not available yet.')),
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (BuildContext ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.person),
+                title: const Text('Profile'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Profile screen is not available yet.'),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('Logout'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  showDialog<void>(
+                    context: context,
+                    builder: (BuildContext dctx) {
+                      return AlertDialog(
+                        // Modern shape
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        // Icon for quick visual context
+                        icon: const Icon(
+                          Icons.logout,
+                          color: Colors.redAccent,
+                          size: 32,
+                        ),
+                        title: const Text('Confirm Logout'),
+                        content: const Text(
+                          'Are you sure you want to end your session?',
+                          textAlign: TextAlign.center,
+                        ),
+                        actionsAlignment: MainAxisAlignment
+                            .spaceEvenly, // Spreads buttons out
+                        actions: [
+                          // Neutral Cancel Button
+                          TextButton(
+                            onPressed: () => Navigator.pop(dctx),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                          // Destructive Action Button (Red)
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(dctx);
+                              _handleLogout();
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.red, // The important part
+                            ),
+                            child: const Text(
+                              'Logout',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -72,7 +166,7 @@ class _HomePageState extends State<HomePage> {
             content: Text(message.notification?.title ?? "New Notification"),
             action: SnackBarAction(label: 'View', onPressed: () {}),
             behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.blueAccent,
+            backgroundColor: Colors.indigo,
           ),
         );
       }
@@ -87,88 +181,529 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Using a slightly off-white background for better contrast
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 30),
-              _buildQuickActions(),
-              const SizedBox(height: 30),
-              _buildShiftCard(),
-              const SizedBox(height: 30),
-              _buildScanButton(context),
-              const SizedBox(height: 30),
-              _buildStatsGrid(),
-            ],
+      backgroundColor: const Color(0xFFF5F7FA),
+      body: _user?.role == 'Manager' || _user?.role == 'Admin'
+          ? _buildManagerView()
+          : _buildStaffView(),
+      floatingActionButton: _user?.role == 'Manager' || _user?.role == 'Admin'
+          ? null
+          : _buildAttendanceButton(context),
+    );
+  }
+
+  Widget _buildStaffView() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          _buildHeader(),
+          Transform.translate(
+            offset: const Offset(0, -40),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildShiftCard(),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle("Quick Actions"),
+                  const SizedBox(height: 24),
+                  _buildQuickActions(),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle("Monthly Overview"),
+                  _buildStatsGrid(),
+                ],
+              ),
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildManagerView() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          _buildHeader(),
+          Transform.translate(
+            offset: const Offset(0, -40),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildManagerOverviewCard(),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle("Management"),
+                  const SizedBox(height: 24),
+                  _buildManagerQuickActions(),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle("Recent Requests"),
+                  const SizedBox(height: 16),
+                  _buildRecentRequests(),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildManagerOverviewCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Team Attendance",
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildTeamStat("Present", "18", Colors.green),
+                _buildTeamStat("Late", "3", Colors.orange),
+                _buildTeamStat("Absent", "2", Colors.red),
+              ],
+            ),
+            const SizedBox(height: 20),
+            const Divider(height: 1, color: Color(0xFFEEEEEE)),
+            const SizedBox(height: 16),
+            Center(
+              child: TextButton(
+                onPressed: () {
+                  // Navigate to detailed attendance report
+                },
+                child: const Text("View Full Report"),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Row(
+  Widget _buildTeamStat(String label, String count, Color color) {
+    return Column(
       children: [
-        PopupMenuButton<String>(
-          onSelected: (value) {
-            switch (value) {
-              case 'profile':
-                _openProfile();
-                break;
-              case 'logout':
-                _handleLogout();
-                break;
-            }
-          },
-          itemBuilder: (context) => const [
-            PopupMenuItem(value: 'profile', child: Text('View profile')),
-            PopupMenuItem(value: 'logout', child: Text('Logout')),
-          ],
-          child: CircleAvatar(
-            radius: 24,
-            backgroundColor: Colors.purple.shade100,
-            child: const Icon(Icons.person_outline, color: Colors.purple),
+        Text(
+          count,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: color,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(height: 4),
         Text(
-          "Hello ${_user?.name ?? 'User'}",
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey.shade600,
+            fontWeight: FontWeight.w500,
+          ),
         ),
-        const Spacer(),
-        Stack(
-          children: [
-            const Icon(Icons.notifications_none, size: 30),
-            if (notificationCount > 0)
-              Positioned(
-                right: 0,
-                top: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
-                  child: Text(
-                    '$notificationCount',
-                    style: const TextStyle(color: Colors.white, fontSize: 10),
-                    textAlign: TextAlign.center,
+      ],
+    );
+  }
+
+  Widget _buildManagerQuickActions() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _buildQuickActionButton(
+          "Approvals",
+          Icons.check_circle_outline,
+          36,
+          Colors.blue,
+          () {},
+        ),
+        _buildQuickActionButton(
+          "Employees",
+          Icons.people_outline,
+          36,
+          Colors.purple,
+          () {},
+        ),
+        _buildQuickActionButton(
+          "Reports",
+          Icons.bar_chart,
+          36,
+          Colors.orange,
+          () {},
+        ),
+        _buildQuickActionButton(
+          "Schedule",
+          Icons.calendar_today,
+          36,
+          Colors.green,
+          () {},
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecentRequests() {
+    // Mock data for requests
+    final requests = [
+      {
+        "name": "Sarah Connor",
+        "type": "Leave Request",
+        "date": "Today, 10:30 AM",
+        "status": "Pending"
+      },
+      {
+        "name": "John Smith",
+        "type": "Overtime",
+        "date": "Yesterday",
+        "status": "Pending"
+      },
+    ];
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: requests.length,
+      separatorBuilder: (ctx, index) => const SizedBox(height: 12),
+      itemBuilder: (ctx, index) {
+        final req = requests[index];
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withValues(alpha: 0.05),
+                spreadRadius: 1,
+                blurRadius: 5,
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Colors.blue.shade50,
+                child: Text(
+                  (req["name"] as String)[0],
+                  style: TextStyle(
+                    color: Colors.blue.shade700,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      req["name"] as String,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      req["type"] as String,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    req["date"] as String,
+                    style: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 10,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      req["status"] as String,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.orange,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 60, 20, 60),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          GestureDetector(
+            onTap: _openProfile,
+            child: CircleAvatar(
+              radius: 28,
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              backgroundImage: const NetworkImage(
+                'https://i.pravatar.cc/150?img=12',
+              ), // Placeholder
+              child: _user?.name == null
+                  ? const Icon(Icons.person, color: Colors.white, size: 30)
+                  : null,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Welcome back,",
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _user?.name ?? 'User',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          _buildNotificationIcon(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationIcon() {
+    return Stack(
+      children: [
+        IconButton(
+          onPressed: () {},
+          icon: const Icon(
+            Icons.notifications_outlined,
+            color: Colors.white,
+            size: 28,
+          ),
+        ),
+        if (notificationCount > 0)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.redAccent,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text(
+                '$notificationCount',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildShiftCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Today's Shift",
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isCheckedIn ? "Checked In" : "Not Checked In",
+                      style: TextStyle(
+                        color: isCheckedIn ? Colors.green : Colors.orange,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isCheckedIn
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.timer_outlined,
+                        size: 16,
+                        color: isCheckedIn ? Colors.green : Colors.orange,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        totalTime,
+                        style: TextStyle(
+                          color: isCheckedIn ? Colors.green : Colors.orange,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            const Divider(height: 1, color: Color(0xFFEEEEEE)),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildTimeInfo("Check In", checkInTime, Icons.login),
+                _buildTimeInfo("Check Out", checkOutTime, Icons.logout),
+              ],
+            ),
           ],
         ),
-        const SizedBox(width: 8),
+      ),
+    );
+  }
+
+  Widget _buildTimeInfo(String label, String time, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 20, color: Colors.grey.shade700),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+            ),
+            Text(
+              time,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Color(0xFF2D3436),
+              ),
+            ),
+          ],
+        ),
       ],
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF2D3436),
+      ),
     );
   }
 
@@ -176,178 +711,65 @@ class _HomePageState extends State<HomePage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildActionButton(
-          Icons.bar_chart,
+        _buildQuickActionButton(
           "History",
+          Icons.history,
+          42,
           Colors.blue,
-          onTap: () => Navigator.pushNamed(context, '/history'),
+          () => Navigator.pushNamed(context, '/history'),
         ),
-        _buildActionButton(
-          Icons.calendar_month,
+        _buildQuickActionButton(
           "Schedule",
-          Colors.blue,
-          onTap: () => Navigator.pushNamed(context, '/schedule'),
+          Icons.calendar_month_outlined,
+          42,
+          Colors.purple,
+          () => Navigator.pushNamed(context, '/schedule'),
         ),
-        _buildActionButton(
-          Icons.receipt_long,
-          "Requests",
+        _buildQuickActionButton(
+          "Forms",
+          Icons.description,
+          42,
+          Colors.green,
+          () => Navigator.pushNamed(context, '/forms'),
+        ),
+        _buildQuickActionButton(
+          "More",
+          Icons.grid_view_rounded,
+          42,
           Colors.orange,
-          onTap: () {
-            if (_user == null) return;
-
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => CreateRequestPage(user: _user!),
-              ),
-            );
-          },
+          () {},
         ),
       ],
     );
   }
 
-  Widget _buildActionButton(
-    IconData icon,
+  Widget _buildQuickActionButton(
     String label,
-    Color color, {
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(12),
+    IconData icon,
+    double iconSize,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return Column(
+      children: <Widget>[
+        IconButton(
+          onPressed: onTap,
+          icon: Icon(icon),
+          iconSize: iconSize,
+          color: color,
+          style: ButtonStyle(
+            shape: WidgetStateProperty.all(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
             ),
-            child: Icon(icon, color: color, size: 30),
-          ),
-          const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildShiftCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey[100] ?? Colors.grey.withAlpha(26),
-            spreadRadius: 5,
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            backgroundColor: WidgetStateProperty.all(
+              color.withValues(alpha: 0.08),
+            ),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Text(
-                "Today's shift",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(width: 8),
-              Icon(Icons.calendar_today, size: 20),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildTimeRow("Check-in: $checkInTime"),
-          const SizedBox(height: 8),
-          _buildTimeRow("Check-out: $checkOutTime"),
-          const SizedBox(height: 16),
-          Text(
-            "Total time: $totalTime",
-            style: const TextStyle(fontWeight: FontWeight.w500),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimeRow(String text) {
-    return Row(
-      children: [
-        const Icon(Icons.access_time, size: 20, color: Colors.grey),
-        const SizedBox(width: 8),
-        Text(text, style: const TextStyle(fontSize: 16)),
+        ),
+        SizedBox(height: 4),
+        Text(label),
       ],
-    );
-  }
-
-  Widget _buildScanButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 60,
-      child: ElevatedButton(
-        onPressed: () async {
-          Map<Permission, PermissionStatus> statuses = await [
-            Permission.camera,
-            Permission.location,
-          ].request();
-
-          if (statuses[Permission.camera]!.isGranted &&
-              statuses[Permission.location]!.isGranted) {
-            if (context.mounted) {
-              Navigator.pushNamed(context, '/scan');
-            }
-          } else {
-            if (context.mounted) {
-              showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text("Permission needed"),
-                  content: const Text(
-                    "Camera and Location permissions are required to check in.",
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text("Đóng"),
-                    ),
-                    TextButton(
-                      onPressed: () => openAppSettings(),
-                      child: const Text("Cài đặt"),
-                    ),
-                  ],
-                ),
-              );
-            }
-          }
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF4A4A4A), // Dark grey
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.qr_code_scanner, color: Colors.white),
-            SizedBox(width: 12),
-            Text(
-              "Scan QR to check in",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -360,51 +782,122 @@ class _HomePageState extends State<HomePage> {
       mainAxisSpacing: 16,
       childAspectRatio: 1.5,
       children: [
-        _buildStatCard(Icons.access_time, daysWorked.toString(), "Days worked"),
-        _buildStatCard(Icons.access_time, daysOff.toString(), "Days off"),
-        _buildStatCard(Icons.access_time, overtimeHours, "Overtime"),
         _buildStatCard(
+          "Days Worked",
+          "$daysWorked",
+          Icons.work_outline,
+          Colors.blue,
+        ),
+        _buildStatCard(
+          "Days Off",
+          "$daysOff",
+          Icons.beach_access_outlined,
+          Colors.orange,
+        ),
+        _buildStatCard(
+          "Overtime",
+          overtimeHours,
           Icons.access_time,
-          lateArrivals.toString(),
-          "Late arrivals",
+          Colors.purple,
+        ),
+        _buildStatCard(
+          "Late Arrival",
+          "$lateArrivals",
+          Icons.warning_amber_rounded,
+          Colors.red,
         ),
       ],
     );
   }
 
-  Widget _buildStatCard(IconData icon, String value, String label) {
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withAlpha(13),
-            spreadRadius: 2,
-            blurRadius: 5,
+            color: Colors.grey.withValues(alpha: 0.05),
+            spreadRadius: 1,
+            blurRadius: 10,
           ),
         ],
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.max,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(icon, size: 28),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 18, color: color),
+              ),
+              if (label == "Late Arrival" && int.parse(value) > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    "Alert",
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2D3436),
+                ),
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAttendanceButton(BuildContext context) {
+    return FloatingActionButton.extended(
+      onPressed: () {
+        // Open the attendance dashboard; scanner and manual entry
+        // are handled from there. Do not force permissions on entry.
+        Navigator.pushNamed(context, '/attendance');
+      },
+      icon: const Icon(Icons.punch_clock_outlined),
+      label: const Text('Attendance'),
+      // backgroundColor: const Color(0xFF4A00E0),
+      elevation: 6,
     );
   }
 }

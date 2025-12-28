@@ -13,7 +13,7 @@ export class RequestService {
 			from_date: dto.from_date ? new Date(dto.from_date) : null,
 			to_date: dto.to_date ? new Date(dto.to_date) : null,
 			reason: dto.reason,
-			image_url: dto.image_url ?? null,
+			attachments: dto.attachments ?? null,
 		});
 
 		return request.toJSON() as RequestResponse;

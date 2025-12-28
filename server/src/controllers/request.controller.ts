@@ -22,6 +22,15 @@ export async function createRequest(
 			...req.body,
 		};
 
+		// Handle file uploads
+		if (req.files && 'files' in req.files) {
+			const files = req.files['files'] as Express.Multer.File[];
+			if (files && files.length > 0) {
+				const paths = files.map(file => file.path);
+				dto.attachments = JSON.stringify(paths);
+			}
+		}
+
 		const created = await RequestService.createRequest(dto);
 
 		return res

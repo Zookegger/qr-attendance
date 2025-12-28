@@ -3,6 +3,7 @@ import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:dio/dio.dart';
+import 'package:qr_attendance_frontend/src/consts/api_endpoints.dart';
 import '../../services/config.service.dart';
 
 class ServerSetupPage extends StatefulWidget {
@@ -30,6 +31,7 @@ class _ServerSetupPageState extends State<ServerSetupPage> {
   @override
   void initState() {
     super.initState();
+    _loadSavedHost();
   }
 
   @override
@@ -37,6 +39,49 @@ class _ServerSetupPageState extends State<ServerSetupPage> {
     _scannerController.dispose();
     _urlController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadSavedHost() async {
+    try {
+      final saved = ConfigService().baseUrl;
+      if (saved.isEmpty) return;
+
+      final display = saved.replaceAll(RegExp(r'\/api\/?$'), '');
+      
+      if (!mounted) return;
+      setState(() {
+        _urlController.text = display;
+      });
+
+      // Verify health of the saved host
+      setState(() => _isConnecting = true);
+      final dio = Dio(
+        BaseOptions(
+          baseUrl: saved,
+          connectTimeout: const Duration(seconds: 8),
+          receiveTimeout: const Duration(seconds: 8),
+          headers: const {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      final response = await dio.get(ApiEndpoints.health);
+      if (response.statusCode == 200) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Connected to $saved"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (_) {
+      // ignore: do nothing if saved host is invalid/unreachable
+    } finally {
+      if (mounted) setState(() => _isConnecting = false);
+    }
   }
 
   Future<void> _requestPermissions() async {

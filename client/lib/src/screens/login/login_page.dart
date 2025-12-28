@@ -17,6 +17,13 @@ class _LoginPageState extends State<LoginPage> {
   bool _isObscured = true;
   bool _isLoading = false;
 
+  @override
+  void dispose() {
+    _loginController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _handleLogin() async {
     // 1. Validate form
     if (!_formKey.currentState!.validate()) return;
@@ -39,6 +46,8 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.of(context).pushReplacementNamed('/home');
     } on AuthException catch (e) {
       if (!mounted) return;
+
+      debugPrint(e.toString());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.message),
@@ -185,7 +194,8 @@ class _LoginPageState extends State<LoginPage> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: () =>
+                          Navigator.of(context).pushNamed('/forgot-password'),
                       child: const Text(
                         "Forgot Password?",
                         style: TextStyle(
@@ -228,6 +238,18 @@ class _LoginPageState extends State<LoginPage> {
                                 color: Colors.white,
                               ),
                             ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: () => Navigator.of(context).pushNamed('/setup'),
+                      icon: const Icon(Icons.settings, color: Colors.deepPurple),
+                      label: const Text(
+                        'Setup / Connect to Server',
+                        style: TextStyle(color: Colors.deepPurple),
+                      ),
+                      style: TextButton.styleFrom(foregroundColor: Colors.deepPurple),
                     ),
                   ),
                 ],

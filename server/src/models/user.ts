@@ -37,6 +37,8 @@ interface UserAttributes {
 	phone_number?: string | null;
 	address?: string | null;
 	gender?: Gender | null;
+	password_reset_token?: string | null;
+	password_reset_expires?: Date | null;
 }
 
 interface UserCreationAttributes
@@ -54,6 +56,8 @@ interface UserCreationAttributes
 		| "phone_number"
 		| "address"
 		| "gender"
+		| "password_reset_token"
+		| "password_reset_expires"
 	> {}
 
 export class User
@@ -77,6 +81,9 @@ export class User
 	public declare phone_number: string | null;
 	public declare address: string | null;
 	public declare gender: Gender | null;
+
+	public declare password_reset_token: string | null;
+	public declare password_reset_expires: Date | null;
 
 	public declare readonly createdAt: Date;
 	public declare readonly updatedAt: Date;
@@ -163,6 +170,14 @@ User.init(
 		},
 		gender: {
 			type: DataTypes.ENUM(...Object.values(Gender)),
+			allowNull: true,
+		},
+		password_reset_token: {
+			type: DataTypes.STRING,
+			allowNull: true,
+		},
+		password_reset_expires: {
+			type: DataTypes.DATE,
 			allowNull: true,
 		},
 	},

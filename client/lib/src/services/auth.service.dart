@@ -65,6 +65,8 @@ class AuthenticationService {
 
   Future<String?> getRefreshToken() => _storage.read(key: _refreshTokenKey);
 
+  
+
   Future<User?> getCachedUser() async {
     final raw = await _storage.read(key: _userKey);
     if (raw == null || raw.trim().isEmpty) return null;
@@ -127,6 +129,11 @@ class AuthenticationService {
         e.response?.statusCode,
       );
     }
+  }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    // TODO: Implement this
+    throw UnimplementedError("This function hasn't been implemented");
   }
 
   Future<AuthSession> refresh() async {
@@ -284,6 +291,28 @@ class AuthenticationService {
       await _deviceInfo.deviceInfo;
     } catch (_) {
       // ignore errors
+    }
+  }
+
+  Future<void> resetPassword({
+    required String email,
+    required String token,
+    required String newPassword,
+  }) async {
+    try {
+      await _dio.post(
+        ApiEndpoints.resetPassword,
+        data: {
+          'email': email,
+          'token': token,
+          'newPassword': newPassword,
+        },
+      );
+    } on DioException catch (e) {
+      final msg = e.response?.data['message'] ?? 'Failed to reset password';
+      throw AuthException(msg, e.response?.statusCode);
+    } catch (e) {
+      throw AuthException('An unexpected error occurred: $e');
     }
   }
 }
