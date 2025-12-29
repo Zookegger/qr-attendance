@@ -17,7 +17,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _loadUser();
   }
 
@@ -53,7 +53,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           tabs: const [
             Tab(text: 'Information', icon: Icon(Icons.person)),
             Tab(text: 'Password', icon: Icon(Icons.lock)),
-            Tab(text: 'Sessions', icon: Icon(Icons.devices)),
           ],
         ),
       ),
@@ -64,7 +63,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
               children: [
                 UserInformationTab(user: _user!),
                 const PasswordChangeTab(),
-                const SessionManagementTab(),
               ],
             ),
     );
@@ -301,142 +299,6 @@ class _PasswordChangeTabState extends State<PasswordChangeTab> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class SessionManagementTab extends StatefulWidget {
-  const SessionManagementTab({super.key});
-
-  @override
-  State<SessionManagementTab> createState() => _SessionManagementTabState();
-}
-
-class _SessionManagementTabState extends State<SessionManagementTab> {
-  List<Map<String, dynamic>> _sessions = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSessions();
-  }
-
-  Future<void> _loadSessions() async {
-    // TODO: Implement session loading from API
-    // For now, show mock data
-    setState(() {
-      _sessions = [
-        {
-          'id': '1',
-          'device': 'iPhone 13',
-          'location': 'New York, NY',
-          'lastActive': '2024-01-15 10:30 AM',
-          'current': true,
-        },
-        {
-          'id': '2',
-          'device': 'Chrome Browser',
-          'location': 'New York, NY',
-          'lastActive': '2024-01-14 3:45 PM',
-          'current': false,
-        },
-        {
-          'id': '3',
-          'device': 'Android Phone',
-          'location': 'Remote',
-          'lastActive': '2024-01-10 9:15 AM',
-          'current': false,
-        },
-      ];
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Active Sessions',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Manage your active sessions across different devices.',
-            style: TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          ..._sessions.map((session) => Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Icon(
-                    session['current'] ? Icons.devices : Icons.device_unknown,
-                    size: 32,
-                    color: session['current'] ? Colors.green : Colors.grey,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          session['device'],
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        Text(
-                          session['location'],
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                        Text(
-                          'Last active: ${session['lastActive']}',
-                          style: const TextStyle(color: Colors.grey, fontSize: 12),
-                        ),
-                        if (session['current'])
-                          const Text(
-                            'Current session',
-                            style: TextStyle(
-                              color: Colors.green,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  if (!session['current'])
-                    IconButton(
-                      icon: const Icon(Icons.logout, color: Colors.red),
-                      onPressed: () {
-                        // TODO: Implement session revocation
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Revoke session ${session['id']} not implemented yet')),
-                        );
-                      },
-                    ),
-                ],
-              ),
-            ),
-          )),
-          const SizedBox(height: 24),
-          CommonButton(
-            label: 'Revoke All Other Sessions',
-            onPressed: () {
-              // TODO: Implement revoke all sessions
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Revoke all sessions not implemented yet')),
-              );
-            },
-          ),
-        ],
       ),
     );
   }
