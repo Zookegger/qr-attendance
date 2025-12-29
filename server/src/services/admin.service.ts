@@ -55,6 +55,25 @@ export class AdminService {
 		return config;
 	}
 
+	static async unbindDevice(userId: string) {
+		const user = await User.findByPk(userId);
+		if (!user) {
+			throw new Error("User not found");
+		}
+
+		user.device_uuid = null;
+		await user.save();
+
+		// Revoke all sessions for this user
+		await RefreshToken.destroy({
+			where: {
+				user_id: userId,
+			},
+		});
+
+		return { message: "Device unbind successful" };
+	}
+
 	static async exportReport(month: string, year: string) {
 		if (!month || !year) {
 			throw new Error("Month and Year are required");

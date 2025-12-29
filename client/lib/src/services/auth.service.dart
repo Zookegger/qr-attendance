@@ -100,7 +100,7 @@ class AuthenticationService {
     final existing = await _storage.read(key: _deviceUuidKey);
     if (existing != null && existing.trim().isNotEmpty) return existing;
 
-    final created = _generateDeviceUuid();
+    final created = await _generateDeviceUuid();
     await _storage.write(key: _deviceUuidKey, value: created);
     return created;
   }
@@ -280,7 +280,22 @@ class AuthenticationService {
     );
   }
 
-  String _generateDeviceUuid() {
+  Future<String> _generateDeviceUuid() async {
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final androidInfo = await _deviceInfo.androidInfo;
+        return androidInfo.id;
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final iosInfo = await _deviceInfo.iosInfo;
+        return iosInfo.identifierForVendor ?? _generateRandomUuid();
+      }
+    } catch (e) {
+      debugPrint('Failed to get hardware ID: $e');
+    }
+    return _generateRandomUuid();
+  }
+
+  String _generateRandomUuid() {
     final rnd = Random.secure();
     final bytes = List<int>.generate(32, (_) => rnd.nextInt(256));
     return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();

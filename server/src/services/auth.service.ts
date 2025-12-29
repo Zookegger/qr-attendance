@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { Op } from "sequelize";
-import { User } from "@models";
+import { User, RefreshToken } from "@models";
 import { UserRole } from "@models/user";
 import { AuthResponse } from "@my-types/auth";
 import {
@@ -131,6 +131,9 @@ export class AuthService {
 		user.password_reset_token = null;
 		user.password_reset_expires = null;
 		await user.save();
+
+		// Revoke all sessions
+		await RefreshToken.destroy({ where: { user_id: user.id } });
 	}
 
 	static async refresh(tokenString: string): Promise<AuthResponse> {
@@ -193,5 +196,8 @@ export class AuthService {
 		// Update the user's password
 		user.password_hash = hashedNewPassword;
 		await user.save();
+
+		// Revoke all sessions
+		await RefreshToken.destroy({ where: { user_id: user.id } });
 	}
 }

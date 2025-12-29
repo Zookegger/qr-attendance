@@ -254,6 +254,24 @@ const revokeUserSession = async (_req: Request, res: Response, next: NextFunctio
 	}
 };
 
+const unbindDevice = async (req: Request, res: Response, next: NextFunction) => {
+	const user = req.user;
+	if (!user) {
+		return res.status(403).json({ status: 403, message: "Unauthorized" });
+	}
+	const { userId } = req.body;
+	if (!userId) {
+		return res.status(400).json({ message: "User ID is required" });
+	}
+
+	try {
+		const result = await AdminService.unbindDevice(userId);
+		return res.json(result);
+	} catch (error) {
+		return next(error);
+	}
+};
+
 export const AdminController = {
 	generateQR,
 	getOfficeConfig,
@@ -265,4 +283,5 @@ export const AdminController = {
 	deleteUser,
 	listUserSession,
 	revokeUserSession,
+	unbindDevice,
 };

@@ -48,3 +48,6 @@ export const listUserSessionValidator = [
 export const revokeUserSessionValidator = [
 	param("id").isString().notEmpty().withMessage("Session ID is required"),
 ];
+export const unbindDeviceValidator = [
+body("userId").isString().notEmpty().withMessage("User ID is required"),
+];
