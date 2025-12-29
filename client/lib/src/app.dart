@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:qr_attendance_frontend/src/screens/schedule/schedule_page.dart';
 
 // Screens
 import 'package:qr_attendance_frontend/src/screens/splash/splash_screen.dart';
 import 'package:qr_attendance_frontend/src/screens/login/forgot_password_page.dart';
 import 'package:qr_attendance_frontend/src/screens/login/reset_password_confirm_page.dart';
-import 'package:qr_attendance_frontend/src/screens/form/create_request_page.dart'; // From snippet 2
-
-// Relative imports (kept as per your existing structure)
+import 'package:qr_attendance_frontend/src/screens/form/create_request_page.dart';
+import 'package:qr_attendance_frontend/src/theme/app_theme.dart';
 import 'screens/login/login_page.dart';
 import 'screens/home/home_page.dart';
 import 'screens/attendance/attendance_page.dart';
