@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createRequest } from "@controllers/request.controller";
+import { RequestController } from "@controllers/request.controller";
 import { authenticate } from "@middlewares/auth.middleware";
 import { errorHandler } from "@middlewares/error.middleware";
 import { createRequestValidator } from "@middlewares/validators/request.validator";
@@ -14,7 +14,7 @@ requestRouter.post(
 	authenticate,
 	createRequestValidator,
 	imageUpload.fields([{ name: 'files', maxCount: 10 }]),
-	createRequest,
+	RequestController.createRequest,
 	errorHandler
 );
 

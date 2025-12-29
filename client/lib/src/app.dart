@@ -14,8 +14,7 @@ import 'screens/home/home_page.dart';
 import 'screens/attendance/attendance_page.dart';
 import 'screens/setup/server_setup_page.dart';
 import 'screens/history/history_page.dart';
-import 'screens/schedule/schedule_page.dart';
-import 'theme/app_theme.dart';
+import 'screens/profile/profile.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -99,6 +98,7 @@ class _AppState extends State<App> {
         '/attendance': (_) => const AttendancePage(),
         '/history': (_) => const HistoryPage(),
         '/schedule': (_) => const SchedulePage(),
+        '/profile': (_) => const ProfilePage(),
 
         // Requests
         '/form': (_) => const CreateRequestPage(),

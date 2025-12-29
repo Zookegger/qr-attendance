@@ -154,3 +154,14 @@ export const revokeRefreshToken = async (
 		// Ignore errors on logout (don't block the user)
 	}
 };
+
+export const listUserSessions = async (userId: string): Promise<RefreshToken[] | null> => {
+	try {
+		const user = await User.findByPk(userId);
+		if (!user) throw new Error("User not found");
+		const tokens = await RefreshToken.findAll({ where: { user_id: userId } });
+		return tokens;
+	} catch (err) {
+		throw err;
+	}
+}

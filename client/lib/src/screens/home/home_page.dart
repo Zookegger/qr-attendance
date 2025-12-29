@@ -77,11 +77,7 @@ class _HomePageState extends State<HomePage> {
                 title: const Text('Profile'),
                 onTap: () {
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Profile screen is not available yet.'),
-                    ),
-                  );
+                  Navigator.of(context).pushNamed('/profile');
                 },
               ),
               ListTile(

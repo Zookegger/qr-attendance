@@ -1,20 +1,45 @@
 import express, { Application } from "express";
 import cors from "cors";
+import morgan from "morgan";
 import routes from "@routes";
 import { errorHandler } from "@middlewares/error.middleware";
-import logger from "@utils/logger";
-import { initCronJobs } from "@services/cron.service";
-import { sequelize } from "@config/database";
 import dotenv from "dotenv";
 import path from "path";
 
 dotenv.config();
 
 const app: Application = express();
-const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(
+	cors({
+		origin: [
+			"http://localhost:5173",
+			"http://127.0.0.1:5173",
+			"http://localhost:3000",
+			"http://127.0.0.1:3000",
+		],
+		methods: ["GET", "POST", "PUT", "DELETE"],
+		credentials: true,
+	})
+);
+
+// Set up request logging with Morgan in development mode
+app.use(
+	morgan("dev", {
+		stream: {
+			write: (message: string) => {
+				const currentTime = new Date(Date.now());
+
+				console.log(
+					`[SERVER - ${currentTime.toUTCString()}]:`,
+					message.trim()
+				);
+			},
+		},
+	})
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -38,24 +63,5 @@ app.use("/api", routes);
 
 // Error Handling
 app.use(errorHandler);
-
-// Start Server
-if (require.main === module) {
-	// Sync Database
-	sequelize
-		.sync({ alter: true })
-		.then(() => {
-			logger.info("Database synced");
-			// Init Cron Jobs
-			initCronJobs();
-
-			app.listen(PORT, () => {
-				logger.info(`Server running on port ${PORT}`);
-			});
-		})
-		.catch((err) => {
-			logger.error("Failed to sync database:", err);
-		});
-}
 
 export default app;

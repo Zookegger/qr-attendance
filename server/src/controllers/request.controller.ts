@@ -3,11 +3,11 @@ import { validationResult } from "express-validator";
 import { RequestService } from "@services/request.service";
 import { CreateRequestDTO } from "@my-types/request";
 
-export async function createRequest(
+const createRequest = async (
 	req: Request,
 	res: Response,
 	next: NextFunction
-) {
+) => {
 	try {
 		const errors = validationResult(req);
 		if (!errors.isEmpty()) {
@@ -39,4 +39,8 @@ export async function createRequest(
 	} catch (err) {
 		return next(err);
 	}
-}
+};
+
+export const RequestController = {
+	createRequest,
+};
