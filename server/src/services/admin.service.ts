@@ -185,6 +185,10 @@ export class AdminService {
 		};
 	}
 
+	static async getUserById(id: string) {
+		return await User.findByPk(id, { attributes: ["id", "name", "status", "email", "role", "device_name", "gender", "position", "date_of_birth", "phone_number", "address", "createdAt", "updatedAt"] });
+	}
+
 	static async updateUser(id: string, dto: UpdateUserDTO) {
 		const user = await User.findByPk(id);
 		if (!user) {

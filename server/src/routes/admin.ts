@@ -54,6 +54,14 @@ adminRouter.put(
 	errorHandler
 );
 adminRouter.get(
+	"/admin/users/:id",
+	authenticate,
+	authorize([UserRole.ADMIN, UserRole.MANAGER]),
+	updateUserValidator,
+	AdminController.findUserByID,
+	errorHandler
+);
+adminRouter.get(
 	"/admin/users",
 	authenticate,
 	authorize([UserRole.ADMIN, UserRole.MANAGER]),

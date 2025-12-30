@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { AdminService } from "@services/admin.service";
 import { UserRole } from "@models/user";
 import { validationResult } from "express-validator";
+import logger from "@utils/logger";
 
 const generateQR = async (req: Request, res: Response, next: NextFunction) => {
 	const user = req.user;
@@ -125,6 +126,37 @@ const addUser = async (req: Request, res: Response, next: NextFunction) => {
 			message: "User created successfully",
 			user,
 		});
+	} catch (error) {
+		return next(error);
+	}
+};
+
+const findUserByID = async (req: Request, res: Response, next: NextFunction) => {
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		return res.status(400).json({ errors: errors.array() });
+	}
+
+	const currentUser = req.user;
+	if (!currentUser || currentUser.role !== UserRole.ADMIN) {
+		return res.status(403).json({ message: "Unauthorized" });
+	}
+
+	const { id } = req.params;
+
+	if (!id) {
+		return res.status(400).json({ message: "No ID provided" });
+	}
+
+	try {
+		const user = await AdminService.getUserById(id);
+
+		logger.debug(user);
+
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
+		return res.status(200).json({ user, message: "User found" });
 	} catch (error) {
 		return next(error);
 	}
@@ -278,6 +310,7 @@ export const AdminController = {
 	updateOfficeConfig,
 	exportReport,
 	addUser,
+	findUserByID,
 	updateUser,
 	listUsers,
 	deleteUser,
