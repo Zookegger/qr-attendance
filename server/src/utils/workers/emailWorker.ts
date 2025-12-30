@@ -49,3 +49,12 @@ emailWorker.on("failed", (job, err) => {
 });
 
 export default emailWorker;
+
+export const shutdownEmailWorker = async () => {
+	try {
+		await emailWorker.close();
+		logger.info("Email worker closed");
+	} catch (err) {
+		logger.warn(`Email worker close error: ${err}`);
+	}
+};

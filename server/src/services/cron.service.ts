@@ -3,10 +3,24 @@ import { Op } from "sequelize";
 import { User, Attendance, RefreshToken } from "@models";
 import logger from "@utils/logger";
 import { AttendanceMethod, AttendanceStatus } from "@models/attendance";
+import { qrCodeQueue } from "@utils/queues/qrCodeQueue";
+import { shutdownQrWorker } from "@utils/workers/qrCodeWorker";
+import { closeEmailQueue } from "@utils/queues/emailQueue";
+import { shutdownEmailWorker } from "@utils/workers/emailWorker";
+import { closeRefreshTokenQueue } from "@utils/queues/refreshTokenQueue";
+import { shutdownRefreshTokenWorker } from "@utils/workers/refreshTokenWorker";
+
+let scheduledTasks: any[] = [];
+
+const scheduleTask = (expr: string, fn: () => void | Promise<void>) => {
+	const task = cron.schedule(expr, fn);
+	scheduledTasks.push(task);
+	return task;
+};
 
 export const initCronJobs = () => {
 	// Run every day at 23:59
-	cron.schedule("59 23 * * *", async () => {
+	scheduleTask("59 23 * * *", async () => {
 		logger.info("Running daily absentee check...");
 		try {
 			const today = new Date();
@@ -44,7 +58,7 @@ export const initCronJobs = () => {
 	});
 
 	// Run every week on Sunday at 00:00
-	cron.schedule("0 0 * * 0", async () => {
+	scheduleTask("0 0 * * 0", async () => {
 		logger.info("Running weekly token cleanup...");
 		try {
 			const result = await RefreshToken.destroy({
@@ -59,4 +73,72 @@ export const initCronJobs = () => {
 			logger.error("Error running weekly token cleanup:", error);
 		}
 	});
+
+	// Schedule QR heartbeat via BullMQ repeatable job (every 30s)
+	(async () => {
+		try {
+			await qrCodeQueue.add(
+				"heartbeat",
+				{},
+				{
+					jobId: "qr:heartbeat",
+					repeat: { every: 30000 },
+					removeOnComplete: true,
+				}
+			);
+			logger.info("QR heartbeat job scheduled via cron.init");
+		} catch (err) {
+			logger.error("Failed to schedule QR heartbeat job:", err);
+		}
+	})();
+};
+
+export const shutdownCronJobs = async () => {
+	// Stop node-cron tasks
+	for (const t of scheduledTasks) {
+		try {
+			t.stop();
+		} catch (err) {
+			logger.warn(`Failed to stop cron task: ${err}`);
+		}
+	}
+	scheduledTasks = [];
+
+	// Close QR queue and worker
+	try {
+		await qrCodeQueue.close();
+	} catch (err) {
+		logger.warn(`Failed to close QR queue: ${err}`);
+	}
+
+	try {
+		await shutdownQrWorker();
+	} catch (err) {
+		logger.warn(`Failed to shutdown QR worker: ${err}`);
+	}
+	// close email queue and worker
+	try {
+		await closeEmailQueue();
+	} catch (err) {
+		logger.warn(`Failed to close email queue: ${err}`);
+	}
+
+	try {
+		await shutdownEmailWorker();
+	} catch (err) {
+		logger.warn(`Failed to shutdown email worker: ${err}`);
+	}
+
+	// close refresh-token queue and worker
+	try {
+		await closeRefreshTokenQueue();
+	} catch (err) {
+		logger.warn(`Failed to close refresh-token queue: ${err}`);
+	}
+
+	try {
+		await shutdownRefreshTokenWorker();
+	} catch (err) {
+		logger.warn(`Failed to shutdown refresh-token worker: ${err}`);
+	}
 };

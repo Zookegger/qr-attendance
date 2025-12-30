@@ -9,6 +9,14 @@ export const refreshTokenQueue = new Queue("refresh-tokens", {
 	},
 });
 
+export const closeRefreshTokenQueue = async () => {
+  try {
+    await refreshTokenQueue.close();
+  } catch (err) {
+    // ignore
+  }
+};
+
 export const addRefreshTokenJob = async (opts?: { once?: boolean }) => {
 	if (opts?.once) {
 		await refreshTokenQueue.add("refresh-token-cleanup", {}, { delay: 0 });

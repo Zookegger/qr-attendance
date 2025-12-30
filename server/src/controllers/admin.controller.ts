@@ -10,8 +10,9 @@ const generateQR = async (req: Request, res: Response, next: NextFunction) => {
 		return res.status(403).json({ status: 403, message: "Unauthorized" });
 	}
 	try {
-		const qr_code = await AdminService.generateQR();
-		return res.json({ qr_code });
+		const officeId = req.query.officeId ? parseInt(req.query.officeId as string, 10) : undefined;
+		const result = await AdminService.generateQR(officeId);
+		return res.json(result);
 	} catch (error) {
 		return next(error);
 	}

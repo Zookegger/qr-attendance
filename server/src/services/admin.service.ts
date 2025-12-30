@@ -1,4 +1,7 @@
 import { OfficeConfig, Attendance, User, UserStatus, RefreshToken } from "@models";
+import redis from "@config/redis";
+import { getIo } from "@utils/socket";
+import crypto from "crypto";
 import ExcelJS from "exceljs";
 import { Op } from "sequelize";
 import { startOfMonth, endOfMonth, format } from "date-fns";
@@ -8,10 +11,26 @@ import { AddUserDTO, UpdateUserDTO, AddOfficeConfigDTO, UpdateOfficeConfigDTO } 
 import { listUserSessions } from "./refreshToken.service";
 
 export default class AdminService {
-	static async generateQR(): Promise<string> {
-		// In a real app, this should be encrypted
-		const timestamp = Date.now();
-		return timestamp.toString();
+	static async generateQR(officeId?: number): Promise<{ code: string; refreshAt: number } > {
+		// generate 4-digit code, store in redis, emit to socket room
+		const num = crypto.randomInt(0, 10000);
+		const code = num.toString().padStart(4, "0");
+
+		const office = officeId ? await OfficeConfig.findByPk(officeId) : await OfficeConfig.findOne();
+		const idToUse = office ? (office as any).id : officeId;
+		const ttlSeconds = 45;
+		const key = `checkin:office:${idToUse}:code:${code}`;
+
+		await redis.set(key, "1", "EX", ttlSeconds);
+
+		try {
+			const io = getIo();
+			io.to(`office_${idToUse}`).emit("qr:update", { code, refreshAt: 30 });
+		} catch (err) {
+			// ignore if socket not initialized
+		}
+
+		return { code, refreshAt: 30 };
 	}
 
 	static async listOfficeConfig() {

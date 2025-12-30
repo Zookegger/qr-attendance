@@ -5,18 +5,20 @@ import { Op } from "sequelize";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { AttendanceMethod, AttendanceStatus } from "@models/attendance";
 import { CheckInOutDTO } from '@my-types/attendance';
+import redis from '@config/redis';
 
 export default class AttendanceService {
 	static async checkIn(dto: CheckInOutDTO) {
-		const { user_id: userId, qr_code, latitude, longitude } = dto;
-		// 1. Validate QR Code (Simple timestamp check for now)
-		// Assuming QR code contains a timestamp in milliseconds
-		// In a real app, this should be an encrypted token
-		const qrTimestamp = parseInt(qr_code);
-		const now = Date.now();
-		if (isNaN(qrTimestamp) || now - qrTimestamp > 30000) {
-			// 30 seconds validity
-			throw new Error("Invalid or expired QR code");
+		const { user_id: userId, qr_code, latitude, longitude, office_id } = dto;
+
+		// 0. Rate limiting by strikes
+		const strikesKey = `checkin:strikes:${userId}`;
+		const strikesVal = await redis.get(strikesKey);
+		const strikes = strikesVal ? parseInt(strikesVal, 10) : 0;
+		if (strikes >= 3) {
+			const err: any = new Error('Too many failed check-in attempts');
+			err.status = 429;
+			throw err;
 		}
 
 
@@ -50,6 +52,24 @@ export default class AttendanceService {
 		if (!officeConfig) {
 			throw new Error("Office configuration not found");
 		}
+
+		// 1. Verify code exists in Redis for this office
+		const officeIdToUse = office_id || (officeConfig as any).id;
+		const redisKey = `checkin:office:${officeIdToUse}:code:${qr_code}`;
+		const ok = await redis.get(redisKey);
+		if (!ok) {
+			// increment strikes with sliding TTL (10 minutes)
+			await redis.multi().incr(strikesKey).expire(strikesKey, 600).exec();
+			const err: any = new Error('Invalid or expired code');
+			err.status = 400;
+			throw err;
+		}
+
+		// Consume the code to prevent reuse
+		await redis.del(redisKey);
+
+		// on success, clear strikes
+		await redis.del(strikesKey);
 
 		const distance = calculateDistance(
 			latitude,
@@ -109,12 +129,16 @@ export default class AttendanceService {
 	}
 
 	static async checkOut(dto: CheckInOutDTO) {
-		const { user_id: userId, qr_code, latitude, longitude } = dto;
-		// 1. Validate QR Code
-		const qrTimestamp = parseInt(qr_code);
-		const now = Date.now();
-		if (isNaN(qrTimestamp) || now - qrTimestamp > 30000) {
-			throw new Error("Invalid or expired QR code");
+		const { user_id: userId, qr_code, latitude, longitude, office_id } = dto;
+
+		// Rate limiting
+		const strikesKey = `checkin:strikes:${userId}`;
+		const strikesVal = await redis.get(strikesKey);
+		const strikes = strikesVal ? parseInt(strikesVal, 10) : 0;
+		if (strikes >= 3) {
+			const err: any = new Error('Too many failed check-out attempts');
+			err.status = 429;
+			throw err;
 		}
 
 		// 2. Resolve today's Schedule -> Workshift -> OfficeConfig for check-out validation
@@ -147,6 +171,21 @@ export default class AttendanceService {
 		if (!officeConfig) {
 			throw new Error("Office configuration not found");
 		}
+
+		// Verify code exists in Redis for this office
+		const officeIdToUse = office_id || (officeConfig as any).id;
+		const redisKey = `checkin:office:${officeIdToUse}:code:${qr_code}`;
+		const ok = await redis.get(redisKey);
+		if (!ok) {
+			await redis.multi().incr(strikesKey).expire(strikesKey, 600).exec();
+			const err: any = new Error('Invalid or expired code');
+			err.status = 400;
+			throw err;
+		}
+
+		// consume code and clear strikes
+		await redis.del(redisKey);
+		await redis.del(strikesKey);
 
 		const distance = calculateDistance(
 			latitude,
