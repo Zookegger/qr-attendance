@@ -4,7 +4,7 @@ import { Op } from "sequelize";
 import { startOfMonth, endOfMonth, format } from "date-fns";
 import bcrypt from "bcrypt";
 import { Gender, UserRole } from "@models/user";
-import { AddUserDTO, UpdateUserDTO, OfficeConfigDTO } from "@my-types/admin";
+import { AddUserDTO, UpdateUserDTO, AddOfficeConfigDTO, UpdateOfficeConfigDTO } from "@my-types/admin";
 import { listUserSessions } from "./refreshToken.service";
 
 export class AdminService {
@@ -14,40 +14,34 @@ export class AdminService {
 		return timestamp.toString();
 	}
 
-	static async getOfficeConfig() {
-		let config = await OfficeConfig.findOne();
-		if (!config) {
-			// Create default if not exists
-			config = await OfficeConfig.create({
-				latitude: 0,
-				longitude: 0,
-				radius: 100,
-				start_hour: "09:00",
-				end_hour: "18:00",
-			});
-		}
-		return config;
+	static async listOfficeConfig() {
+		return await OfficeConfig.findAll();
 	}
 
-	static async updateOfficeConfig(dto: OfficeConfigDTO) {
-		const { latitude, longitude, radius, start_hour, end_hour, wifi_ssid } = dto;
-		let config = await OfficeConfig.findOne();
+	static async updateOfficeConfig(dto: AddOfficeConfigDTO | UpdateOfficeConfigDTO, id?: string) {
+		let config = null;
+
+		if (id) {
+			config = await OfficeConfig.findByPk(id);
+		} else {
+			config = await OfficeConfig.findOne({ where: { name: dto.name } });
+		}
 
 		if (config) {
+			const { name, latitude, longitude, radius, wifi_ssid } = dto as UpdateOfficeConfigDTO;
+			if (name !== undefined) config.name = name;
 			if (latitude !== undefined) config.latitude = latitude;
 			if (longitude !== undefined) config.longitude = longitude;
 			if (radius !== undefined) config.radius = radius;
-			if (start_hour !== undefined) config.start_hour = start_hour;
-			if (end_hour !== undefined) config.end_hour = end_hour;
 			if (wifi_ssid !== undefined) config.wifi_ssid = wifi_ssid;
 			await config.save();
 		} else {
+			const { name, latitude, longitude, radius, wifi_ssid } = dto as AddOfficeConfigDTO;
 			config = await OfficeConfig.create({
+				name: name || 'Default Config',
 				latitude: latitude || 0,
 				longitude: longitude || 0,
 				radius: radius || 100,
-				start_hour: start_hour || "09:00",
-				end_hour: end_hour || "18:00",
 				wifi_ssid: wifi_ssid || null,
 			});
 		}

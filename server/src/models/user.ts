@@ -58,12 +58,11 @@ interface UserCreationAttributes
 		| "gender"
 		| "password_reset_token"
 		| "password_reset_expires"
-	> {}
+	> { }
 
-export class User
+export default class User
 	extends Model<UserAttributes, UserCreationAttributes>
-	implements UserAttributes
-{
+	implements UserAttributes {
 	public declare id: string;
 	public declare name: string;
 	public declare email: string;
@@ -183,6 +182,7 @@ User.init(
 	},
 	{
 		sequelize,
-		tableName: "users",
+		tableName: "users", 
+		timestamps: true,
 	}
 );

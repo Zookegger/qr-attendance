@@ -25,11 +25,18 @@ export interface UpdateUserDTO {
 	gender?: string;
 }
 
-export interface OfficeConfigDTO {
+export interface AddOfficeConfigDTO {
+	name: string;
+	latitude: number;
+	longitude: number;
+	radius?: number;
+	wifi_ssid: string;
+}
+
+export interface UpdateOfficeConfigDTO {
+	name?: string;
 	latitude?: number;
 	longitude?: number;
 	radius?: number;
-	start_hour?: string;
-	end_hour?: string;
 	wifi_ssid?: string;
 }

@@ -1,6 +1,26 @@
 import { Model, DataTypes, Optional } from "sequelize";
 import { sequelize } from "@config/database";
-import { User } from "./user";
+import User from "./user";
+
+export interface CheckInOutObject {
+	userId: string,
+	location: {
+		longitude: number,
+		latitude: number,
+	},
+	deviceUuid: string,
+	userAgent: string,
+	ipAddress: string,
+	wifiBssid: string,
+}
+
+export enum AttendanceStatus {
+	PRESENT = "Present", LATE = "LATE", ABSENT = "ABSENT"
+}
+
+export enum AttendanceMethod {
+	QR = "QR", MANUAL = "MANUAL",
+}
 
 interface AttendanceAttributes {
 	id: string;
@@ -8,11 +28,11 @@ interface AttendanceAttributes {
 	date: Date;
 	check_in_time?: Date | null;
 	check_out_time?: Date | null;
-	status: "Present" | "Late" | "Absent";
+	status: AttendanceStatus;
 	check_in_location?: object | null;
 	check_out_location?: object | null;
-	check_in_method?: "QR" | "Manual" | null;
-	check_out_method?: "QR" | "Manual" | null;
+	check_in_method?: AttendanceMethod;
+	check_out_method?: AttendanceMethod;
 }
 
 interface AttendanceCreationAttributes extends Optional<
@@ -24,22 +44,21 @@ interface AttendanceCreationAttributes extends Optional<
 	| "check_out_location"
 	| "check_in_method"
 	| "check_out_method"
-> {}
+> { }
 
-export class Attendance
+export default class Attendance
 	extends Model<AttendanceAttributes, AttendanceCreationAttributes>
-	implements AttendanceAttributes
-{
+	implements AttendanceAttributes {
 	declare public id: string;
 	declare public user_id: string;
 	declare public date: Date;
 	declare public check_in_time: Date | null;
 	declare public check_out_time: Date | null;
-	declare public status: "Present" | "Late" | "Absent";
+	declare public status: AttendanceStatus;
 	declare public check_in_location: object | null;
 	declare public check_out_location: object | null;
-	declare public check_in_method: "QR" | "Manual" | null;
-	declare public check_out_method: "QR" | "Manual" | null;
+	declare public check_in_method: AttendanceMethod;
+	declare public check_out_method: AttendanceMethod;
 
 	declare public readonly user?: User;
 
@@ -75,7 +94,7 @@ Attendance.init(
 			allowNull: true,
 		},
 		status: {
-			type: DataTypes.ENUM("Present", "Late", "Absent"),
+			type: DataTypes.ENUM(...Object.values(AttendanceStatus)),
 			defaultValue: "Absent",
 			allowNull: false,
 		},
@@ -88,17 +107,18 @@ Attendance.init(
 			allowNull: true,
 		},
 		check_in_method: {
-			type: DataTypes.ENUM("QR", "Manual"),
+			type: DataTypes.ENUM(...Object.values(AttendanceMethod)),
 			allowNull: true,
 		},
 		check_out_method: {
-			type: DataTypes.ENUM("QR", "Manual"),
+			type: DataTypes.ENUM(...Object.values(AttendanceMethod)),
 			allowNull: true,
 		},
 	},
 	{
 		sequelize,
-		tableName: "attendance",
+		tableName: "attendances",
+		timestamps: true,
 		indexes: [
 			{
 				unique: true,
