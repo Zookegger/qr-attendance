@@ -1,6 +1,6 @@
 export interface CheckInOutDTO {
   user_id: string;
-  qr_code: string;
+  code: string;
   latitude: number;
   longitude: number;
   office_id?: number;

@@ -75,7 +75,10 @@ export const initCronJobs = () => {
 	});
 
 	// Schedule QR heartbeat via BullMQ repeatable job (every 30s)
-	(async () => {
+
+	// Morning: start QR heartbeat every day at 06:00
+	scheduleTask("0 6 * * *", async () => {
+		logger.info("Starting QR heartbeat (06:00)");
 		try {
 			await qrCodeQueue.add(
 				"heartbeat",
@@ -86,11 +89,22 @@ export const initCronJobs = () => {
 					removeOnComplete: true,
 				}
 			);
-			logger.info("QR heartbeat job scheduled via cron.init");
+			logger.info("QR heartbeat job scheduled");
 		} catch (err) {
 			logger.error("Failed to schedule QR heartbeat job:", err);
 		}
-	})();
+	});
+
+	// Night: stop QR heartbeat every day at 22:00
+	scheduleTask("0 22 * * *", async () => {
+		logger.info("Stopping QR heartbeat (22:00)");
+		try {
+			await qrCodeQueue.removeRepeatable("heartbeat", { every: 30000, jobId: "qr:heartbeat" } as any);
+			logger.info("QR heartbeat job removed");
+		} catch (err) {
+			logger.error("Failed to remove QR heartbeat job:", err);
+		}
+	});
 };
 
 export const shutdownCronJobs = async () => {

@@ -17,12 +17,12 @@ const checkIn = async (req: Request, res: Response, next: NextFunction) => {
 			.json({ status: 403, message: "Unauthorized" });
 	}
 
-	const { qr_code, latitude, longitude } = req.body;
+	const { code, latitude, longitude } = req.body;
 
 	try {
 		const dto: CheckInOutDTO = {
 			user_id: user.id,
-			qr_code,
+			code,
 			latitude,
 			longitude,
 		};
@@ -49,12 +49,12 @@ const checkOut = async (req: Request, res: Response, next: NextFunction) => {
 			.json({ status: 403, message: "Unauthorized" });
 	}
 
-	const { qr_code, latitude, longitude } = req.body;
+	const { code, latitude, longitude } = req.body;
 
 	try {
 		const dto: CheckInOutDTO = {
 			user_id: user.id,
-			qr_code,
+			code,
 			latitude,
 			longitude,
 		};

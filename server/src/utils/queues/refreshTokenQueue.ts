@@ -1,5 +1,5 @@
 import { Queue } from "bullmq";
-import { redis } from "@config/index";
+import redis from "@config/redis";
 
 export const refreshTokenQueue = new Queue("refresh-tokens", {
 	connection: redis,

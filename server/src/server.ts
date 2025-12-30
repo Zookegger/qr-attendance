@@ -6,6 +6,8 @@ import { connectToDatabase } from "@config/database";
 import { initCronJobs, shutdownCronJobs } from "@services/cron.service";
 import { initSocket } from "@utils/socket";
 import "@utils/workers/qrCodeWorker"; // initialize QR worker (side-effect)
+import "@utils/workers/emailWorker";
+import "@utils/workers/refreshTokenWorker";
 import dotenv from "dotenv";
 import "@my-types/express";
 

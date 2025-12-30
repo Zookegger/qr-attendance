@@ -8,8 +8,8 @@ import { CheckInOutDTO } from '@my-types/attendance';
 import redis from '@config/redis';
 
 export default class AttendanceService {
-	static async checkIn(dto: CheckInOutDTO) {
-		const { user_id: userId, qr_code, latitude, longitude, office_id } = dto;
+		static async checkIn(dto: CheckInOutDTO) {
+			const { user_id: userId, code, latitude, longitude, office_id } = dto;
 
 		// 0. Rate limiting by strikes
 		const strikesKey = `checkin:strikes:${userId}`;
@@ -55,7 +55,7 @@ export default class AttendanceService {
 
 		// 1. Verify code exists in Redis for this office
 		const officeIdToUse = office_id || (officeConfig as any).id;
-		const redisKey = `checkin:office:${officeIdToUse}:code:${qr_code}`;
+		const redisKey = `checkin:office:${officeIdToUse}:code:${code}`;
 		const ok = await redis.get(redisKey);
 		if (!ok) {
 			// increment strikes with sliding TTL (10 minutes)
@@ -129,7 +129,7 @@ export default class AttendanceService {
 	}
 
 	static async checkOut(dto: CheckInOutDTO) {
-		const { user_id: userId, qr_code, latitude, longitude, office_id } = dto;
+		const { user_id: userId, code, latitude, longitude, office_id } = dto;
 
 		// Rate limiting
 		const strikesKey = `checkin:strikes:${userId}`;
@@ -174,7 +174,7 @@ export default class AttendanceService {
 
 		// Verify code exists in Redis for this office
 		const officeIdToUse = office_id || (officeConfig as any).id;
-		const redisKey = `checkin:office:${officeIdToUse}:code:${qr_code}`;
+		const redisKey = `checkin:office:${officeIdToUse}:code:${code}`;
 		const ok = await redis.get(redisKey);
 		if (!ok) {
 			await redis.multi().incr(strikesKey).expire(strikesKey, 600).exec();
