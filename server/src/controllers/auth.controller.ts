@@ -1,9 +1,12 @@
 import { NextFunction, Request, Response } from "express";
 import { AuthService } from "@services/auth.service";
+import { validationResult } from "express-validator";
+import { ChangePasswordDTO, LoginRequestDTO, LogoutRequestDTO, RefreshRequestDTO, ForgotPasswordRequestDTO, ResetPasswordRequestDTO } from "@my-types/auth";
 
 const login = async (req: Request, res: Response, next: NextFunction) => {
 	try {
-		const result = await AuthService.login(req.body);
+		const dto: LoginRequestDTO = req.body;
+		const result = await AuthService.login(dto.email, dto.password, dto.device_uuid);
 		return res.status(200).json(result);
 	} catch (error) {
 		return next(error);
@@ -12,8 +15,8 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
 
 const logout = async (req: Request, res: Response, next: NextFunction) => {
 	try {
-		const { refreshToken } = req.body;
-		await AuthService.logout(refreshToken);
+		const dto: LogoutRequestDTO = req.body;
+		await AuthService.logout(dto.refreshToken);
 		return res.status(200).json({ success: true, message: "Logged out successfully" });
 	} catch (error) {
 		return next(error);
@@ -22,8 +25,8 @@ const logout = async (req: Request, res: Response, next: NextFunction) => {
 
 const refresh = async (req: Request, res: Response, next: NextFunction) => {
 	try {
-		const { refreshToken } = req.body;
-		const result = await AuthService.refresh(refreshToken);
+		const dto: RefreshRequestDTO = req.body;
+		const result = await AuthService.refresh(dto.refreshToken);
 		return res.status(200).json(result);
 	} catch (error) {
 		return next(error);
@@ -33,6 +36,10 @@ const refresh = async (req: Request, res: Response, next: NextFunction) => {
 const me = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const user = (req as any).user;
+
+		// TODO: Check token expiry, if expired, revoke and sign out
+
+
 		if (!user) {
 			return res.status(401).json({ message: "Unauthorized" });
 		}
@@ -44,10 +51,8 @@ const me = async (req: Request, res: Response, next: NextFunction) => {
 
 const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
 	try {
-		const { email } = req.body;
-
-
-		await AuthService.forgotPassword(email);
+		const dto: ForgotPasswordRequestDTO = req.body;
+		await AuthService.forgotPassword(dto.email);
 		return res.status(200).json({ success: true, message: "Password reset email sent" });
 	} catch (error) {
 		return next(error);
@@ -90,18 +95,40 @@ const resetPasswordLanding = async (req: Request, res: Response, next: NextFunct
 
 const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
 	try {
-		const { email, token, newPassword } = req.body;
+		const dto: ResetPasswordRequestDTO = req.body;
 
-		if (!email || !token || !newPassword) {
+		if (!dto.email || !dto.token || !dto.newPassword) {
 			return res.status(400).json({ message: "Missing required fields" });
 		}
 
-		await AuthService.resetPassword(email, token, newPassword);
+		await AuthService.resetPassword(dto.email, dto.token, dto.newPassword);
 		return res.status(200).json({ success: true, message: "Password reset successfully" });
 	} catch (error) {
 		return next(error);
 	}
 };
+
+const changePassword = async (req: Request, res: Response, next: NextFunction) => {
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		return res.status(400).json({ errors: errors.array() });
+	}
+
+	try {
+		const user = (req as any).user;
+		if (!user) {
+			return res.status(401).json({ message: "Unauthorized" });
+		}
+
+		const dto: ChangePasswordDTO = req.body;
+		const { currentPassword, newPassword, confirmNewPassword } = dto;
+
+		await AuthService.changePassword(user.id, currentPassword, newPassword, confirmNewPassword);
+		return res.status(200).json({ success: true, message: "Password changed successfully" });
+	} catch (error) {
+		return next(error);
+	}
+}
 
 export const AuthController = {
 	login,
@@ -111,4 +138,5 @@ export const AuthController = {
 	forgotPassword,
 	resetPasswordLanding,
 	resetPassword,
+	changePassword
 };

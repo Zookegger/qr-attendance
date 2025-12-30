@@ -48,13 +48,31 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
 
       debugPrint(e.toString());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+
+      if (e.message.contains("bound to another device")) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Device Mismatch"),
+            content: const Text(
+                "Tài khoản này đã gắn với thiết bị khác. Vui lòng liên hệ Quản lý để mở khóa thiết bị (Unbind)."),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } catch (error) {
       if (!mounted) return;
 
