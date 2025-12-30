@@ -10,7 +10,8 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
+class _ProfilePageState extends State<ProfilePage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   User? _user;
 
@@ -36,9 +37,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     } catch (e) {
       // Handle error - maybe show snackbar
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load user data: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to load user data: $e')));
       }
     }
   }
@@ -91,10 +92,16 @@ class _UserInformationTabState extends State<UserInformationTab> {
     super.initState();
     _nameController = TextEditingController(text: widget.user.name);
     _emailController = TextEditingController(text: widget.user.email);
-    _phoneController = TextEditingController(text: widget.user.phoneNumber ?? '');
+    _phoneController = TextEditingController(
+      text: widget.user.phoneNumber ?? '',
+    );
     _addressController = TextEditingController(text: widget.user.address ?? '');
-    _positionController = TextEditingController(text: widget.user.position ?? '');
-    _departmentController = TextEditingController(text: widget.user.department ?? '');
+    _positionController = TextEditingController(
+      text: widget.user.position ?? '',
+    );
+    _departmentController = TextEditingController(
+      text: widget.user.department ?? '',
+    );
   }
 
   @override
@@ -185,7 +192,9 @@ class _UserInformationTabState extends State<UserInformationTab> {
             onPressed: () {
               // TODO: Implement save functionality
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Profile update not implemented yet')),
+                const SnackBar(
+                  content: Text('Profile update not implemented yet'),
+                ),
               );
             },
           ),
@@ -214,6 +223,17 @@ class _PasswordChangeTabState extends State<PasswordChangeTab> {
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  Future<void> handleSubmit () async {
+    if (_formKey.currentState!.validate()) {
+      // TODO: Implement password change functionality
+      
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password change not implemented yet')),
+      );
+    }
   }
 
   @override
@@ -289,12 +309,7 @@ class _PasswordChangeTabState extends State<PasswordChangeTab> {
             CommonButton(
               label: 'Change Password',
               onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  // TODO: Implement password change functionality
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Password change not implemented yet')),
-                  );
-                }
+                handleSubmit();
               },
             ),
           ],
