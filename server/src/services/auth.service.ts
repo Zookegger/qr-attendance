@@ -1,9 +1,9 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { Op } from "sequelize";
-import { User } from "@models";
+import { User, RefreshToken } from "@models";
 import { UserRole } from "@models/user";
-import { LoginDTO, AuthResponse } from "@my-types/auth";
+import { AuthResponse } from "@my-types/auth";
 import {
 	generateRefreshToken,
 	rotateRefreshToken,
@@ -13,30 +13,30 @@ import { emailQueue } from "@utils/queues/emailQueue";
 import { EmailService } from "./email.service";
 
 export class AuthService {
-	static async login(dto: LoginDTO): Promise<AuthResponse> {
-		const user = await User.findOne({ where: { email: dto.email } });
+	static async login(email: string, password: string, device_uuid?: string): Promise<AuthResponse> {
+		const user = await User.findOne({ where: { email } });
 		if (!user) {
 			throw new Error("Invalid credentials");
 		}
 
-		const isMatch = await bcrypt.compare(dto.password, user.password_hash);
+		const isMatch = await bcrypt.compare(password, user.password_hash);
 		if (!isMatch) {
 			throw new Error("Invalid credentials");
 		}
 
 		// Device Binding Check (Only for non-admin users)
 		if (user.role === UserRole.USER) {
-			if (!dto.device_uuid) {
+			if (!device_uuid) {
 				throw new Error("Device UUID is required for login");
 			}
 
-			if (user.device_uuid && user.device_uuid !== dto.device_uuid) {
+			if (user.device_uuid && user.device_uuid !== device_uuid) {
 				throw new Error("This account is bound to another device.");
 			}
 
 			// Bind device if not bound
 			if (!user.device_uuid) {
-				user.device_uuid = dto.device_uuid;
+				user.device_uuid = device_uuid;
 				await user.save();
 			}
 		}
@@ -66,8 +66,6 @@ export class AuthService {
 	}
 
 	static async forgotPassword(email: string): Promise<void> {
-		// TODO: Implement Email Queue
-
 		if (!email) {
 			throw { status: 400, message: "" };
 		}
@@ -133,6 +131,9 @@ export class AuthService {
 		user.password_reset_token = null;
 		user.password_reset_expires = null;
 		await user.save();
+
+		// Revoke all sessions
+		await RefreshToken.destroy({ where: { user_id: user.id } });
 	}
 
 	static async refresh(tokenString: string): Promise<AuthResponse> {
@@ -152,5 +153,51 @@ export class AuthService {
 				device_uuid: user.device_uuid,
 			},
 		};
+	}
+
+	static async changePassword(userId: string, currentPassword: string, newPassword: string, confirmNewPassword: string): Promise<void> {
+		// Validate input
+		if (!userId || !currentPassword || !newPassword || !confirmNewPassword) {
+			throw new Error("All fields are required");
+		}
+
+		// Validate password strength
+		if (newPassword.length < 6) {
+			throw new Error("New password must be at least 6 characters long");
+		}
+
+		// Check if new password and confirmation match
+		if (newPassword !== confirmNewPassword) {
+			throw new Error("New password and confirmation do not match");
+		}
+
+		// Find the user
+		const user = await User.findByPk(userId);
+		if (!user) {
+			throw new Error("User not found");
+		}
+
+		// Verify current password
+		const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
+		if (!isCurrentPasswordValid) {
+			throw new Error("Current password is incorrect");
+		}
+
+		// Check if new password is different from current
+		const isSameAsCurrent = await bcrypt.compare(newPassword, user.password_hash);
+		if (isSameAsCurrent) {
+			throw new Error("New password must be different from current password");
+		}
+
+		// Hash the new password
+		const salt = await bcrypt.genSalt(10);
+		const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+
+		// Update the user's password
+		user.password_hash = hashedNewPassword;
+		await user.save();
+
+		// Revoke all sessions
+		await RefreshToken.destroy({ where: { user_id: user.id } });
 	}
 }

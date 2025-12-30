@@ -1,46 +1,41 @@
-import { Request, Response } from "express";
-import { OfficeConfig, Attendance, User, UserStatus } from "@models";
-import ExcelJS from "exceljs";
-import { Op } from "sequelize";
-import { startOfMonth, endOfMonth, format } from "date-fns";
-import bcrypt from "bcrypt";
+import { NextFunction, Request, Response } from "express";
+import { AdminService } from "@services/admin.service";
 import { UserRole } from "@models/user";
+import { validationResult } from "express-validator";
+import logger from "@utils/logger";
 
-// TODO: Put info into here so admin can generate QR code from attendace info
-async function generateQR(req: Request, res: Response) {
-	const user = req.user;
-	if (!user) {
-		return res.status(403).json({ status: 403, message: "Unauthorized" });
-	}
-	// In a real app, this should be encrypted
-	const timestamp = Date.now();
-	return res.json({ qr_code: timestamp.toString() });
-}
-
-async function getOfficeConfig(req: Request, res: Response) {
+const generateQR = async (req: Request, res: Response, next: NextFunction) => {
 	const user = req.user;
 	if (!user) {
 		return res.status(403).json({ status: 403, message: "Unauthorized" });
 	}
 	try {
-		let config = await OfficeConfig.findOne();
-		if (!config) {
-			// Create default if not exists
-			config = await OfficeConfig.create({
-				latitude: 0,
-				longitude: 0,
-				radius: 100,
-				start_hour: "09:00",
-				end_hour: "18:00",
-			});
-		}
+		const qr_code = await AdminService.generateQR();
+		return res.json({ qr_code });
+	} catch (error) {
+		return next(error);
+	}
+};
+
+const getOfficeConfig = async (req: Request, res: Response, next: NextFunction) => {
+	const user = req.user;
+	if (!user) {
+		return res.status(403).json({ status: 403, message: "Unauthorized" });
+	}
+	try {
+		let config = await AdminService.getOfficeConfig();
 		return res.json(config);
 	} catch (error) {
-		return res.status(500).json({ message: "Server error", error });
+		return next(error);
 	}
-}
+};
 
-async function updateOfficeConfig(req: Request, res: Response) {
+const updateOfficeConfig = async (req: Request, res: Response, next: NextFunction) => {
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		return res.status(400).json({ errors: errors.array() });
+	}
+
 	const user = req.user;
 	if (!user) {
 		return res.status(403).json({ status: 403, message: "Unauthorized" });
@@ -48,34 +43,22 @@ async function updateOfficeConfig(req: Request, res: Response) {
 	try {
 		const { latitude, longitude, radius, start_hour, end_hour, wifi_ssid } =
 			req.body;
-		let config = await OfficeConfig.findOne();
 
-		if (config) {
-			config.latitude = latitude;
-			config.longitude = longitude;
-			config.radius = radius;
-			config.start_hour = start_hour;
-			config.end_hour = end_hour;
-			config.wifi_ssid = wifi_ssid;
-			await config.save();
-		} else {
-			config = await OfficeConfig.create({
-				latitude,
-				longitude,
-				radius,
-				start_hour,
-				end_hour,
-				wifi_ssid,
-			});
-		}
-
+		const config = await AdminService.updateOfficeConfig({
+			latitude,
+			longitude,
+			radius,
+			start_hour,
+			end_hour,
+			wifi_ssid,
+		});
 		return res.json({ message: "Configuration updated", config });
 	} catch (error) {
-		return res.status(500).json({ message: "Server error", error });
+		return next(error);
 	}
-}
+};
 
-async function exportReport(req: Request, res: Response) {
+const exportReport = async (req: Request, res: Response, next: NextFunction) => {
 	const user = req.user;
 	if (!user) {
 		return res.status(403).json({ status: 403, message: "Unauthorized" });
@@ -83,64 +66,7 @@ async function exportReport(req: Request, res: Response) {
 	try {
 		const { month, year } = req.query;
 
-		if (!month || !year) {
-			return res
-				.status(400)
-				.json({ message: "Month and Year are required" });
-		}
-
-		const reportDate = new Date(Number(year), Number(month) - 1);
-		const startDate = startOfMonth(reportDate);
-		const endDate = endOfMonth(reportDate);
-
-		const attendances = await Attendance.findAll({
-			where: {
-				date: {
-					[Op.between]: [
-						format(startDate, "yyyy-MM-dd"),
-						format(endDate, "yyyy-MM-dd"),
-					],
-				},
-			},
-			include: [
-				{
-					model: User,
-					as: "user",
-					attributes: ["name", "email", "department"],
-				},
-			],
-			order: [["date", "ASC"]],
-		});
-
-		const workbook = new ExcelJS.Workbook();
-		const worksheet = workbook.addWorksheet("Attendance Report");
-
-		worksheet.columns = [
-			{ header: "Date", key: "date", width: 15 },
-			{ header: "Employee Name", key: "name", width: 25 },
-			{ header: "Email", key: "email", width: 25 },
-			{ header: "Department", key: "department", width: 20 },
-			{ header: "Check In", key: "check_in", width: 15 },
-			{ header: "Check Out", key: "check_out", width: 15 },
-			{ header: "Status", key: "status", width: 15 },
-		];
-
-		attendances.forEach((record) => {
-			const user = record.user as unknown as User; // Type assertion
-			worksheet.addRow({
-				date: record.date,
-				name: user?.name || "Unknown",
-				email: user?.email || "Unknown",
-				department: user?.department || "N/A",
-				check_in: record.check_in_time
-					? new Date(record.check_in_time).toLocaleTimeString()
-					: "-",
-				check_out: record.check_out_time
-					? new Date(record.check_out_time).toLocaleTimeString()
-					: "-",
-				status: record.status,
-			});
-		});
+		const workbook = await AdminService.exportReport(month as string, year as string);
 
 		res.setHeader(
 			"Content-Type",
@@ -154,11 +80,16 @@ async function exportReport(req: Request, res: Response) {
 		await workbook.xlsx.write(res);
 		return res.end();
 	} catch (error) {
-		return res.status(500).json({ message: "Server error", error });
+		return next(error);
 	}
-}
+};
 
-async function addUser(req: Request, res: Response) {
+const addUser = async (req: Request, res: Response, next: NextFunction) => {
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		return res.status(400).json({ errors: errors.array() });
+	}
+
 	const currentUser = req.user;
 	if (!currentUser || currentUser.role !== UserRole.ADMIN) {
 		return res.status(403).json({ message: "Unauthorized" });
@@ -178,19 +109,11 @@ async function addUser(req: Request, res: Response) {
 			gender,
 		} = req.body;
 
-		const existingUser = await User.findOne({ where: { email } });
-		if (existingUser) {
-			return res.status(400).json({ message: "User already exists" });
-		}
-
-		const salt = await bcrypt.genSalt(10);
-		const password_hash = await bcrypt.hash(password, salt);
-
-		const user = await User.create({
+		const user = await AdminService.addUser({
 			name,
 			email,
-			password_hash,
-			role: role || "user",
+			password,
+			role,
 			position,
 			department,
 			date_of_birth,
@@ -201,26 +124,50 @@ async function addUser(req: Request, res: Response) {
 
 		return res.status(201).json({
 			message: "User created successfully",
-			user: {
-				id: user.id,
-				name: user.name,
-				email: user.email,
-				status: user.status,
-				role: user.role,
-				position: user.position,
-				department: user.department,
-				date_of_birth: user.date_of_birth,
-				phone_number: user.phone_number,
-				address: user.address,
-				gender: user.gender,
-			},
+			user,
 		});
 	} catch (error) {
-		return res.status(500).json({ message: "Server error", error });
+		return next(error);
 	}
-}
+};
 
-async function updateUser(req: Request, res: Response) {
+const findUserByID = async (req: Request, res: Response, next: NextFunction) => {
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		return res.status(400).json({ errors: errors.array() });
+	}
+
+	const currentUser = req.user;
+	if (!currentUser || currentUser.role !== UserRole.ADMIN) {
+		return res.status(403).json({ message: "Unauthorized" });
+	}
+
+	const { id } = req.params;
+
+	if (!id) {
+		return res.status(400).json({ message: "No ID provided" });
+	}
+
+	try {
+		const user = await AdminService.getUserById(id);
+
+		logger.debug(user);
+
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
+		return res.status(200).json({ user, message: "User found" });
+	} catch (error) {
+		return next(error);
+	}
+};
+
+const updateUser = async (req: Request, res: Response, next: NextFunction) => {
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		return res.status(400).json({ errors: errors.array() });
+	}
+
 	const currentUser = req.user;
 	if (!currentUser || currentUser.role !== UserRole.ADMIN) {
 		return res.status(403).json({ message: "Unauthorized" });
@@ -242,79 +189,49 @@ async function updateUser(req: Request, res: Response) {
 			gender,
 		} = req.body;
 
-		const user = await User.findByPk(id);
-		if (!user) {
-			return res.status(404).json({ message: "User not found" });
-		}
-
-		if (email && email !== user.email) {
-			const existingUser = await User.findOne({ where: { email } });
-			if (existingUser) {
-				return res
-					.status(400)
-					.json({ message: "Email already in use" });
-			}
-			user.email = email;
-		}
-
-		if (name) user.name = name;
-		if (role) user.role = role;
-		if (position) user.position = position;
-		if (department) user.department = department;
-		if (status && Object.values(UserStatus).includes(status)) {
-			user.status = status;
-		}
-		if (date_of_birth) user.date_of_birth = date_of_birth;
-		if (phone_number) user.phone_number = phone_number;
-		if (address) user.address = address;
-		if (gender) user.gender = gender;
-
-		if (password) {
-			const salt = await bcrypt.genSalt(10);
-			user.password_hash = await bcrypt.hash(password, salt);
-		}
-
-		await user.save();
+		const user = await AdminService.updateUser(id as string, {
+			name,
+			email,
+			password,
+			role,
+			position,
+			department,
+			status,
+			date_of_birth,
+			phone_number,
+			address,
+			gender,
+		});
 
 		return res.status(200).json({
 			message: "User updated successfully",
-			user: {
-				id: user.id,
-				name: user.name,
-				status: user.status,
-				email: user.email,
-				role: user.role,
-				position: user.position,
-				department: user.department,
-				date_of_birth: user.date_of_birth,
-				phone_number: user.phone_number,
-				address: user.address,
-				gender: user.gender,
-			},
+			user,
 		});
 	} catch (error) {
-		return res.status(500).json({ message: "Server error", error });
+		return next(error);
 	}
-}
+};
 
-async function listUsers(req: Request, res: Response) {
+const listUsers = async (req: Request, res: Response, next: NextFunction) => {
 	const currentUser = req.user;
 	if (!currentUser || currentUser.role !== UserRole.ADMIN) {
 		return res.status(403).json({ message: "Unauthorized" });
 	}
 
 	try {
-		const users = await User.findAll({
-			attributes: { exclude: ["password_hash"] },
-			order: [["createdAt", "DESC"]],
-		});
+		const users = await AdminService.listUsers();
 		return res.json(users);
 	} catch (error) {
-		return res.status(500).json({ message: "Server error", error });
+		return next(error);
 	}
-}
+};
 
-async function deleteUser(req: Request, res: Response) {
+const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		return res.status(400).json({ errors: errors.array() });
+	}
+
 	const currentUser = req.user;
 	if (!currentUser || currentUser.role !== UserRole.ADMIN) {
 		return res.status(403).json({ message: "Unauthorized" });
@@ -322,25 +239,70 @@ async function deleteUser(req: Request, res: Response) {
 
 	try {
 		const { id } = req.params;
-		const user = await User.findByPk(id);
-
-		if (!user) {
-			return res.status(404).json({ message: "User not found" });
-		}
-
-		// Prevent deleting self
-		if (currentUser.id === user.id) {
-			return res
-				.status(400)
-				.json({ message: "Cannot delete your own account" });
-		}
-
-		await user.destroy();
+		await AdminService.deleteUser(id as string, currentUser.id);
 		return res.json({ message: "User deleted successfully" });
 	} catch (error) {
-		return res.status(500).json({ message: "Server error", error });
+		return next(error);
 	}
-}
+};
+
+const listUserSession = async (_req: Request, res: Response, next: NextFunction) => {
+	const errors = validationResult(_req);
+	if (!errors.isEmpty()) {
+		return res.status(400).json({ errors: errors.array() });
+	}
+
+	const currentUser = _req.user;
+	if (!currentUser || currentUser.role !== UserRole.ADMIN) {
+		return res.status(403).json({ message: "Unauthorized" });
+	}
+
+	try {
+		const { id } = _req.params;
+		const sessions = await AdminService.listUserSessions(id as string);
+		return res.json(sessions);
+	} catch (error) {
+		return next(error);
+	}
+};
+
+const revokeUserSession = async (_req: Request, res: Response, next: NextFunction) => {
+	const errors = validationResult(_req);
+	if (!errors.isEmpty()) {
+		return res.status(400).json({ errors: errors.array() });
+	}
+
+	const currentUser = _req.user;
+	if (!currentUser || currentUser.role !== UserRole.ADMIN) {
+		return res.status(403).json({ message: "Unauthorized" });
+	}
+
+	try {
+		const { id } = _req.params;
+		await AdminService.revokeUserSession(id as string);
+		return res.json({ message: "Session revoked successfully" });
+	} catch (error) {
+		return next(error);
+	}
+};
+
+const unbindDevice = async (req: Request, res: Response, next: NextFunction) => {
+	const user = req.user;
+	if (!user) {
+		return res.status(403).json({ status: 403, message: "Unauthorized" });
+	}
+	const { userId } = req.body;
+	if (!userId) {
+		return res.status(400).json({ message: "User ID is required" });
+	}
+
+	try {
+		const result = await AdminService.unbindDevice(userId);
+		return res.json(result);
+	} catch (error) {
+		return next(error);
+	}
+};
 
 export const AdminController = {
 	generateQR,
@@ -348,7 +310,11 @@ export const AdminController = {
 	updateOfficeConfig,
 	exportReport,
 	addUser,
+	findUserByID,
 	updateUser,
 	listUsers,
 	deleteUser,
+	listUserSession,
+	revokeUserSession,
+	unbindDevice,
 };

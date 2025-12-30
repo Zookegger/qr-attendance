@@ -1,5 +1,6 @@
 import cron from "node-cron";
-import { User, Attendance } from "@models";
+import { Op } from "sequelize";
+import { User, Attendance, RefreshToken } from "@models";
 import logger from "@utils/logger";
 
 export const initCronJobs = () => {
@@ -38,6 +39,23 @@ export const initCronJobs = () => {
 			logger.info("Daily absentee check completed.");
 		} catch (error) {
 			logger.error("Error running daily absentee check:", error);
+		}
+	});
+
+	// Run every week on Sunday at 00:00
+	cron.schedule("0 0 * * 0", async () => {
+		logger.info("Running weekly token cleanup...");
+		try {
+			const result = await RefreshToken.destroy({
+				where: {
+					expires_at: {
+						[Op.lt]: new Date(),
+					},
+				},
+			});
+			logger.info(`Deleted ${result} expired refresh tokens.`);
+		} catch (error) {
+			logger.error("Error running weekly token cleanup:", error);
 		}
 	});
 };

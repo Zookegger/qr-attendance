@@ -4,6 +4,7 @@ import 'dart:async';
 
 import '../../models/user.dart';
 import '../../services/auth.service.dart';
+import '../../services/admin.service.dart';
 
 class HomePage extends StatefulWidget {
   final bool isPreview;
@@ -77,11 +78,7 @@ class _HomePageState extends State<HomePage> {
                 title: const Text('Profile'),
                 onTap: () {
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Profile screen is not available yet.'),
-                    ),
-                  );
+                  Navigator.of(context).pushNamed('/profile');
                 },
               ),
               ListTile(
@@ -329,6 +326,50 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _showUnbindDialog() {
+    final userIdController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Unbind Device"),
+        content: TextField(
+          controller: userIdController,
+          decoration: const InputDecoration(labelText: "User ID"),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              final userId = userIdController.text.trim();
+              if (userId.isNotEmpty) {
+                try {
+                  await AdminService().unbindDevice(userId);
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text("Device unbound successfully")),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Failed to unbind device: $e")),
+                    );
+                  }
+                }
+              }
+            },
+            child: const Text("Unbind"),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildManagerQuickActions() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -355,11 +396,11 @@ class _HomePageState extends State<HomePage> {
           () {},
         ),
         _buildQuickActionButton(
-          "Schedule",
-          Icons.calendar_today,
+          "Unbind",
+          Icons.phonelink_erase,
           36,
-          Colors.green,
-          () {},
+          Colors.red,
+          _showUnbindDialog,
         ),
       ],
     );

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { User } from "@models";
+import { UserRole } from "@models/user";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key";
 
@@ -41,13 +42,13 @@ export const authenticate = async (
 	}
 };
 
-export const authorize = (roles: string[]) => {
+export const authorize = (roles: UserRole[]) => {
 	return (req: Request, res: Response, next: NextFunction) => {
 		if (!req.user) {
 			return res.status(401).json({ message: "Unauthorized" });
 		}
 
-		if (!roles.includes((req as any).user.role)) {
+		if (!roles.includes(req.user.role)) {
 			return res.status(403).json({ message: "Forbidden" });
 		}
 
