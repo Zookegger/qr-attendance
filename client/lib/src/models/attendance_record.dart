@@ -1,5 +1,5 @@
 class AttendanceRecord {
-  final String id;
+  final int id;
   final DateTime date;
   final DateTime? checkInTime;
   final DateTime? checkOutTime;
@@ -30,7 +30,7 @@ class AttendanceRecord {
     final rawId = json['id'];
     final rawDate = json['date'];
     return AttendanceRecord(
-      id: rawId is String ? rawId : '',
+      id: rawId is int ? rawId : (int.tryParse(rawId.toString()) ?? 0),
       date: rawDate != null
           ? DateTime.parse(rawDate as String)
           : DateTime.now(),

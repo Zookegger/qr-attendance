@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { Op } from "sequelize";
 import { User, Attendance, RefreshToken } from "@models";
 import logger from "@utils/logger";
+import { AttendanceMethod, AttendanceStatus } from "@models/attendance";
 
 export const initCronJobs = () => {
 	// Run every day at 23:59
@@ -27,9 +28,9 @@ export const initCronJobs = () => {
 					await Attendance.create({
 						user_id: user.id,
 						date: today,
-						status: "Absent",
-						check_in_method: null,
-						check_out_method: null,
+						status: AttendanceStatus.ABSENT,
+						check_in_method: AttendanceMethod.NONE,
+						check_out_method: AttendanceMethod.NONE,
 					});
 					logger.info(
 						`Marked user ${user.id} as Absent for ${today}`

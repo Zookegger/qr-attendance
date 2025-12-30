@@ -1,6 +1,7 @@
 import { Model, DataTypes, Optional } from "sequelize";
 import { sequelize } from "@config/database";
 import User from "./user";
+import Schedule from "./schedule";
 
 export interface CheckInOutObject {
 	userId: string,
@@ -19,13 +20,15 @@ export enum AttendanceStatus {
 }
 
 export enum AttendanceMethod {
-	QR = "QR", MANUAL = "MANUAL",
+	QR = "QR", MANUAL = "MANUAL", NONE = "NONE",
 }
 
 interface AttendanceAttributes {
-	id: string;
+	id: number;
 	user_id: string;
 	date: Date;
+	schedule_id?: number | null;
+	request_id?: string | null;
 	check_in_time?: Date | null;
 	check_out_time?: Date | null;
 	status: AttendanceStatus;
@@ -49,9 +52,11 @@ interface AttendanceCreationAttributes extends Optional<
 export default class Attendance
 	extends Model<AttendanceAttributes, AttendanceCreationAttributes>
 	implements AttendanceAttributes {
-	declare public id: string;
+	declare public id: number;
 	declare public user_id: string;
 	declare public date: Date;
+	declare public schedule_id?: number | null;
+	declare public request_id?: string | null;
 	declare public check_in_time: Date | null;
 	declare public check_out_time: Date | null;
 	declare public status: AttendanceStatus;
@@ -61,6 +66,8 @@ export default class Attendance
 	declare public check_out_method: AttendanceMethod;
 
 	declare public readonly user?: User;
+	declare public readonly schedule?: Schedule;
+	declare public readonly request?: Request; 
 
 	declare public readonly createdAt: Date;
 	declare public readonly updatedAt: Date;
@@ -69,8 +76,8 @@ export default class Attendance
 Attendance.init(
 	{
 		id: {
-			type: DataTypes.UUID,
-			defaultValue: DataTypes.UUIDV4,
+			type: DataTypes.INTEGER.UNSIGNED,
+			autoIncrement: true,
 			primaryKey: true,
 		},
 		user_id: {
@@ -84,6 +91,22 @@ Attendance.init(
 		date: {
 			type: DataTypes.DATEONLY,
 			allowNull: false,
+		},
+		schedule_id: {
+			type: DataTypes.INTEGER.UNSIGNED,
+			allowNull: true,
+			references: {
+				model: 'schedules',
+				key: 'id',
+			},
+		},
+		request_id: {
+			type: DataTypes.UUID,
+			allowNull: true,
+			references: {
+				model: 'requests',
+				key: 'id',
+			},
 		},
 		check_in_time: {
 			type: DataTypes.DATE,

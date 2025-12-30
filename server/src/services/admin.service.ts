@@ -7,7 +7,7 @@ import { Gender, UserRole } from "@models/user";
 import { AddUserDTO, UpdateUserDTO, AddOfficeConfigDTO, UpdateOfficeConfigDTO } from "@my-types/admin";
 import { listUserSessions } from "./refreshToken.service";
 
-export class AdminService {
+export default class AdminService {
 	static async generateQR(): Promise<string> {
 		// In a real app, this should be encrypted
 		const timestamp = Date.now();
@@ -24,7 +24,7 @@ export class AdminService {
 		if (id) {
 			config = await OfficeConfig.findByPk(id);
 		} else {
-			config = await OfficeConfig.findOne({ where: { name: dto.name } });
+			config = await OfficeConfig.findOne({ where: { name: (dto as any).name } });
 		}
 
 		if (config) {

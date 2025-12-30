@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { validationResult } from "express-validator";
-import { RequestService } from "@services/request.service";
+import RequestService from "@services/request.service";
 import { CreateRequestDTO } from "@my-types/request";
 
 const createRequest = async (

@@ -2,7 +2,7 @@ import { DataTypes, Model, Optional } from "sequelize";
 import sequelize from "@config/database";
 
 interface WorkshiftAttributes {
-   id: string;
+   id: number;
    name: string;
    startTime: Date;
    endTime: Date;
@@ -10,12 +10,13 @@ interface WorkshiftAttributes {
    breakStart: Date;
    breakEnd: Date;
    workDays: number[];
+   office_config_id?: number | null;
 }
 
 interface WorkshifCreationAttributes extends Optional<WorkshiftAttributes, 'id'> { }
 
 export default class Workshift extends Model<WorkshiftAttributes, WorkshifCreationAttributes> implements WorkshiftAttributes {
-   declare public id: string;
+   declare public id: number;
    declare public name: string;
    declare public startTime: Date;
    declare public endTime: Date;
@@ -23,6 +24,7 @@ export default class Workshift extends Model<WorkshiftAttributes, WorkshifCreati
    declare public breakStart: Date;
    declare public breakEnd: Date;
    declare public workDays: number[];
+   declare public office_config_id?: number | null;
 
    declare public readonly createdAt: Date;
    declare public readonly updatedAt: Date;
@@ -30,8 +32,8 @@ export default class Workshift extends Model<WorkshiftAttributes, WorkshifCreati
 
 Workshift.init({
    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
+      type: DataTypes.INTEGER.UNSIGNED,
+      autoIncrement: true,
       primaryKey: true,
    },
    name: {
@@ -61,6 +63,14 @@ Workshift.init({
    workDays: {
       type: DataTypes.JSON,
       defaultValue: [],
+   },
+   office_config_id: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: true,
+      references: {
+         model: 'office_configs',
+         key: 'id',
+      },
    }
 }, {
    sequelize,

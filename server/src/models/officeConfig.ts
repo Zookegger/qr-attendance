@@ -2,7 +2,7 @@ import { Model, DataTypes, Optional } from "sequelize";
 import { sequelize } from "@config/database";
 
 interface OfficeConfigAttributes {
-	id: string;
+	id: number;
 	name: string;
 	latitude: number;
 	longitude: number;
@@ -18,7 +18,7 @@ interface OfficeConfigCreationAttributes extends Optional<
 export default class OfficeConfig
 	extends Model<OfficeConfigAttributes, OfficeConfigCreationAttributes>
 	implements OfficeConfigAttributes {
-	declare public id: string;
+	declare public id: number;
 	declare public name: string;
 	declare public latitude: number;
 	declare public longitude: number;
@@ -32,8 +32,8 @@ export default class OfficeConfig
 OfficeConfig.init(
 	{
 		id: {
-			type: DataTypes.UUID,
-			defaultValue: DataTypes.UUIDV4,
+			type: DataTypes.INTEGER.UNSIGNED,
+			autoIncrement: true,
 			primaryKey: true,
 		},
 		name: {

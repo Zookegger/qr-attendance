@@ -1,9 +1,9 @@
 import { User } from "@models";
-import { RequestModel } from "@models/request";
+import RequestModel from "@models/request";
 import { UserRole } from "@models/user";
 import { CreateRequestDTO, ReviewRequestDTO, RequestResponse } from "@my-types/request";
 
-export class RequestService {
+export default class RequestService {
 	static async createRequest(
 		dto: CreateRequestDTO
 	): Promise<RequestResponse> {

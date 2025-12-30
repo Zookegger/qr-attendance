@@ -1,6 +1,6 @@
 // import { format } from "date-fns";
 
-export class HealthService {
+export default class HealthService {
 	formatMemoryUsage = (usage: NodeJS.MemoryUsage) => {
 		const toMB = (bytes: number) => (bytes / 1024 / 1024).toFixed(2) + "MB";
 		return Object.fromEntries(

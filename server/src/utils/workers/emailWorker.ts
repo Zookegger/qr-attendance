@@ -9,7 +9,7 @@ import { Worker, Job } from "bullmq";
 import redis from "@config/redis";
 import { EmailJobData } from "@utils/queues/emailQueue";
 import logger from "@utils/logger";
-import { EmailService } from "@services/email.service";
+import EmailService from "@services/email.service";
 
 /**
  * BullMQ email worker instance.

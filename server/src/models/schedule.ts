@@ -4,9 +4,9 @@ import User from './user';
 import Workshift from './workshift';
 
 interface ScheduleAttributes {
-   id: string;
+   id: number;
    user_id: string;
-   shift_id: string;
+   shift_id: number;
    start_date: string;
    end_date?: string | null;
 }
@@ -14,13 +14,13 @@ interface ScheduleAttributes {
 interface ScheduleCreationAttributes extends Optional<ScheduleAttributes, 'id'> { }
 
 class Schedule extends Model<ScheduleAttributes, ScheduleCreationAttributes> implements ScheduleAttributes {
-   public declare id: string;
+   public declare id: number;
    public declare user_id: string;
-   public declare shift_id: string;
+   public declare shift_id: number;
    public declare start_date: string;
    public declare end_date?: string | null;
 
-   // Association mixins (để TypeScript hiểu khi include)
+   // Association mixins
    public declare Shift?: Workshift;
    public declare User?: User;
 
@@ -30,12 +30,12 @@ class Schedule extends Model<ScheduleAttributes, ScheduleCreationAttributes> imp
 
 Schedule.init({
    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
+      type: DataTypes.INTEGER.UNSIGNED,
+      autoIncrement: true,
       primaryKey: true,
    },
    user_id: { type: DataTypes.UUID, allowNull: false },
-   shift_id: { type: DataTypes.UUID, allowNull: false },
+   shift_id: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
    start_date: { type: DataTypes.DATEONLY, allowNull: false },
    end_date: { type: DataTypes.DATEONLY, allowNull: true },
 }, {
@@ -45,8 +45,7 @@ Schedule.init({
    timestamps: true,
 });
 
-// Setup Associations (Quan trọng)
-Schedule.belongsTo(Workshift, { foreignKey: 'shift_id', as: 'Shift' });
+// Setup Associations (defined centrally in models/index.ts)
 Schedule.belongsTo(User, { foreignKey: 'user_id', as: 'User' });
 
 export default Schedule;

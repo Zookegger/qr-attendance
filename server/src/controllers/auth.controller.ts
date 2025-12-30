@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { AuthService } from "@services/auth.service";
+import AuthService from "@services/auth.service";
 import { validationResult } from "express-validator";
 import { ChangePasswordDTO, LoginRequestDTO, LogoutRequestDTO, RefreshRequestDTO, ForgotPasswordRequestDTO, ResetPasswordRequestDTO } from "@my-types/auth";
 

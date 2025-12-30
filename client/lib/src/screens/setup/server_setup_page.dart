@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:dio/dio.dart';
 import 'package:qr_attendance_frontend/src/consts/api_endpoints.dart';
+import "../../services/health.service.dart";
 import '../../services/config.service.dart';
 
 class ServerSetupPage extends StatefulWidget {
@@ -55,19 +56,8 @@ class _ServerSetupPageState extends State<ServerSetupPage> {
 
       // Verify health of the saved host
       setState(() => _isConnecting = true);
-      final dio = Dio(
-        BaseOptions(
-          baseUrl: saved,
-          connectTimeout: const Duration(seconds: 8),
-          receiveTimeout: const Duration(seconds: 8),
-          headers: const {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-        ),
-      );
 
-      final response = await dio.get(ApiEndpoints.health);
+      final response = await HealthService.checkOnce(8);
       if (response.statusCode == 200) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

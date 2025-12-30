@@ -10,9 +10,9 @@ import {
 	revokeRefreshToken,
 } from "./refreshToken.service";
 import { emailQueue } from "@utils/queues/emailQueue";
-import { EmailService } from "./email.service";
+import EmailService from "./email.service";
 
-export class AuthService {
+export default class AuthService {
 	static async login(email: string, password: string, device_uuid?: string): Promise<AuthResponse> {
 		const user = await User.findOne({ where: { email } });
 		if (!user) {
