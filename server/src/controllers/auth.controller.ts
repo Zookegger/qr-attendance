@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 import AuthService from "@services/auth.service";
 import { validationResult } from "express-validator";
-import { ChangePasswordDTO, LoginRequestDTO, LogoutRequestDTO, RefreshRequestDTO, ForgotPasswordRequestDTO, ResetPasswordRequestDTO } from "@my-types/auth";
+import { ChangePasswordRequestDTO, LoginRequestDTO, LogoutRequestDTO, RefreshRequestDTO, ForgotPasswordRequestDTO, ResetPasswordRequestDTO } from "@my-types/auth";
 import { RefreshToken, User } from "@models";
 
 const login = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const dto: LoginRequestDTO = req.body;
-		const result = await AuthService.login(dto.email, dto.password, dto.device_uuid);
+		const result = await AuthService.login(dto.email, dto.password, dto.device_uuid, dto.device_name, dto.device_model, dto.device_os_version);
 		return res.status(200).json(result);
 	} catch (error) {
 		return next(error);
@@ -154,7 +154,7 @@ const changePassword = async (req: Request, res: Response, next: NextFunction) =
 			return res.status(401).json({ message: "Unauthorized" });
 		}
 
-		const dto: ChangePasswordDTO = req.body;
+		const dto: ChangePasswordRequestDTO = req.body;
 		const { currentPassword, newPassword, confirmNewPassword } = dto;
 
 		await AuthService.changePassword(user.id, currentPassword, newPassword, confirmNewPassword);

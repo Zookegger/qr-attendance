@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 
 import 'package:qr_attendance_frontend/src/models/request.dart';
 import 'package:qr_attendance_frontend/src/models/user.dart';
-import 'package:qr_attendance_frontend/src/services/RequestService.dart';
+import 'package:qr_attendance_frontend/src/services/request.service.dart';
 import 'package:qr_attendance_frontend/src/services/auth.service.dart';
 
-class HomeFormPage extends StatefulWidget {
-  const HomeFormPage({super.key});
+class RequestListPage extends StatefulWidget {
+  const RequestListPage({super.key});
 
   @override
-  State<HomeFormPage> createState() => _HomeFormPageState();
+  State<RequestListPage> createState() => _RequestListPageState();
 }
 
-class _HomeFormPageState extends State<HomeFormPage>
+class _RequestListPageState extends State<RequestListPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -54,7 +54,7 @@ class _HomeFormPageState extends State<HomeFormPage>
     try {
       final User user = await _auth.getCachedUser() ?? await _auth.me();
 
-      final data = await RequestService().getMyRequests(user.id as int);
+      final data = await RequestService().listRequests(userId: user.id);
 
       setState(() {
         _allRequests = data;
@@ -64,6 +64,11 @@ class _HomeFormPageState extends State<HomeFormPage>
       _applyFilters();
     } catch (e) {
       debugPrint('Load history error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load requests: $e')),
+        );
+      }
       setState(() => _isLoading = false);
     }
   }
@@ -74,11 +79,11 @@ class _HomeFormPageState extends State<HomeFormPage>
 
     // Filter theo TAB
     switch (_tabController.index) {
-      case 1: // Đã nộp
-        list = list.where((r) => r.status == 'pending').toList();
+      case 1: // Submitted
+        list = list.where((r) => r.status.toLowerCase() == 'pending').toList();
         break;
-      case 2: // Đã duyệt
-        list = list.where((r) => r.status == 'approved').toList();
+      case 2: // Approved
+        list = list.where((r) => r.status.toLowerCase() == 'approved').toList();
         break;
     }
 
@@ -97,7 +102,7 @@ class _HomeFormPageState extends State<HomeFormPage>
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: const BackButton(color: Colors.black),
-        title: const Text('My Requests', style: TextStyle(color: Colors.black)),
+        title: const Text('Request List', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 0.5,
         actions: [

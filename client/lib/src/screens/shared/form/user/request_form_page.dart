@@ -9,18 +9,21 @@ import 'package:qr_attendance_frontend/src/models/user.dart';
 import 'package:qr_attendance_frontend/src/services/request.service.dart';
 import 'package:qr_attendance_frontend/src/services/auth.service.dart';
 
-class CreateRequestPage extends StatefulWidget {
-  const CreateRequestPage({super.key});
+class RequestFormPage extends StatefulWidget {
+  final Request? initialRequest;
+  const RequestFormPage({super.key, this.initialRequest});
 
   @override
-  State<CreateRequestPage> createState() => _CreateRequestPageState();
+  State<RequestFormPage> createState() => _RequestFormPageState();
 }
 
-class _CreateRequestPageState extends State<CreateRequestPage> {
+class _RequestFormPageState extends State<RequestFormPage> {
   DateTime? _fromDate;
   DateTime? _toDate;
 
   bool _isLoading = false;
+  bool _isEditing = false;
+  bool _isEditable = true;
 
   String? _selectedType;
 
@@ -55,6 +58,16 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   void initState() {
     super.initState();
     _loadUser();
+    if (widget.initialRequest != null) {
+      _isEditing = true;
+      final r = widget.initialRequest!;
+      _selectedType = r.type;
+      _fromDate = r.fromDate;
+      _toDate = r.toDate;
+      _reasonController.text = r.reason ?? '';
+      // Only editable if status is pending
+      _isEditable = r.status.toLowerCase() == 'pending';
+    }
   }
 
   Future<void> _loadUser() async {
@@ -132,23 +145,51 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     try {
       setState(() => _isLoading = true);
 
-      final request = Request(
-        userId: _currentUser!.id,
-        type: _selectedType!,
-        fromDate: _fromDate,
-        toDate: _toDate,
-        reason: _reasonController.text.trim(),
-      );
-
       final files = _selectedFiles.where((f) => f.path != null).map((f) => File(f.path!)).toList();
 
-      await RequestService().createRequest(request, files);
+      if (_isEditing) {
+        if (!_isEditable) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Only pending requests can be edited')),
+          );
+          return;
+        }
 
-      if (!mounted) return;
+        final request = Request(
+          id: widget.initialRequest!.id,
+          userId: _currentUser!.id,
+          type: _selectedType!,
+          fromDate: _fromDate,
+          toDate: _toDate,
+          reason: _reasonController.text.trim(),
+          attachments: widget.initialRequest!.attachments,
+          status: widget.initialRequest!.status,
+        );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Request created successfully')),
-      );
+        await RequestService().updateRequest(request, files);
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Request updated successfully')),
+        );
+      } else {
+        final request = Request(
+          userId: _currentUser!.id,
+          type: _selectedType!,
+          fromDate: _fromDate,
+          toDate: _toDate,
+          reason: _reasonController.text.trim(),
+        );
+
+        await RequestService().createRequest(request, files);
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Request created successfully')),
+        );
+      }
 
       Navigator.pop(context);
     } catch (e) {
@@ -156,7 +197,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $e')));
       debugPrint('Error: $e');
-      debugPrint('USER ID: ${_currentUser!.id} (${_currentUser!.id.runtimeType})');
+      debugPrint('USER ID: ${_currentUser?.id}');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -169,9 +210,9 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: const BackButton(color: Colors.black),
-        title: const Text(
-          'Create Request',
-          style: TextStyle(color: Colors.black),
+        title: Text(
+          _isEditing ? 'Edit Request' : 'Create Request',
+          style: const TextStyle(color: Colors.black),
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,

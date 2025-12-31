@@ -3,6 +3,7 @@ import AdminService  from "@services/admin.service";
 import { UserRole } from "@models/user";
 import { validationResult } from "express-validator";
 import logger from "@utils/logger";
+import AuthService from "@services/auth.service";
 
 const generateQR = async (req: Request, res: Response, next: NextFunction) => {
 	const user = req.user;
@@ -266,21 +267,20 @@ const listUserSession = async (_req: Request, res: Response, next: NextFunction)
 	}
 };
 
-const revokeUserSession = async (_req: Request, res: Response, next: NextFunction) => {
+const revokeUserSessions = async (_req: Request, res: Response, next: NextFunction) => {
 	const errors = validationResult(_req);
 	if (!errors.isEmpty()) {
 		return res.status(400).json({ errors: errors.array() });
 	}
-
-	const currentUser = _req.user;
-	if (!currentUser || currentUser.role !== UserRole.ADMIN) {
-		return res.status(403).json({ message: "Unauthorized" });
-	}
-
+	
 	try {
-		const { id } = _req.params;
-		await AdminService.revokeUserSession(id as string);
-		return res.json({ message: "Session revoked successfully" });
+		const { userId } = _req.params;
+		if (!userId) {
+			return res.status(400).json({ message: 'User ID is required' });
+		}
+
+		await AuthService.revokeUserSessions(userId);
+		return res.status(200).json({ message: "Session revoked successfully" });
 	} catch (error) {
 		return next(error);
 	}
@@ -315,6 +315,6 @@ export const AdminController = {
 	listUsers,
 	deleteUser,
 	listUserSession,
-	revokeUserSession,
+	revokeUserSessions,
 	unbindDevice,
 };

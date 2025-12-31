@@ -11,7 +11,7 @@ import 'package:qr_attendance_frontend/src/screens/shared/schedule/schedule_page
 import 'package:qr_attendance_frontend/src/screens/shared/splash/splash_screen.dart';
 import 'package:qr_attendance_frontend/src/screens/shared/login/forgot_password_page.dart';
 import 'package:qr_attendance_frontend/src/screens/shared/login/reset_password_confirm_page.dart';
-import 'package:qr_attendance_frontend/src/screens/shared/form/create_request_page.dart';
+import 'package:qr_attendance_frontend/src/screens/shared/form/user/request_form_page.dart';
 import 'package:qr_attendance_frontend/src/theme/app_theme.dart';
 import 'screens/shared/login/login_page.dart';
 import 'screens/shared/home/home_page.dart';
@@ -106,7 +106,7 @@ class _AppState extends State<App> {
         '/employees': (_) => const EmployeeListPage(),
 
         // Requests
-        '/form': (_) => const CreateRequestPage(),
+        '/form': (_) => const RequestFormPage(),
       },
 
       onGenerateRoute: (settings) {

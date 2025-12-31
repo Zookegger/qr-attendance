@@ -11,7 +11,7 @@ import { AddUserDTO, UpdateUserDTO, AddOfficeConfigDTO, UpdateOfficeConfigDTO } 
 import RefreshTokenService from "./refreshToken.service";
 
 export default class AdminService {
-	static async generateQR(officeId?: number): Promise<{ code: string; refreshAt: number } > {
+	static async generateQR(officeId?: number): Promise<{ code: string; refreshAt: number }> {
 		// generate 4-digit code, store in redis, emit to socket room
 		const num = crypto.randomInt(0, 10000);
 		const code = num.toString().padStart(4, "0");
@@ -289,12 +289,5 @@ export default class AdminService {
 
 	static async listUserSessions(userId: string) {
 		return await RefreshTokenService.listUserSessions(userId);
-	}
-
-	static async revokeUserSession(sessionId: string) {
-		await RefreshToken.update(
-			{ revoked: true },
-			{ where: { id: sessionId } }
-		);
 	}
 }

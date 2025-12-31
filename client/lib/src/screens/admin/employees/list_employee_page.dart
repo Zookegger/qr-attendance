@@ -62,7 +62,14 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
               itemCount: _filteredUsers.length,
               itemBuilder: (context, index) {
                 // The TILE is Stateless, but the LIST is Stateful
-                return EmployeeTile(user: _filteredUsers[index]);
+                return EmployeeTile(
+                  user: _filteredUsers[index],
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/employee/details',
+                    arguments: _filteredUsers[index],
+                  ),
+                );
               },
             ),
       floatingActionButton: _buildAddButton(context),

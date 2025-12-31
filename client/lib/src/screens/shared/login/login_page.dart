@@ -38,6 +38,7 @@ class _LoginPageState extends State<LoginPage> {
       final session = await AuthenticationService().login(
         email: login,
         password: password,
+        context: context
       );
 
       if (!mounted) return;

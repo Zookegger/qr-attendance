@@ -1,37 +1,12 @@
 import { UserRole } from "@models/user";
 
-// TODO: Move this to Admin instead
-export interface RegisterDTO {
-	name: string;
-	email: string;
-	password: string;
-	role: UserRole;
-	position?: string;
-	department?: string;
-}
-
-export interface LoginDTO {
-	email: string;
-	password: string;
-	device_uuid?: string;
-}
-
 export interface LoginRequestDTO {
 	email: string;
 	password: string;
-	device_uuid?: string;
-}
-
-export interface LogoutDTO {
-	accessToken: string;
-	refreshToken: string;
-	user: {
-		id: string;
-		name: string;
-		email: string;
-		role: UserRole;
-		device_uuid?: string | null;
-	};
+	device_uuid: string;
+	device_name: string;
+	device_model: string;
+	device_os_version: string;
 }
 
 export interface AuthResponse {
@@ -64,7 +39,7 @@ export interface ResetPasswordRequestDTO {
 	newPassword: string;
 }
 
-export interface ChangePasswordDTO {
+export interface ChangePasswordRequestDTO {
 	currentPassword: string;
 	newPassword: string;
 	confirmNewPassword: string;
