@@ -42,7 +42,6 @@ class Request {
       'to_date': toDate?.toIso8601String(),
       'reason': reason,
       'image_url': imageUrl,
-      'status': status,
     };
   }
 }

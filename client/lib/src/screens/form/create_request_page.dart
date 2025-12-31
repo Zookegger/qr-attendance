@@ -53,11 +53,14 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
 
   // ================= DATE PICKER =================
   Future<void> _pickDate({required bool isFromDate}) async {
+    final now = DateTime.now();
+    final lastSelectableDate = DateTime(now.year + 2, now.month, now.day);
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: now,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+      lastDate: lastSelectableDate,
     );
 
     if (picked != null) {
@@ -88,8 +91,8 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
 
   // ================= IMAGE UPLOAD (MOCK) =================
   Future<String> uploadImage(File image) async {
-    await Future.delayed(const Duration(seconds: 1));
-    return 'https://example.com/image.jpg';
+    // TODO: Implement multer file formdata upload
+    throw UnimplementedError("Upload is not implemented");
   }
 
   // ================= SUBMIT REQUEST =================
@@ -130,7 +133,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      debugPrint('Error: $e' as String?);
+      debugPrint('Error: $e');
       debugPrint('USER ID: ${widget.user.id} (${widget.user.id.runtimeType})');
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -283,10 +286,10 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
             InkWell(
               onTap: _pickImage,
               child: Row(
-                children: const [
-                  Icon(Icons.camera_alt_outlined),
-                  SizedBox(width: 6),
-                  Text('Upload image'),
+                children: [
+                  const Icon(Icons.camera_alt_outlined),
+                  const SizedBox(width: 6),
+                  const Text('Upload image'),
                 ],
               ),
             ),

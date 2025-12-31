@@ -20,8 +20,9 @@ module.exports = {
         onDelete: 'CASCADE'
       },
       type: {
-        type: Sequelize.STRING,
-        allowNull: false
+        type: Sequelize.ENUM('LEAVE', 'SICK', 'UNPAID', 'LATE_EARLY', 'OVERTIME', 'BUSINESS_TRIP', 'SHIFT_CHANGE', 'REMOTE_WORK', 'ATTENDANCE_CONFIRMATION', 'ATTENDANCE_ADJUSTMENT', 'EXPLANATION', 'OTHER'),
+        allowNull: false,
+        defaultValue: 'OTHER'
       },
       from_date: {
         type: Sequelize.DATE,
@@ -33,16 +34,30 @@ module.exports = {
       },
       reason: {
         type: Sequelize.TEXT,
-        allowNull: true
+        allowNull: false
       },
       image_url: {
         type: Sequelize.STRING,
         allowNull: true
       },
       status: {
-        type: Sequelize.ENUM('pending', 'approved', 'rejected'),
+        type: Sequelize.ENUM('PENDING', 'APPROVED', 'REJECTED'),
         allowNull: false,
-        defaultValue: 'pending'
+        defaultValue: 'PENDING'
+      },
+      reviewed_by: {
+        type: Sequelize.UUID,
+        allowNull: true,
+        references: {
+          model: 'users',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
+      review_note: {
+        type: Sequelize.TEXT,
+        allowNull: true
       },
       createdAt: {
         allowNull: false,

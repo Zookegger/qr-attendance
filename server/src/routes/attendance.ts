@@ -2,7 +2,6 @@ import { Router } from "express";
 import { AttendanceController } from "../controllers/attendance.controller";
 import { authenticate } from "@middlewares/auth.middleware";
 import { errorHandler } from "@middlewares/error.middleware";
-import { createRequest } from '../controllers/request.controller';
 
 const attendanceRouter = Router();
 
@@ -24,12 +23,6 @@ attendanceRouter.get(
 	authenticate,
 	AttendanceController.getHistory,
 	errorHandler
-);
-attendanceRouter.post(
-  "/attendance/requests",
-	authenticate,
-	createRequest,
-  errorHandler
 );
 
 export default attendanceRouter;
