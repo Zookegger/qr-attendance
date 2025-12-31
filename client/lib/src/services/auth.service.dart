@@ -124,8 +124,6 @@ class AuthenticationService {
         data: {'email': email, 'password': password, 'device_uuid': deviceUuid},
       );
 
-      debugPrint(res.toString());
-
       return _persistAndReturnSession(
         res.data,
         invalidMessage: 'Login succeeded but response was invalid.',
