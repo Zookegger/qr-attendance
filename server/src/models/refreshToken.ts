@@ -51,7 +51,6 @@ RefreshToken.init(
 		token_hash: {
 			type: DataTypes.STRING,
 			allowNull: false,
-			get() {},
 		},
 		device_uuid: {
 			type: DataTypes.STRING,

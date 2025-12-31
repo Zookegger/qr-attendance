@@ -5,8 +5,6 @@ import '../services/auth.service.dart';
 class AuthInterceptor extends Interceptor {
   final Dio _dio;
 
-  // Instead of a Queue, we use a shared Future.
-  // This acts as a "Red Light" that everyone watches.
   Future<String?>? _refreshFuture;
 
   AuthInterceptor(this._dio);
