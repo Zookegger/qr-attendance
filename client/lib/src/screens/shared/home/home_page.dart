@@ -2,9 +2,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-import '../../models/user.dart';
-import '../../services/auth.service.dart';
-import '../../services/admin.service.dart';
+import '../../../models/user.dart';
+import '../../../services/auth.service.dart';
+import '../../../services/admin.service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -363,21 +363,21 @@ class _HomePageState extends State<HomePage> {
           Icons.check_circle_outline,
           36,
           Colors.blue,
-          () {},
+          () => Navigator.pushNamed(context, '/approvals'),
         ),
         _buildQuickActionButton(
           "Employees",
           Icons.people_outline,
           36,
           Colors.purple,
-          () {},
+          () => Navigator.pushNamed(context, '/employees'),
         ),
         _buildQuickActionButton(
           "Reports",
           Icons.bar_chart,
           36,
           Colors.orange,
-          () {},
+          () => Navigator.pushNamed(context, '/reports'),
         ),
         _buildQuickActionButton(
           "Unbind",

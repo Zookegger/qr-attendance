@@ -3,8 +3,8 @@ import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:dio/dio.dart';
-import "../../services/health.service.dart";
-import '../../services/config.service.dart';
+import "../../../services/health.service.dart";
+import '../../../services/config.service.dart';
 
 class ServerSetupPage extends StatefulWidget {
   const ServerSetupPage({super.key});

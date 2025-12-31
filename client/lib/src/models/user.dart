@@ -4,10 +4,15 @@ enum UserRole {
   USER;
 
   static UserRole fromString(String value) {
+    final v = value.toUpperCase();
     return UserRole.values.firstWhere(
-      (e) => e.name == value,
-      orElse: () => UserRole.USER, // Default fallback
+      (e) => e.name == v,
+      orElse: () => UserRole.USER,
     );
+  }
+
+  static String toTextString(UserRole value) {
+    return value.name[0] + value.name.substring(1).toLowerCase(); 
   }
 }
 
@@ -18,10 +23,15 @@ enum UserStatus {
   UNKNOWN;
 
   static UserStatus fromString(String value) {
+    final v = value.toUpperCase();
     return UserStatus.values.firstWhere(
-      (e) => e.name == value,
+      (e) => e.name == v,
       orElse: () => UserStatus.UNKNOWN,
     );
+  }
+
+  static String toTextString(UserStatus value) {
+    return value.name[0] + value.name.substring(1).toLowerCase(); 
   }
 }
 
@@ -32,8 +42,9 @@ enum Gender {
   UNKNOWN;
 
   static Gender fromString(String value) {
+    final v = value.toUpperCase();
     return Gender.values.firstWhere(
-      (e) => e.name == value,
+      (e) => e.name == v,
       orElse: () => Gender.UNKNOWN,
     );
   }

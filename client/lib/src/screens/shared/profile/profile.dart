@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../models/user.dart';
-import '../../services/auth.service.dart';
-import '../../widgets/common_button.dart';
+import '../../../models/user.dart';
+import '../../../services/auth.service.dart';
+import '../../../widgets/common_button.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});

@@ -1,8 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-import '../../models/attendance_record.dart';
-import '../../services/attendance.service.dart';
+import '../../../models/attendance_record.dart';
+import '../../../services/attendance.service.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});

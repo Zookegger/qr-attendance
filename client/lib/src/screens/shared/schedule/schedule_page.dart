@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-import '../../models/attendance_record.dart';
-import '../../services/attendance.service.dart';
+import '../../../models/attendance_record.dart';
+import '../../../services/attendance.service.dart';
 
 class SchedulePage extends StatefulWidget {
   const SchedulePage({super.key});

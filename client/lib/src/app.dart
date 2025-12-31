@@ -1,20 +1,24 @@
 import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
-import 'package:qr_attendance_frontend/src/screens/schedule/schedule_page.dart';
+import 'package:qr_attendance_frontend/src/models/user.dart';
+import 'package:qr_attendance_frontend/src/screens/admin/employees/employee_detail_page.dart';
+import 'package:qr_attendance_frontend/src/screens/admin/employees/employee_form_page.dart';
+import 'package:qr_attendance_frontend/src/screens/admin/employees/list_employee_page.dart';
+import 'package:qr_attendance_frontend/src/screens/shared/schedule/schedule_page.dart';
 
 // Screens
-import 'package:qr_attendance_frontend/src/screens/splash/splash_screen.dart';
-import 'package:qr_attendance_frontend/src/screens/login/forgot_password_page.dart';
-import 'package:qr_attendance_frontend/src/screens/login/reset_password_confirm_page.dart';
-import 'package:qr_attendance_frontend/src/screens/form/create_request_page.dart';
+import 'package:qr_attendance_frontend/src/screens/shared/splash/splash_screen.dart';
+import 'package:qr_attendance_frontend/src/screens/shared/login/forgot_password_page.dart';
+import 'package:qr_attendance_frontend/src/screens/shared/login/reset_password_confirm_page.dart';
+import 'package:qr_attendance_frontend/src/screens/shared/form/create_request_page.dart';
 import 'package:qr_attendance_frontend/src/theme/app_theme.dart';
-import 'screens/login/login_page.dart';
-import 'screens/home/home_page.dart';
-import 'screens/attendance/attendance_page.dart';
-import 'screens/setup/server_setup_page.dart';
-import 'screens/history/history_page.dart';
-import 'screens/profile/profile.dart';
+import 'screens/shared/login/login_page.dart';
+import 'screens/shared/home/home_page.dart';
+import 'screens/shared/attendance/attendance_page.dart';
+import 'screens/shared/setup/server_setup_page.dart';
+import 'screens/shared/history/history_page.dart';
+import 'screens/shared/profile/profile.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -99,10 +103,46 @@ class _AppState extends State<App> {
         '/history': (_) => const HistoryPage(),
         '/schedule': (_) => const SchedulePage(),
         '/profile': (_) => const ProfilePage(),
+        '/employees': (_) => const EmployeeListPage(),
 
         // Requests
         '/form': (_) => const CreateRequestPage(),
       },
+
+      onGenerateRoute: (settings) {
+        
+        // 1. Employee FORM (Create or Edit)
+        // Accepts User? (null = create, user object = edit)
+        if (settings.name == '/employee/form') {
+          final user = settings.arguments as User?;
+          return MaterialPageRoute(
+            builder: (_) => EmployeeFormPage(user: user),
+          );
+        }
+
+        // 2. Employee DETAILS (View Info / Unbind)
+        // Accepts required User object
+        if (settings.name == '/employee/details') {
+          if (settings.arguments is User) {
+            final user = settings.arguments as User;
+            return MaterialPageRoute(
+              builder: (_) => EmployeeDetailsPage(user: user),
+            );
+          }
+          // Fallback if arguments are missing/wrong
+          return _errorRoute(); 
+        }
+
+        return null; // Standard 'Route Not Found' behavior
+      },
+    );
+  }
+  MaterialPageRoute _errorRoute() {
+    return MaterialPageRoute(
+      builder: (_) => Scaffold(
+        appBar: AppBar(title: const Text("Error")),
+        body: const Center(child: Text("Invalid navigation arguments")),
+      ),
     );
   }
 }
