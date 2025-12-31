@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { AttendanceService } from "@services/attendance.service";
+import AttendanceService from "@services/attendance.service";
+import { CheckInOutDTO } from '@my-types/attendance';
 import { validationResult } from "express-validator";
 
 const checkIn = async (req: Request, res: Response, next: NextFunction) => {
@@ -16,10 +17,17 @@ const checkIn = async (req: Request, res: Response, next: NextFunction) => {
 			.json({ status: 403, message: "Unauthorized" });
 	}
 
-	const { qr_code, latitude, longitude } = req.body;
+	const { code, latitude, longitude } = req.body;
 
 	try {
-		const attendance = await AttendanceService.checkIn(user.id, qr_code, latitude, longitude);
+		const dto: CheckInOutDTO = {
+			user_id: user.id,
+			code,
+			latitude,
+			longitude,
+		};
+
+		const attendance = await AttendanceService.checkIn(dto);
 
 		return res.json({ message: "Check-in successful", attendance });
 	} catch (error) {
@@ -41,10 +49,17 @@ const checkOut = async (req: Request, res: Response, next: NextFunction) => {
 			.json({ status: 403, message: "Unauthorized" });
 	}
 
-	const { qr_code, latitude, longitude } = req.body;
+	const { code, latitude, longitude } = req.body;
 
 	try {
-		const attendance = await AttendanceService.checkOut(user.id, qr_code, latitude, longitude);
+		const dto: CheckInOutDTO = {
+			user_id: user.id,
+			code,
+			latitude,
+			longitude,
+		};
+
+		const attendance = await AttendanceService.checkOut(dto);
 
 		return res.json({ message: "Check-out successful", attendance });
 	} catch (error) {

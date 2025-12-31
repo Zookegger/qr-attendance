@@ -69,7 +69,7 @@ interface RequestCreationAttributes
 		"id" | "status" | "attachments" | "reviewed_by" | "review_note" | "from_date" | "to_date"
 	> {}
 
-export class RequestModel
+export default class RequestModel
 	extends Model<RequestAttributes, RequestCreationAttributes>
 	implements RequestAttributes
 {
@@ -137,5 +137,6 @@ RequestModel.init(
 	{
 		sequelize,
 		tableName: "requests",
+		timestamps: true,
 	}
 );

@@ -4,20 +4,22 @@ import { Op } from "sequelize";
 import { User, RefreshToken } from "@models";
 import { UserRole } from "@models/user";
 import { AuthResponse } from "@my-types/auth";
-import {
-	generateRefreshToken,
-	rotateRefreshToken,
-	revokeRefreshToken,
-} from "./refreshToken.service";
 import { emailQueue } from "@utils/queues/emailQueue";
-import { EmailService } from "./email.service";
+import EmailService from "./email.service";
+import RefreshTokenService from "./refreshToken.service";
+import { database } from "@config/index";
 
-export class AuthService {
-	static async login(email: string, password: string, device_uuid?: string): Promise<AuthResponse> {
+export default class AuthService {
+	static async login(email: string, password: string, device_uuid: string, device_name: string, device_model: string, device_os_version: string): Promise<AuthResponse> {
 		const user = await User.findOne({ where: { email } });
 		if (!user) {
 			throw new Error("Invalid credentials");
 		}
+
+		if (!user.device_name) user.device_model = device_name;
+		if (!user.device_model) user.device_model = device_model;
+		if (!user.device_os_version) user.device_os_version = device_os_version;
+		await user.save();
 
 		const isMatch = await bcrypt.compare(password, user.password_hash);
 		if (!isMatch) {
@@ -42,7 +44,7 @@ export class AuthService {
 		}
 
 		// Use RefreshTokenService to generate tokens
-		const { accessToken, refreshToken } = await generateRefreshToken(user, {
+		const { accessToken, refreshToken } = await RefreshTokenService.generateRefreshToken(user, {
 			id: user.id,
 			role: user.role,
 		});
@@ -62,7 +64,7 @@ export class AuthService {
 
 	static async logout(refreshToken: string): Promise<void> {
 		if (!refreshToken) return;
-		await revokeRefreshToken(refreshToken);
+		await RefreshTokenService.revokeRefreshToken(refreshToken);
 	}
 
 	static async forgotPassword(email: string): Promise<void> {
@@ -80,11 +82,10 @@ export class AuthService {
 		const token = crypto.randomBytes(32).toString("hex");
 		const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
 
-		// persist token — update to match your DB model (example fields)
-		// if your User model doesn't have these fields, create a PasswordReset table instead
-		(user as any).password_reset_token = token;
-		(user as any).password_reset_expires = expiresAt;
-		await user.save();
+		await user.update({
+			password_reset_token: token,
+			password_reset_expires: expiresAt
+		});
 
 		const resetLink = `${process.env.API_URL}/auth/reset-password?token=${token}&email=${encodeURIComponent(
 			email
@@ -127,18 +128,19 @@ export class AuthService {
 		}
 
 		const salt = await bcrypt.genSalt(10);
-		user.password_hash = await bcrypt.hash(newPassword, salt);
-		user.password_reset_token = null;
-		user.password_reset_expires = null;
-		await user.save();
+		await user.update({
+			password_hash: await bcrypt.hash(newPassword, salt),
+			password_reset_token: null,
+			password_reset_expires: null
+		});
 
 		// Revoke all sessions
-		await RefreshToken.destroy({ where: { user_id: user.id } });
+		await this.revokeUserSessions(user.id);
 	}
 
 	static async refresh(tokenString: string): Promise<AuthResponse> {
 		// Use RefreshTokenService to rotate tokens
-		const { accessToken, refreshToken, user } = await rotateRefreshToken(
+		const { accessToken, refreshToken, user } = await RefreshTokenService.rotateRefreshToken(
 			tokenString
 		);
 
@@ -194,10 +196,31 @@ export class AuthService {
 		const hashedNewPassword = await bcrypt.hash(newPassword, salt);
 
 		// Update the user's password
-		user.password_hash = hashedNewPassword;
-		await user.save();
+		await user.update({ password_hash: hashedNewPassword });
 
 		// Revoke all sessions
-		await RefreshToken.destroy({ where: { user_id: user.id } });
+		await this.revokeUserSessions(user.id);
+	}
+
+	static async revokeUserSessions(userId: string) {
+		const transaction = await database.transaction();
+		try {
+			const user = await User.findByPk(userId, { transaction });
+			if (!user) {
+				throw new Error("User not found for session revocation.");
+			}
+
+			await user.update({ device_uuid: null, device_name: null, device_model: null, device_os_version: null }, { transaction });
+
+			await RefreshToken.update(
+				{ revoked: true },
+				{ where: { user_id: userId }, transaction }
+			);
+
+			await transaction.commit();
+		} catch (err) {
+			await transaction.rollback();
+			throw err;
+		}
 	}
 }

@@ -1,25 +1,75 @@
-import { Attendance, OfficeConfig } from "@models";
+import { Attendance, OfficeConfig, Schedule, Workshift, RequestModel } from "@models";
+import { RequestType } from "@models/request";
 import { calculateDistance } from "@utils/geo";
 import { Op } from "sequelize";
 import { format, startOfMonth, endOfMonth } from "date-fns";
+import { AttendanceMethod, AttendanceStatus } from "@models/attendance";
+import { CheckInOutDTO } from '@my-types/attendance';
+import redis from '@config/redis';
 
-export class AttendanceService {
-	static async checkIn(userId: string, qr_code: string, latitude: number, longitude: number) {
-		// 1. Validate QR Code (Simple timestamp check for now)
-		// Assuming QR code contains a timestamp in milliseconds
-		// In a real app, this should be an encrypted token
-		const qrTimestamp = parseInt(qr_code);
-		const now = Date.now();
-		if (isNaN(qrTimestamp) || now - qrTimestamp > 30000) {
-			// 30 seconds validity
-			throw new Error("Invalid or expired QR code");
+export default class AttendanceService {
+		static async checkIn(dto: CheckInOutDTO) {
+			const { user_id: userId, code, latitude, longitude, office_id } = dto;
+
+		// 0. Rate limiting by strikes
+		const strikesKey = `checkin:strikes:${userId}`;
+		const strikesVal = await redis.get(strikesKey);
+		const strikes = strikesVal ? parseInt(strikesVal, 10) : 0;
+		if (strikes >= 3) {
+			const err: any = new Error('Too many failed check-in attempts');
+			err.status = 429;
+			throw err;
 		}
 
-		// 2. Validate Location
-		const officeConfig = await OfficeConfig.findOne();
+
+		// 2. Resolve today's Schedule -> Workshift -> OfficeConfig
+		const todayStr = format(new Date(), "yyyy-MM-dd");
+		const schedule = await Schedule.findOne({
+			where: {
+				user_id: userId,
+				start_date: { [Op.lte]: todayStr },
+				[Op.or]: [
+					{ end_date: null },
+					{ end_date: { [Op.gte]: todayStr } },
+				],
+			},
+			include: [
+				{
+					model: Workshift,
+					as: "Shift",
+					include: [],
+				},
+			],
+		});
+
+		let officeConfig = null as any;
+		if (schedule && (schedule as any).Shift && (schedule as any).Shift.office_config_id) {
+			officeConfig = await OfficeConfig.findByPk((schedule as any).Shift.office_config_id);
+		} else {
+			officeConfig = await OfficeConfig.findOne();
+		}
+
 		if (!officeConfig) {
 			throw new Error("Office configuration not found");
 		}
+
+		// 1. Verify code exists in Redis for this office
+		const officeIdToUse = office_id || (officeConfig as any).id;
+		const redisKey = `checkin:office:${officeIdToUse}:code:${code}`;
+		const ok = await redis.get(redisKey);
+		if (!ok) {
+			// increment strikes with sliding TTL (10 minutes)
+			await redis.multi().incr(strikesKey).expire(strikesKey, 600).exec();
+			const err: any = new Error('Invalid or expired code');
+			err.status = 400;
+			throw err;
+		}
+
+		// Consume the code to prevent reuse
+		await redis.del(redisKey);
+
+		// on success, clear strikes
+		await redis.del(strikesKey);
 
 		const distance = calculateDistance(
 			latitude,
@@ -44,49 +94,98 @@ export class AttendanceService {
 			throw new Error("Already checked in today");
 		}
 
-		// 4. Determine Status (Late or Present)
-		const currentTimeString = format(new Date(), "HH:mm");
-
-		let status: "Present" | "Late" = "Present";
-		if (currentTimeString > officeConfig.start_hour) {
-			status = "Late";
+		// 4. Determine Status (Late or Present) using schedule's workshift if available
+		let status: AttendanceStatus = AttendanceStatus.PRESENT;
+		if (schedule && (schedule as any).Shift) {
+			const shift = (schedule as any).Shift as any;
+			// shift.startTime is stored as TIME; treat as HH:mm:ss or HH:mm
+			const shiftTime = shift.startTime as string;
+			const [h, m] = shiftTime.split(":").map((s: string) => parseInt(s, 10));
+			const shiftStart = new Date();
+			shiftStart.setHours(h || 0, m || 0, 0, 0);
+			const allowedLate = new Date(shiftStart.getTime() + (shift.gracePeriod || 0) * 60000);
+			if (Date.now() > allowedLate.getTime()) {
+				status = AttendanceStatus.LATE;
+			}
 		}
 
-		// 5. Create or Update Attendance
+		// 5. Create Attendance
+		// If an attendance record already exists for today, do not silently overwrite it.
+		// Users should submit a correction/request if an existing record was created by a background job.
 		if (existingAttendance) {
-			// If record exists (maybe marked absent by cron or something), update it
-			existingAttendance.check_in_time = new Date();
-			existingAttendance.check_in_location = { latitude, longitude };
-			existingAttendance.check_in_method = "QR";
-			existingAttendance.status = status;
-			await existingAttendance.save();
-			return existingAttendance;
-		} else {
-			const attendance = await Attendance.create({
-				user_id: userId,
-				date: today as any, // Sequelize expects string or Date, but TS might complain if strict
-				check_in_time: new Date(),
-				check_in_location: { latitude, longitude },
-				check_in_method: "QR",
-				status: status,
-			});
-			return attendance;
+			throw new Error("Attendance record already exists for today. If this is incorrect, please submit a correction request.");
 		}
+
+		const attendance = await Attendance.create({
+			user_id: userId,
+			date: today as any, // Sequelize expects string or Date, but TS might complain if strict
+			schedule_id: schedule ? (schedule as any).id : null,
+			check_in_time: new Date(),
+			check_in_location: { latitude, longitude },
+			check_in_method: AttendanceMethod.QR,
+			status: status,
+		});
+		return attendance;
 	}
 
-	static async checkOut(userId: string, qr_code: string, latitude: number, longitude: number) {
-		// 1. Validate QR Code
-		const qrTimestamp = parseInt(qr_code);
-		const now = Date.now();
-		if (isNaN(qrTimestamp) || now - qrTimestamp > 30000) {
-			throw new Error("Invalid or expired QR code");
+	static async checkOut(dto: CheckInOutDTO) {
+		const { user_id: userId, code, latitude, longitude, office_id } = dto;
+
+		// Rate limiting
+		const strikesKey = `checkin:strikes:${userId}`;
+		const strikesVal = await redis.get(strikesKey);
+		const strikes = strikesVal ? parseInt(strikesVal, 10) : 0;
+		if (strikes >= 3) {
+			const err: any = new Error('Too many failed check-out attempts');
+			err.status = 429;
+			throw err;
 		}
 
-		// 2. Validate Location
-		const officeConfig = await OfficeConfig.findOne();
+		// 2. Resolve today's Schedule -> Workshift -> OfficeConfig for check-out validation
+		const todayStr = format(new Date(), "yyyy-MM-dd");
+		const schedule = await Schedule.findOne({
+			where: {
+				user_id: userId,
+				start_date: { [Op.lte]: todayStr },
+				[Op.or]: [
+					{ end_date: null },
+					{ end_date: { [Op.gte]: todayStr } },
+				],
+			},
+			include: [
+				{
+					model: Workshift,
+					as: "Shift",
+					include: [],
+				},
+			],
+		});
+
+		let officeConfig = null as any;
+		if (schedule && (schedule as any).Shift && (schedule as any).Shift.office_config_id) {
+			officeConfig = await OfficeConfig.findByPk((schedule as any).Shift.office_config_id);
+		} else {
+			officeConfig = await OfficeConfig.findOne();
+		}
+
 		if (!officeConfig) {
 			throw new Error("Office configuration not found");
 		}
+
+		// Verify code exists in Redis for this office
+		const officeIdToUse = office_id || (officeConfig as any).id;
+		const redisKey = `checkin:office:${officeIdToUse}:code:${code}`;
+		const ok = await redis.get(redisKey);
+		if (!ok) {
+			await redis.multi().incr(strikesKey).expire(strikesKey, 600).exec();
+			const err: any = new Error('Invalid or expired code');
+			err.status = 400;
+			throw err;
+		}
+
+		// consume code and clear strikes
+		await redis.del(redisKey);
+		await redis.del(strikesKey);
 
 		const distance = calculateDistance(
 			latitude,
@@ -115,12 +214,38 @@ export class AttendanceService {
 			throw new Error("Already checked out today");
 		}
 
-		// 4. Update Attendance
-		attendance.check_out_time = new Date();
+		// 4. Update Attendance & detect early leave
+		const nowDate = new Date();
+		attendance.check_out_time = nowDate;
 		attendance.check_out_location = { latitude, longitude };
-		attendance.check_out_method = "QR";
-		await attendance.save();
+		attendance.check_out_method = AttendanceMethod.QR;
 
+		// Attach schedule_id if we resolved one earlier (useful for reports)
+		if (schedule) attendance.schedule_id = (schedule as any).id;
+
+		// Early-leave detection: if shift exists and current time is before allowed end
+		if (schedule && (schedule as any).Shift) {
+			const shift = (schedule as any).Shift as any;
+			const shiftEndTime = shift.endTime as string; // TIME field
+			const [eh, em] = shiftEndTime.split(":").map((s: string) => parseInt(s, 10));
+			const shiftEnd = new Date();
+			shiftEnd.setHours(eh || 0, em || 0, 0, 0);
+			// consider gracePeriod as minutes allowed for both late arrival and early leave tolerance
+			const allowedEarlyThreshold = new Date(shiftEnd.getTime() - (shift.gracePeriod || 0) * 60000);
+			if (nowDate.getTime() < allowedEarlyThreshold.getTime()) {
+				// create a request record for early leave
+				const reason = `Auto-generated early-leave detected at ${nowDate.toISOString()}`;
+				const req = await RequestModel.create({
+					user_id: userId,
+					type: RequestType.LATE_EARLY,
+					from_date: nowDate,
+					reason,
+				});
+				attendance.request_id = req.id;
+			}
+		}
+
+		await attendance.save();
 		return attendance;
 	}
 

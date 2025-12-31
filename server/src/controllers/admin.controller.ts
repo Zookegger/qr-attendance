@@ -1,8 +1,9 @@
 import { NextFunction, Request, Response } from "express";
-import { AdminService } from "@services/admin.service";
+import AdminService  from "@services/admin.service";
 import { UserRole } from "@models/user";
 import { validationResult } from "express-validator";
 import logger from "@utils/logger";
+import AuthService from "@services/auth.service";
 
 const generateQR = async (req: Request, res: Response, next: NextFunction) => {
 	const user = req.user;
@@ -10,8 +11,9 @@ const generateQR = async (req: Request, res: Response, next: NextFunction) => {
 		return res.status(403).json({ status: 403, message: "Unauthorized" });
 	}
 	try {
-		const qr_code = await AdminService.generateQR();
-		return res.json({ qr_code });
+		const officeId = req.query.officeId ? parseInt(req.query.officeId as string, 10) : undefined;
+		const result = await AdminService.generateQR(officeId);
+		return res.json(result);
 	} catch (error) {
 		return next(error);
 	}
@@ -23,7 +25,7 @@ const getOfficeConfig = async (req: Request, res: Response, next: NextFunction) 
 		return res.status(403).json({ status: 403, message: "Unauthorized" });
 	}
 	try {
-		let config = await AdminService.getOfficeConfig();
+		const config = await AdminService.listOfficeConfig();
 		return res.json(config);
 	} catch (error) {
 		return next(error);
@@ -41,18 +43,17 @@ const updateOfficeConfig = async (req: Request, res: Response, next: NextFunctio
 		return res.status(403).json({ status: 403, message: "Unauthorized" });
 	}
 	try {
-		const { latitude, longitude, radius, start_hour, end_hour, wifi_ssid } =
-			req.body;
+		// const { latitude, longitude, radius, wifi_ssid } =
+		// 	req.body;
 
-		const config = await AdminService.updateOfficeConfig({
-			latitude,
-			longitude,
-			radius,
-			start_hour,
-			end_hour,
-			wifi_ssid,
-		});
-		return res.json({ message: "Configuration updated", config });
+		// const config = await AdminService.updateOfficeConfig({
+		// 	latitude,
+		// 	longitude,
+		// 	radius,
+		// 	wifi_ssid,
+		// });
+		// return res.json({ message: "Configuration updated", config });
+		throw new Error("Not Implemented");
 	} catch (error) {
 		return next(error);
 	}
@@ -266,21 +267,20 @@ const listUserSession = async (_req: Request, res: Response, next: NextFunction)
 	}
 };
 
-const revokeUserSession = async (_req: Request, res: Response, next: NextFunction) => {
+const revokeUserSessions = async (_req: Request, res: Response, next: NextFunction) => {
 	const errors = validationResult(_req);
 	if (!errors.isEmpty()) {
 		return res.status(400).json({ errors: errors.array() });
 	}
-
-	const currentUser = _req.user;
-	if (!currentUser || currentUser.role !== UserRole.ADMIN) {
-		return res.status(403).json({ message: "Unauthorized" });
-	}
-
+	
 	try {
-		const { id } = _req.params;
-		await AdminService.revokeUserSession(id as string);
-		return res.json({ message: "Session revoked successfully" });
+		const { userId } = _req.params;
+		if (!userId) {
+			return res.status(400).json({ message: 'User ID is required' });
+		}
+
+		await AuthService.revokeUserSessions(userId);
+		return res.status(200).json({ message: "Session revoked successfully" });
 	} catch (error) {
 		return next(error);
 	}
@@ -315,6 +315,6 @@ export const AdminController = {
 	listUsers,
 	deleteUser,
 	listUserSession,
-	revokeUserSession,
+	revokeUserSessions,
 	unbindDevice,
 };

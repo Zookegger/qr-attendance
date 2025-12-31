@@ -34,21 +34,25 @@ export const createUploadMiddleware = (category: string) => {
 		file: Express.Multer.File,
 		cb: multer.FileFilterCallback
 	) => {
-		const allowed = ["image/jpeg", "image/png", "image/webp"];
-		if (allowed.includes(file.mimetype)) {
-			cb(null, true);
-		} else {
-			cb(
-				new Error(
-					"Unsupported file type. Only JPEG, PNG, and WebP images are allowed."
-				)
-			);
-		}
+		const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+      
+      if (allowed.includes(file.mimetype)) {
+         cb(null, true);
+      } else {
+         cb(
+            new Error(
+               "Unsupported file type. Only JPEG, PNG, WebP, and PDF are allowed."
+            )
+         );
+      }
 	};
 
 	return multer({
 		storage,
 		fileFilter,
-		limits: { fileSize: 8 * 1024 * 1024 }, // 8 MB
+		limits: { 
+			fileSize: 25 * 1024 * 1024, // 25 MB
+			files: 5, // Max 5 files per request
+		}, 
 	});
 };

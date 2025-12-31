@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
-import '../config.service.dart';
+import '../services/config.service.dart';
+import 'auth_interceptor.dart';
 
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
@@ -38,6 +39,9 @@ class ApiClient {
         },
       ),
     );
+
+    // Add auth interceptor after basic setup
+    _dio.interceptors.add(AuthInterceptor(_dio));
   }
 
   Dio get client => _dio;
@@ -46,12 +50,12 @@ class ApiClient {
   String parseErrorMessage(Object error) {
     if (error is DioException && error.response?.data != null) {
       final data = error.response!.data;
-      
+
       // Handle Map (JSON) responses
       if (data is Map<String, dynamic>) {
         if (data.containsKey('message')) return data['message'];
         if (data.containsKey('error')) return data['error'];
-      } 
+      }
       // Handle Plain String responses
       else if (data is String) {
         return data;

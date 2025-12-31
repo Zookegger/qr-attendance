@@ -2,31 +2,28 @@ import { Model, DataTypes, Optional } from "sequelize";
 import { sequelize } from "@config/database";
 
 interface OfficeConfigAttributes {
-	id: string;
+	id: number;
+	name: string;
 	latitude: number;
 	longitude: number;
 	radius: number; // in meters
 	wifi_ssid?: string | null;
-	start_hour: string; // e.g., "09:00"
-	end_hour: string; // e.g., "18:00"
 }
 
 interface OfficeConfigCreationAttributes extends Optional<
 	OfficeConfigAttributes,
 	"id" | "wifi_ssid"
-> {}
+> { }
 
-export class OfficeConfig
+export default class OfficeConfig
 	extends Model<OfficeConfigAttributes, OfficeConfigCreationAttributes>
-	implements OfficeConfigAttributes
-{
-	declare public id: string;
+	implements OfficeConfigAttributes {
+	declare public id: number;
+	declare public name: string;
 	declare public latitude: number;
 	declare public longitude: number;
 	declare public radius: number;
 	declare public wifi_ssid: string | null;
-	declare public start_hour: string;
-	declare public end_hour: string;
 
 	declare public readonly createdAt: Date;
 	declare public readonly updatedAt: Date;
@@ -35,40 +32,35 @@ export class OfficeConfig
 OfficeConfig.init(
 	{
 		id: {
-			type: DataTypes.UUID,
-			defaultValue: DataTypes.UUIDV4,
+			type: DataTypes.INTEGER.UNSIGNED,
+			autoIncrement: true,
 			primaryKey: true,
 		},
+		name: {
+			type: DataTypes.STRING,
+			allowNull: false,
+		},
 		latitude: {
-			type: DataTypes.DECIMAL(10, 8),
+			type: DataTypes.FLOAT,
 			allowNull: false,
 		},
 		longitude: {
-			type: DataTypes.DECIMAL(11, 8),
+			type: DataTypes.FLOAT,
 			allowNull: false,
 		},
 		radius: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
-			defaultValue: 100, // 100 meters default
+			defaultValue: 100,
 		},
 		wifi_ssid: {
 			type: DataTypes.STRING,
 			allowNull: true,
 		},
-		start_hour: {
-			type: DataTypes.STRING,
-			allowNull: false,
-			defaultValue: "09:00",
-		},
-		end_hour: {
-			type: DataTypes.STRING,
-			allowNull: false,
-			defaultValue: "18:00",
-		},
 	},
 	{
 		sequelize,
-		tableName: "office_config",
+		tableName: "office_configs", 
+		timestamps: true,
 	},
 );

@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../consts/api_endpoints.dart';
 import '../models/attendance_record.dart';
-import 'api/api_client.dart';
+import '../utils/api_client.dart';
 import 'auth.service.dart';
 
 class AttendanceService {

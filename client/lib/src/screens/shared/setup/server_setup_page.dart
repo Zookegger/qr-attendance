@@ -3,8 +3,8 @@ import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:dio/dio.dart';
-import 'package:qr_attendance_frontend/src/consts/api_endpoints.dart';
-import '../../services/config.service.dart';
+import "../../../services/health.service.dart";
+import '../../../services/config.service.dart';
 
 class ServerSetupPage extends StatefulWidget {
   const ServerSetupPage({super.key});
@@ -47,7 +47,7 @@ class _ServerSetupPageState extends State<ServerSetupPage> {
       if (saved.isEmpty) return;
 
       final display = saved.replaceAll(RegExp(r'\/api\/?$'), '');
-      
+
       if (!mounted) return;
       setState(() {
         _urlController.text = display;
@@ -55,20 +55,11 @@ class _ServerSetupPageState extends State<ServerSetupPage> {
 
       // Verify health of the saved host
       setState(() => _isConnecting = true);
-      final dio = Dio(
-        BaseOptions(
-          baseUrl: saved,
-          connectTimeout: const Duration(seconds: 8),
-          receiveTimeout: const Duration(seconds: 8),
-          headers: const {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-        ),
-      );
 
-      final response = await dio.get(ApiEndpoints.health);
-      if (response.statusCode == 200) {
+      final isHealthy = await HealthService().checkOnce(
+        timeout: Duration(seconds: 8),
+      );
+      if (isHealthy) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

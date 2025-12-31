@@ -8,6 +8,7 @@ class ApiEndpoints {
   static const String logout = '/auth/logout';
   static const String me = '/auth/me';
   static const String refresh = '/auth/refresh';
+  static const String forgotPassword = '/auth/forgot-password';
   static const String resetPassword = '/auth/reset-password';
   static const String changePassword = '/auth/change-password';
   static const String unbindDevice = '/admin/unbind-device';
@@ -18,6 +19,24 @@ class ApiEndpoints {
   static const String history = '/attendance/history';
   static const String createRequest = '/requests';
 
+  // Admin Routes
+  static const String adminQr = '/admin/qr';
+  static const String adminConfig = '/admin/config';
+  static const String adminReport = '/admin/report';
+  static const String adminUsers = '/admin/users';
+  static String adminUser(String id) => '/admin/users/$id';
+  static String adminUserSessions(String id) => '/admin/users/$id/sessions';
+  static String revokeSession(String id) => '/admin/sessions/$id';
+
   // User routes
-  static String userProfile(int id) => '/users/$id/profile';
+  static String userProfile(String id) => '/users/$id/profile';
+
+  // Schedule routes
+  static const String schedules = '/schedules';
+  static const String schedulesSearch = '/schedules/search';
+  static String scheduleById(int id) => '/schedules/$id';
+
+  // Workshift routes
+  static const String workshifts = '/workshifts';
+  static String workshiftById(int id) => '/workshifts/$id';
 }

@@ -28,7 +28,7 @@ const transporter = nodemailer.createTransport({
 	},
 });
 
-export class EmailService {
+export default class EmailService {
 	static async sendEmail(data: EmailJobData): Promise<void> {
 		const FROM_EMAIL: string =
 			process.env.FROM_EMAIL ||

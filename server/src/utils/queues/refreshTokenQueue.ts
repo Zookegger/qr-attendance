@@ -1,5 +1,5 @@
 import { Queue } from "bullmq";
-import { redis } from "@config/index";
+import redis from "@config/redis";
 
 export const refreshTokenQueue = new Queue("refresh-tokens", {
 	connection: redis,
@@ -8,6 +8,14 @@ export const refreshTokenQueue = new Queue("refresh-tokens", {
 		removeOnFail: false,
 	},
 });
+
+export const closeRefreshTokenQueue = async () => {
+  try {
+    await refreshTokenQueue.close();
+  } catch (err) {
+    // ignore
+  }
+};
 
 export const addRefreshTokenJob = async (opts?: { once?: boolean }) => {
 	if (opts?.once) {

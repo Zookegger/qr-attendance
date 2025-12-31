@@ -13,6 +13,17 @@ export const initSocket = (httpServer: http.Server): IOServer => {
 
 	io.on("connection", (socket) => {
 		logger.info(`[Socket] ${socket.id} connected`);
+
+		// Allow clients to join an office room to receive QR updates
+		socket.on("join:office", (officeId: string | number) => {
+			try {
+				socket.join(`office_${officeId}`);
+				logger.info(`[Socket] ${socket.id} joined office_${officeId}`);
+			} catch (err) {
+				logger.warn(`[Socket] Failed to join office room: ${err}`);
+			}
+		});
+
 		socket.on("disconnect", (reason) => {
 			logger.info(`[Socket] ${socket.id} disconnected: ${reason}`);
 		});

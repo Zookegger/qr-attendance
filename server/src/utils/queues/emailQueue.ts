@@ -57,3 +57,11 @@ export const emailQueue = new Queue<EmailJobData>("email", {
 		},
 	},
 });
+
+export const closeEmailQueue = async () => {
+	try {
+		await emailQueue.close();
+	} catch (err) {
+		// ignore
+	}
+};

@@ -1,5 +1,6 @@
 import Redis from "ioredis";
 import dotenv from "dotenv";
+import logger from "@utils/logger";
 
 dotenv.config();
 
@@ -9,14 +10,14 @@ const redisPort = parseInt(process.env.REDIS_PORT || "6379", 10);
 const redis = new Redis({
 	host: redisHost,
 	port: redisPort,
+	maxRetriesPerRequest: null, // Required for BullMQ
 });
 
 redis.on("connect", () => {
-	console.log("[INFO] Redis connected");
+	logger.info("Redis connected");
 });
-
 redis.on("error", (err) => {
-	console.error("[ERROR] Redis connection error:", err);
+	logger.error("Redis connection error:", err);
 });
 
 export default redis;

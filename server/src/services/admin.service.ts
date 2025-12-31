@@ -1,53 +1,66 @@
 import { OfficeConfig, Attendance, User, UserStatus, RefreshToken } from "@models";
+import redis from "@config/redis";
+import { getIo } from "@utils/socket";
+import crypto from "crypto";
 import ExcelJS from "exceljs";
 import { Op } from "sequelize";
 import { startOfMonth, endOfMonth, format } from "date-fns";
 import bcrypt from "bcrypt";
 import { Gender, UserRole } from "@models/user";
-import { AddUserDTO, UpdateUserDTO, OfficeConfigDTO } from "@my-types/admin";
-import { listUserSessions } from "./refreshToken.service";
+import { AddUserDTO, UpdateUserDTO, AddOfficeConfigDTO, UpdateOfficeConfigDTO } from "@my-types/admin";
+import RefreshTokenService from "./refreshToken.service";
 
-export class AdminService {
-	static async generateQR(): Promise<string> {
-		// In a real app, this should be encrypted
-		const timestamp = Date.now();
-		return timestamp.toString();
-	}
+export default class AdminService {
+	static async generateQR(officeId?: number): Promise<{ code: string; refreshAt: number }> {
+		// generate 4-digit code, store in redis, emit to socket room
+		const num = crypto.randomInt(0, 10000);
+		const code = num.toString().padStart(4, "0");
 
-	static async getOfficeConfig() {
-		let config = await OfficeConfig.findOne();
-		if (!config) {
-			// Create default if not exists
-			config = await OfficeConfig.create({
-				latitude: 0,
-				longitude: 0,
-				radius: 100,
-				start_hour: "09:00",
-				end_hour: "18:00",
-			});
+		const office = officeId ? await OfficeConfig.findByPk(officeId) : await OfficeConfig.findOne();
+		const idToUse = office ? (office as any).id : officeId;
+		const ttlSeconds = 45;
+		const key = `checkin:office:${idToUse}:code:${code}`;
+
+		await redis.set(key, "1", "EX", ttlSeconds);
+
+		try {
+			const io = getIo();
+			io.to(`office_${idToUse}`).emit("qr:update", { code, refreshAt: 30 });
+		} catch (err) {
+			// ignore if socket not initialized
 		}
-		return config;
+
+		return { code, refreshAt: 30 };
 	}
 
-	static async updateOfficeConfig(dto: OfficeConfigDTO) {
-		const { latitude, longitude, radius, start_hour, end_hour, wifi_ssid } = dto;
-		let config = await OfficeConfig.findOne();
+	static async listOfficeConfig() {
+		return await OfficeConfig.findAll();
+	}
+
+	static async updateOfficeConfig(dto: AddOfficeConfigDTO | UpdateOfficeConfigDTO, id?: string) {
+		let config = null;
+
+		if (id) {
+			config = await OfficeConfig.findByPk(id);
+		} else {
+			config = await OfficeConfig.findOne({ where: { name: (dto as any).name } });
+		}
 
 		if (config) {
+			const { name, latitude, longitude, radius, wifi_ssid } = dto as UpdateOfficeConfigDTO;
+			if (name !== undefined) config.name = name;
 			if (latitude !== undefined) config.latitude = latitude;
 			if (longitude !== undefined) config.longitude = longitude;
 			if (radius !== undefined) config.radius = radius;
-			if (start_hour !== undefined) config.start_hour = start_hour;
-			if (end_hour !== undefined) config.end_hour = end_hour;
 			if (wifi_ssid !== undefined) config.wifi_ssid = wifi_ssid;
 			await config.save();
 		} else {
+			const { name, latitude, longitude, radius, wifi_ssid } = dto as AddOfficeConfigDTO;
 			config = await OfficeConfig.create({
+				name: name || 'Default Config',
 				latitude: latitude || 0,
 				longitude: longitude || 0,
 				radius: radius || 100,
-				start_hour: start_hour || "09:00",
-				end_hour: end_hour || "18:00",
 				wifi_ssid: wifi_ssid || null,
 			});
 		}
@@ -275,13 +288,6 @@ export class AdminService {
 	}
 
 	static async listUserSessions(userId: string) {
-		return await listUserSessions(userId);
-	}
-
-	static async revokeUserSession(sessionId: string) {
-		await RefreshToken.update(
-			{ revoked: true },
-			{ where: { id: sessionId } }
-		);
+		return await RefreshTokenService.listUserSessions(userId);
 	}
 }

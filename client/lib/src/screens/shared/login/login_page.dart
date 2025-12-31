@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:qr_attendance_frontend/src/services/api/api_client.dart';
+import 'package:qr_attendance_frontend/src/utils/api_client.dart';
 import 'package:qr_attendance_frontend/src/services/auth.service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -38,6 +38,7 @@ class _LoginPageState extends State<LoginPage> {
       final session = await AuthenticationService().login(
         email: login,
         password: password,
+        context: context
       );
 
       if (!mounted) return;

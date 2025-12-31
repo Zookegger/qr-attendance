@@ -4,7 +4,7 @@ import logger from "@utils/logger";
 import { Job, Worker } from "bullmq";
 import { Op } from "sequelize";
 
-const worker = new Worker(
+const refreshTokenWorker = new Worker(
 	"refresh-tokens",
 	async (job: Job) => {
 		logger.info(
@@ -37,10 +37,21 @@ const worker = new Worker(
 	{ connection: redis }
 );
 
-worker.on("completed", (job) => {
+refreshTokenWorker.on("completed", (job) => {
 	logger.debug(`Job ${job.id} has completed!`);
 });
 
-worker.on("failed", (job, err) => {
+refreshTokenWorker.on("failed", (job, err) => {
 	logger.error(`Job ${job?.id} failed: ${err.message}`);
 });
+
+export default refreshTokenWorker;
+
+export const shutdownRefreshTokenWorker = async () => {
+	try {
+		await refreshTokenWorker.close();
+		logger.info("RefreshToken worker closed");
+	} catch (err) {
+		logger.warn(`RefreshToken worker close error: ${err}`);
+	}
+};

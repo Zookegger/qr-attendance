@@ -1,12 +1,13 @@
 import { NextFunction, Request, Response } from "express";
-import { AuthService } from "@services/auth.service";
+import AuthService from "@services/auth.service";
 import { validationResult } from "express-validator";
-import { ChangePasswordDTO, LoginRequestDTO, LogoutRequestDTO, RefreshRequestDTO, ForgotPasswordRequestDTO, ResetPasswordRequestDTO } from "@my-types/auth";
+import { ChangePasswordRequestDTO, LoginRequestDTO, LogoutRequestDTO, RefreshRequestDTO, ForgotPasswordRequestDTO, ResetPasswordRequestDTO } from "@my-types/auth";
+import { RefreshToken, User } from "@models";
 
 const login = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const dto: LoginRequestDTO = req.body;
-		const result = await AuthService.login(dto.email, dto.password, dto.device_uuid);
+		const result = await AuthService.login(dto.email, dto.password, dto.device_uuid, dto.device_name, dto.device_model, dto.device_os_version);
 		return res.status(200).json(result);
 	} catch (error) {
 		return next(error);
@@ -35,14 +36,46 @@ const refresh = async (req: Request, res: Response, next: NextFunction) => {
 
 const me = async (req: Request, res: Response, next: NextFunction) => {
 	try {
-		const user = (req as any).user;
-
-		// TODO: Check token expiry, if expired, revoke and sign out
-
+		const user: User = req.user as User;
 
 		if (!user) {
 			return res.status(401).json({ message: "Unauthorized" });
 		}
+
+		const now = new Date();
+		const token = await RefreshToken.findOne({ where: { user_id: user.id }, order: [['created_at', 'DESC']] });
+
+		if (!token) {
+			return res.status(401).json({ message: "No active session" });
+		}
+
+		if (token.revoked) {
+			return res.status(401).json({ message: "Session revoked. Please sign in again." });
+		}
+
+		if (token.expires_at && now >= token.expires_at) {
+			await token.update({ revoked: true });
+			return res.status(401).json({ message: "Session expired. Please sign in again." });
+		}
+
+		// If middleware rotated tokens, it will expose them via response headers.
+		const newAccess = res.getHeader ? res.getHeader('x-access-token') : undefined;
+		const newRefresh = res.getHeader ? res.getHeader('x-refresh-token') : undefined;
+
+		if (newAccess || newRefresh) {
+			return res.status(200).json({
+				accessToken: String(newAccess || ''),
+				refreshToken: String(newRefresh || ''),
+				user: {
+					id: user.id,
+					name: user.name,
+					email: user.email,
+					role: user.role,
+					device_uuid: user.device_uuid,
+				},
+			});
+		}
+
 		return res.json(user);
 	} catch (error) {
 		return next(error);
@@ -102,6 +135,7 @@ const resetPassword = async (req: Request, res: Response, next: NextFunction) =>
 		}
 
 		await AuthService.resetPassword(dto.email, dto.token, dto.newPassword);
+
 		return res.status(200).json({ success: true, message: "Password reset successfully" });
 	} catch (error) {
 		return next(error);
@@ -120,7 +154,7 @@ const changePassword = async (req: Request, res: Response, next: NextFunction) =
 			return res.status(401).json({ message: "Unauthorized" });
 		}
 
-		const dto: ChangePasswordDTO = req.body;
+		const dto: ChangePasswordRequestDTO = req.body;
 		const { currentPassword, newPassword, confirmNewPassword } = dto;
 
 		await AuthService.changePassword(user.id, currentPassword, newPassword, confirmNewPassword);

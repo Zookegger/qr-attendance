@@ -18,7 +18,7 @@ interface RefreshTokenCreationAttributes
 		"id" | "device_uuid" | "created_at" | "updated_at"
 	> {}
 
-export class RefreshToken
+export default class RefreshToken
 	extends Model<RefreshTokenAttributes | RefreshTokenCreationAttributes>
 	implements RefreshTokenAttributes
 {
@@ -51,7 +51,6 @@ RefreshToken.init(
 		token_hash: {
 			type: DataTypes.STRING,
 			allowNull: false,
-			get() {},
 		},
 		device_uuid: {
 			type: DataTypes.STRING,
