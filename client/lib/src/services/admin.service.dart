@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:qr_attendance_frontend/src/consts/api_endpoints.dart';
-import 'api/api_client.dart';
+import '../utils/api_client.dart';
 
 class AdminService {
   final Dio _dio = ApiClient().client;

@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 
 import 'package:qr_attendance_frontend/src/models/request.dart';
 import 'package:qr_attendance_frontend/src/models/user.dart';
-import 'package:qr_attendance_frontend/src/services/RequestService.dart';
+import 'package:qr_attendance_frontend/src/services/request.service.dart';
 import 'package:qr_attendance_frontend/src/services/auth.service.dart';
 
 class CreateRequestPage extends StatefulWidget {

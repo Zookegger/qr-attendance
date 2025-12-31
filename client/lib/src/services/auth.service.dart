@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:qr_attendance_frontend/src/consts/api_endpoints.dart';
 import '../models/user.dart';
-import 'api/api_client.dart';
+import '../utils/api_client.dart';
 
 class AuthException implements Exception {
   final String message;
