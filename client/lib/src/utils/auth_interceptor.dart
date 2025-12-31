@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
-import '../auth.service.dart';
+import '../services/auth.service.dart';
 
 class AuthInterceptor extends Interceptor {
   final AuthenticationService _auth = AuthenticationService();
@@ -11,10 +11,13 @@ class AuthInterceptor extends Interceptor {
   AuthInterceptor(this._dio);
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  void onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     final token = await _auth.getAccessToken();
     if (token != null && token.isNotEmpty) {
-      options.headers['Authorization'] = 'Bearer $token';
+      options.headers['Au thorization'] = 'Bearer $token';
     }
     return handler.next(options);
   }
@@ -24,7 +27,9 @@ class AuthInterceptor extends Interceptor {
     final status = err.response?.statusCode;
     final reqOptions = err.requestOptions;
 
-    if (status == 401 && reqOptions.extra['retried'] != true && reqOptions.path != '/auth/refresh') {
+    if (status == 401 &&
+        reqOptions.extra['retried'] != true &&
+        reqOptions.path != '/auth/refresh') {
       final completer = Completer<Response>();
       _queue.add(completer);
 
@@ -38,12 +43,20 @@ class AuthInterceptor extends Interceptor {
             final opts = reqOptions.copyWith();
             opts.headers['Authorization'] = 'Bearer $newAccess';
             opts.extra['retried'] = true;
-            _dio.fetch(opts).then((r) => q.complete(r)).catchError((e) => q.completeError(e));
+            _dio
+                .fetch(opts)
+                .then((r) => q.complete(r))
+                .catchError((e) => q.completeError(e));
           }
         } catch (e) {
           await _auth.logout();
           for (final q in _queue) {
-            q.completeError(DioException(requestOptions: reqOptions, error: 'Auth refresh failed'));
+            q.completeError(
+              DioException(
+                requestOptions: reqOptions,
+                error: 'Auth refresh failed',
+              ),
+            );
           }
         } finally {
           _queue.clear();
