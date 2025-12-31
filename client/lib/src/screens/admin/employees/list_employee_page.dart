@@ -74,8 +74,11 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
       width: 65,
       height: 65,
       child: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/employee/form');
+        onPressed: () async {
+          final result = await Navigator.pushNamed(context, '/employee/form');
+          if (result == true) {
+            await _fetchUsers();
+          }
         },
         elevation: 1,
         clipBehavior: Clip.hardEdge,

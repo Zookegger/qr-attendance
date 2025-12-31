@@ -29,7 +29,7 @@ class _EmployeeFormPageState extends State<EmployeeFormPage> {
   // Dropdown Values
   UserRole _selectedRole = UserRole.USER;
   UserStatus _selectedStatus = UserStatus.ACTIVE;
-  Gender _selectedGender = Gender.UNKNOWN;
+  Gender _selectedGender = Gender.MALE;
 
   bool get isEditing => widget.user != null;
 
@@ -49,7 +49,7 @@ class _EmployeeFormPageState extends State<EmployeeFormPage> {
     _phoneController.text = user.phoneNumber ?? '';
     _selectedRole = user.role;
     _selectedStatus = user.status;
-    _selectedGender = user.gender ?? Gender.UNKNOWN;
+    _selectedGender = user.gender ?? Gender.MALE;
   }
 
   Future<void> _submit() async {
@@ -96,7 +96,7 @@ class _EmployeeFormPageState extends State<EmployeeFormPage> {
       Navigator.pop(context, true); // Return 'true' to trigger refresh
     } catch (e) {
       if (e is DioException) {
-        final resp = e.response!.data;
+        final resp = e.response?.data;
         // express-validator returns { errors: [ { msg, param, ... } ] }
         if (resp is Map && resp['errors'] is List) {
           final List errs = resp['errors'] as List;
@@ -200,6 +200,17 @@ class _EmployeeFormPageState extends State<EmployeeFormPage> {
                     ),
                   ),
                 ],
+              ),
+
+              const SizedBox(height: 12),
+              DropdownButtonFormField<Gender>(
+                initialValue: _selectedGender,
+                decoration: InputDecoration(labelText: 'Gender', errorText: _fieldErrors['gender']),
+                items: Gender.values.map((g) {
+                  final label = g.name[0] + g.name.substring(1).toLowerCase();
+                  return DropdownMenuItem(value: g, child: Text(label));
+                }).toList(),
+                onChanged: (v) => setState(() => _selectedGender = v ?? Gender.MALE),
               ),
 
               const SizedBox(height: 24),

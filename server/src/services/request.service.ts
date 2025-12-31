@@ -27,6 +27,37 @@ export default class RequestService {
 		return request.toJSON() as RequestResponse;
 	}
 
+	static async updateRequest(
+      id: string, 
+      userId: string, 
+      dto: Partial<CreateRequestDTO>
+   ): Promise<RequestModel> {
+      const request = await RequestModel.findByPk(id);
+      
+      if (!request) throw { status: 404, message: "Request not found" };
+
+      // 1. Ownership Check
+      if (request.user_id !== userId) {
+         throw { status: 403, message: "Unauthorized: You can only edit your own requests" };
+      }
+
+      // 2. Status Check
+      if (request.status !== RequestStatus.PENDING) {
+         throw { status: 400, message: "Cannot edit a request that has already been processed" };
+      }
+
+      // 3. Update 
+      const updatedRequest = await request.update({
+         type: dto.type ?? request.type,
+         from_date: dto.from_date ? new Date(dto.from_date) : request.from_date,
+         to_date: dto.to_date ? new Date(dto.to_date) : request.to_date,
+         reason: dto.reason ?? request.reason,
+         attachments: dto.attachments ?? request.attachments,
+      });
+
+      return updatedRequest;
+   }
+
 	static async listRequests(currentUser: User, filters: RequestFilters): Promise<RequestModel[]> {
 		const where: any = {};
 

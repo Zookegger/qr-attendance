@@ -38,14 +38,13 @@ enum UserStatus {
 enum Gender {
   MALE,
   FEMALE,
-  OTHER,
-  UNKNOWN;
+  OTHER;
 
   static Gender fromString(String value) {
     final v = value.toUpperCase();
     return Gender.values.firstWhere(
       (e) => e.name == v,
-      orElse: () => Gender.UNKNOWN,
+      orElse: () => Gender.OTHER,
     );
   }
 }

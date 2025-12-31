@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:qr_attendance_frontend/src/consts/api_endpoints.dart';
 import 'package:qr_attendance_frontend/src/models/user.dart';
 import '../utils/api_client.dart';
@@ -30,6 +31,8 @@ class AdminService {
 
   Future<void> createUser(Map<String, dynamic> data) async {
     try {
+      debugPrint(data.toString());
+
       await _dio.post(
         ApiEndpoints.adminUsers,
         data: data,
