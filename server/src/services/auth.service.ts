@@ -4,13 +4,9 @@ import { Op } from "sequelize";
 import { User, RefreshToken } from "@models";
 import { UserRole } from "@models/user";
 import { AuthResponse } from "@my-types/auth";
-import {
-	generateRefreshToken,
-	rotateRefreshToken,
-	revokeRefreshToken,
-} from "./refreshToken.service";
 import { emailQueue } from "@utils/queues/emailQueue";
 import EmailService from "./email.service";
+import RefreshTokenService from "./refreshToken.service";
 
 export default class AuthService {
 	static async login(email: string, password: string, device_uuid?: string): Promise<AuthResponse> {
@@ -42,7 +38,7 @@ export default class AuthService {
 		}
 
 		// Use RefreshTokenService to generate tokens
-		const { accessToken, refreshToken } = await generateRefreshToken(user, {
+		const { accessToken, refreshToken } = await RefreshTokenService.generateRefreshToken(user, {
 			id: user.id,
 			role: user.role,
 		});
@@ -62,7 +58,7 @@ export default class AuthService {
 
 	static async logout(refreshToken: string): Promise<void> {
 		if (!refreshToken) return;
-		await revokeRefreshToken(refreshToken);
+		await RefreshTokenService.revokeRefreshToken(refreshToken);
 	}
 
 	static async forgotPassword(email: string): Promise<void> {
@@ -138,7 +134,7 @@ export default class AuthService {
 
 	static async refresh(tokenString: string): Promise<AuthResponse> {
 		// Use RefreshTokenService to rotate tokens
-		const { accessToken, refreshToken, user } = await rotateRefreshToken(
+		const { accessToken, refreshToken, user } = await RefreshTokenService.rotateRefreshToken(
 			tokenString
 		);
 

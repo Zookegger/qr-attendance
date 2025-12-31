@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { User } from "@models";
+import { User, RefreshToken } from "@models";
 import { UserRole } from "@models/user";
+// RefreshTokenService rotation moved to client-side flow (interceptor + /auth/refresh route)
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key";
 
@@ -27,16 +28,37 @@ export const authenticate = async (
 		if (!token) {
 			return res.status(401).json({ message: "Token missing" });
 		}
+		try {
+			const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+			const user = await User.findByPk(decoded.id);
 
-		const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
-		const user = await User.findByPk(decoded.id);
+			if (!user) {
+				return res.status(401).json({ message: "User not found" });
+			}
 
-		if (!user) {
-			return res.status(401).json({ message: "User not found" });
+			// Ensure there is an active refresh token session for this user
+			const now = new Date();
+			const tokenRecord = await RefreshToken.findOne({ where: { user_id: user.id }, order: [['created_at', 'DESC']] });
+
+			if (!tokenRecord) {
+				return res.status(401).json({ message: "No active session" });
+			}
+
+			if (tokenRecord.revoked) {
+				return res.status(401).json({ message: "Session revoked. Please sign in again." });
+			}
+
+			if (tokenRecord.expires_at && now >= tokenRecord.expires_at) {
+				await tokenRecord.update({ revoked: true });
+				return res.status(401).json({ message: "Session expired. Please sign in again." });
+			}
+
+			req.user = user;
+			return next();
+		} catch (err: any) {
+			// Let client handle refresh. Return 401 when token invalid/expired.
+			return res.status(401).json({ message: "Invalid or expired token" });
 		}
-
-		req.user = user;
-		return next();
 	} catch (error) {
 		return res.status(401).json({ message: "Invalid token" });
 	}

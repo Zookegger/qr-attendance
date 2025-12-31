@@ -8,7 +8,7 @@ import { startOfMonth, endOfMonth, format } from "date-fns";
 import bcrypt from "bcrypt";
 import { Gender, UserRole } from "@models/user";
 import { AddUserDTO, UpdateUserDTO, AddOfficeConfigDTO, UpdateOfficeConfigDTO } from "@my-types/admin";
-import { listUserSessions } from "./refreshToken.service";
+import RefreshTokenService from "./refreshToken.service";
 
 export default class AdminService {
 	static async generateQR(officeId?: number): Promise<{ code: string; refreshAt: number } > {
@@ -288,7 +288,7 @@ export default class AdminService {
 	}
 
 	static async listUserSessions(userId: string) {
-		return await listUserSessions(userId);
+		return await RefreshTokenService.listUserSessions(userId);
 	}
 
 	static async revokeUserSession(sessionId: string) {
