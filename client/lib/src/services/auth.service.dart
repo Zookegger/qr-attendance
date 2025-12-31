@@ -65,8 +65,6 @@ class AuthenticationService {
 
   Future<String?> getRefreshToken() => _storage.read(key: _refreshTokenKey);
 
-  
-
   Future<User?> getCachedUser() async {
     final raw = await _storage.read(key: _userKey);
     if (raw == null || raw.trim().isEmpty) return null;
@@ -75,24 +73,33 @@ class AuthenticationService {
     return null;
   }
 
-  Future<void> logout() async {
+  Future<bool> logout() async {
     try {
       final refreshToken = await getRefreshToken();
 
-      if (refreshToken != null && refreshToken.trim().isNotEmpty) {
-        await _dio.post(
-          ApiEndpoints.logout,
-          data: {'refreshToken': refreshToken},
-        );
+      if (refreshToken == null || refreshToken.trim().isEmpty) {
+        return false;
       }
-    } catch (e) {
-      debugPrint('Logout request failed: $e');
-    } finally {
+
+      final response = await _dio.post(
+        ApiEndpoints.logout,
+        data: {'refreshToken': refreshToken},
+      );
+
+      if (response.statusCode != 200 && !response.data.success) {
+        return false;
+      }
+
       await Future.wait([
         _storage.delete(key: _accessTokenKey),
         _storage.delete(key: _refreshTokenKey),
         _storage.delete(key: _userKey),
       ]);
+
+      return true;
+    } catch (e) {
+      debugPrint('Logout request failed: $e');
+      return false;
     }
   }
 
@@ -317,11 +324,7 @@ class AuthenticationService {
     try {
       await _dio.post(
         ApiEndpoints.resetPassword,
-        data: {
-          'email': email,
-          'token': token,
-          'newPassword': newPassword,
-        },
+        data: {'email': email, 'token': token, 'newPassword': newPassword},
       );
     } on DioException catch (e) {
       final msg = e.response?.data['message'] ?? 'Failed to reset password';

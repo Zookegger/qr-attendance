@@ -1,9 +1,50 @@
+enum UserRole {
+  ADMIN,
+  MANAGER,
+  USER;
+
+  static UserRole fromString(String value) {
+    return UserRole.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => UserRole.USER, // Default fallback
+    );
+  }
+}
+
+enum UserStatus {
+  ACTIVE,
+  INACTIVE,
+  PENDING,
+  UNKNOWN;
+
+  static UserStatus fromString(String value) {
+    return UserStatus.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => UserStatus.UNKNOWN,
+    );
+  }
+}
+
+enum Gender {
+  MALE,
+  FEMALE,
+  OTHER,
+  UNKNOWN;
+
+  static Gender fromString(String value) {
+    return Gender.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => Gender.UNKNOWN,
+    );
+  }
+}
+
 class User {
   final String id;
   final String name;
   final String email;
-  final String status;
-  final String role;
+  final UserStatus status;
+  final UserRole role;
   final String? deviceUuid;
   final String? deviceName;
   final String? deviceModel;
@@ -14,7 +55,7 @@ class User {
   final String? dateOfBirth;
   final String? phoneNumber;
   final String? address;
-  final String? gender;
+  final Gender? gender;
 
   User({
     required this.id,
@@ -40,8 +81,8 @@ class User {
       id: json['id'],
       name: json['name'],
       email: json['email'],
-      status: json['status'] ?? 'UNKNOWN',
-      role: json['role'],
+      status: UserStatus.fromString((json['status'] ?? 'UNKNOWN').toString()),
+      role: UserRole.fromString((json['role'] ?? 'USER').toString()),
       deviceUuid: json['device_uuid'],
       deviceName: json['device_name'],
       deviceModel: json['device_model'],
@@ -52,7 +93,7 @@ class User {
       dateOfBirth: json['date_of_birth'],
       phoneNumber: json['phone_number'],
       address: json['address'],
-      gender: json['gender'],
+      gender: json['gender'] != null ? Gender.fromString(json['gender'].toString()) : null,
     );
   }
 
@@ -61,8 +102,8 @@ class User {
       'id': id,
       'name': name,
       'email': email,
-      'role': role,
-      'status': status,
+      'role': role.name,
+      'status': status.name,
       'device_uuid': deviceUuid,
       'device_name': deviceName,
       'device_model': deviceModel,
@@ -73,7 +114,7 @@ class User {
       'date_of_birth': dateOfBirth,
       'phone_number': phoneNumber,
       'address': address,
-      'gender': gender,
+      'gender': gender?.name,
     };
   }
 }

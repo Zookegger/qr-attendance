@@ -7,9 +7,7 @@ import '../../services/auth.service.dart';
 import '../../services/admin.service.dart';
 
 class HomePage extends StatefulWidget {
-  final bool isPreview;
-
-  const HomePage({super.key, this.isPreview = false});
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -37,21 +35,9 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
-    if (widget.isPreview) {
-      _user = User(
-        id: '0',
-        name: 'Alex Johnson',
-        status: 'Active',
-        email: 'alex@demo.com',
-        role: 'Staff',
-      );
-      return;
-    }
-
     _loadUser();
     _setupNotificationListener();
   }
-
 
   Future<void> _handleLogout() async {
     await AuthenticationService().logout();
@@ -59,11 +45,7 @@ class _HomePageState extends State<HomePage> {
     Navigator.of(
       context,
     ).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
-    Navigator.of(
-      context,
-    ).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
   }
-
 
   void _openProfile() {
     showModalBottomSheet<void>(
@@ -148,6 +130,7 @@ class _HomePageState extends State<HomePage> {
     if (mounted) {
       setState(() => _user = cached);
     }
+    
   }
 
   void _setupNotificationListener() {
@@ -178,15 +161,15 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint(_user?.role.name);
+
     // Using a slightly off-white background for better contrast
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      body: _user?.role == 'Manager' || _user?.role == 'Admin'
+      body: _user?.role == UserRole.ADMIN || _user?.role == UserRole.MANAGER
           ? _buildManagerView()
           : _buildStaffView(),
-      floatingActionButton: _user?.role == 'Manager' || _user?.role == 'Admin'
-          ? null
-          : _buildAttendanceButton(context),
+      floatingActionButton: _buildAttendanceButton(context),
     );
   }
 
@@ -351,7 +334,8 @@ class _HomePageState extends State<HomePage> {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                          content: Text("Device unbound successfully")),
+                        content: Text("Device unbound successfully"),
+                      ),
                     );
                   }
                 } catch (e) {
@@ -413,13 +397,13 @@ class _HomePageState extends State<HomePage> {
         "name": "Sarah Connor",
         "type": "Leave Request",
         "date": "Today, 10:30 AM",
-        "status": "Pending"
+        "status": "Pending",
       },
       {
         "name": "John Smith",
         "type": "Overtime",
         "date": "Yesterday",
-        "status": "Pending"
+        "status": "Pending",
       },
     ];
 
@@ -482,10 +466,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Text(
                     req["date"] as String,
-                    style: TextStyle(
-                      color: Colors.grey.shade400,
-                      fontSize: 10,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade400, fontSize: 10),
                   ),
                   const SizedBox(height: 4),
                   Container(
