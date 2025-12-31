@@ -35,10 +35,12 @@ class RequestService {
       // Add files
       for (final file in files) {
         final filename = file.path.split(Platform.pathSeparator).last;
-        formData.files.add(MapEntry(
-          'files',
-          MultipartFile.fromFileSync(file.path, filename: filename),
-        ));
+        formData.files.add(
+          MapEntry(
+            'files',
+            MultipartFile.fromFileSync(file.path, filename: filename),
+          ),
+        );
       }
 
       final response = await _dio.post(
