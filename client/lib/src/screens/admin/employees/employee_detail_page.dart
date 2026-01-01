@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../models/user.dart';
 import '../../../services/admin.service.dart';
 
@@ -114,6 +115,14 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
                   'Address',
                   _user.address ?? 'N/A',
                 ),
+                _buildInfoTile(
+                  Icons.transgender,
+                  'Gender',
+                  _user.gender != null
+                      ? (_user.gender!.name[0] +
+                            _user.gender!.name.substring(1).toLowerCase())
+                      : 'N/A',
+                ),
                 const Divider(height: 32),
                 _buildSectionTitle('Work Info'),
                 _buildInfoTile(
@@ -126,7 +135,13 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
                   'Department',
                   _user.department ?? 'N/A',
                 ),
-                _buildInfoTile(Icons.cake, 'DOB', _user.dateOfBirth ?? 'N/A'),
+                _buildInfoTile(
+                  Icons.cake,
+                  'DOB',
+                  (_user.dateOfBirth != null)
+                      ? DateFormat("dd/MM/yyyy").format(_user.dateOfBirth!)
+                      : 'N/A',
+                ),
                 const Divider(height: 32),
                 _buildDeviceSection(),
                 const SizedBox(height: 40),
@@ -164,21 +179,54 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: _user.role == UserRole.ADMIN
-                  ? Colors.red.withOpacity(0.1)
-                  : Colors.blue.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              _user.role.name,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: _user.role == UserRole.ADMIN ? Colors.red : Colors.blue,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: _user.role == UserRole.ADMIN
+                      ? Colors.red.withValues(alpha: 0.1)
+                      : Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  UserRole.toTextString(_user.role),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: _user.role == UserRole.ADMIN
+                        ? Colors.red
+                        : Colors.blue,
+                  ),
+                ),
               ),
-            ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: _user.role == UserRole.ADMIN
+                      ? Colors.red.withValues(alpha: 0.1)
+                      : Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  UserStatus.toTextString(_user.status),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: _user.status == UserStatus.ACTIVE
+                        ? Colors.green
+                        : _user.status == UserStatus.PENDING
+                        ? Colors.amber
+                        : Colors.red,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -200,7 +248,7 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
           title: Text(hasDevice ? 'Device Bound' : 'No Device Bound'),
           subtitle: hasDevice
               ? Text(
-                  'Model: ${_user.deviceModel ?? "Unknown"}\nUUID: ${_user.deviceUuid}',
+                  'Name: ${_user.deviceName ?? "Unknown"}\nModel: ${_user.deviceModel ?? "Unknown"}\nOS: ${_user.deviceOsVersion ?? "Unknown"}\nUUID: ${_user.deviceUuid ?? "Unknown"}${_user.fcmToken != null ? '\nFCM: ${_user.fcmToken}' : ''}',
                 )
               : const Text('User can login from any new device.'),
           trailing: hasDevice

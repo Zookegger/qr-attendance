@@ -177,7 +177,7 @@ export default class AdminService {
 			role: (role as UserRole) || UserRole.USER,
 			position: position || null,
 			department: department || null,
-			date_of_birth: date_of_birth || null,
+			date_of_birth: (typeof date_of_birth === 'string') ? new Date(date_of_birth) : date_of_birth || null,
 			phone_number: phone_number || null,
 			address: address || null,
 			gender: gender ? (gender as Gender) : null,
@@ -237,7 +237,7 @@ export default class AdminService {
 		if (status && Object.values(UserStatus).includes(status as UserStatus)) {
 			user.status = status as UserStatus;
 		}
-		if (date_of_birth) user.date_of_birth = date_of_birth;
+		if (date_of_birth) user.date_of_birth = (typeof date_of_birth === 'string') ? new Date(date_of_birth) : date_of_birth;
 		if (phone_number) user.phone_number = phone_number;
 		if (address) user.address = address;
 		if (gender) user.gender = gender as Gender;

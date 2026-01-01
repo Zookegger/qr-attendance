@@ -62,7 +62,7 @@ class User {
   final String? position;
   final String? department;
   final String? fcmToken;
-  final String? dateOfBirth;
+  final DateTime? dateOfBirth;
   final String? phoneNumber;
   final String? address;
   final Gender? gender;

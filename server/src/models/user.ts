@@ -33,7 +33,7 @@ interface UserAttributes {
 	position?: string | null;
 	department?: string | null;
 	fcm_token?: string | null;
-	date_of_birth?: string | null;
+	date_of_birth?: Date | null;
 	phone_number?: string | null;
 	address?: string | null;
 	gender?: Gender | null;
@@ -76,7 +76,7 @@ export default class User
 	public declare position: string | null;
 	public declare department: string | null;
 	public declare fcm_token: string | null;
-	public declare date_of_birth: string | null;
+	public declare date_of_birth: Date | null;
 	public declare phone_number: string | null;
 	public declare address: string | null;
 	public declare gender: Gender | null;

@@ -90,7 +90,11 @@ class AuthenticationService {
         data: {'refreshToken': refreshToken},
       );
 
-      if (response.statusCode != 200 && !response.data.success) {
+      final data = response.data;
+      final bool success =
+          data is Map<String, dynamic> && data['success'] == true;
+
+      if (response.statusCode != 200 && !success) {
         return false;
       }
 
@@ -139,14 +143,15 @@ class AuthenticationService {
                 "1. SECURITY REQUIREMENT",
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
-                  fontSize: 12,
+                  fontSize: 16,
                   letterSpacing: 0.5,
                 ),
               ),
               const SizedBox(height: 4),
               const Text(
                 "To ensure attendance integrity and prevent unauthorized proxy logins, this application utilizes strict device binding.",
-                style: TextStyle(fontSize: 13, height: 1.4),
+                style: TextStyle(fontSize: 16, height: 1.4),
+                textAlign: TextAlign.left,
               ),
 
               const SizedBox(height: 20),
@@ -155,14 +160,14 @@ class AuthenticationService {
                 "2. DATA COLLECTION",
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
-                  fontSize: 12,
+                  fontSize: 16,
                   letterSpacing: 0.5,
                 ),
               ),
               const SizedBox(height: 4),
               const Text(
                 "By proceeding, you authorize the system to capture and permanently link the following hardware identifiers to your employee profile:",
-                style: TextStyle(fontSize: 13, height: 1.4),
+                style: TextStyle(fontSize: 16, height: 1.4),
               ),
               const SizedBox(height: 10),
 
@@ -181,7 +186,7 @@ class AuthenticationService {
                     Text(
                       "• Unique Device Identifier (UUID)",
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -189,7 +194,7 @@ class AuthenticationService {
                     Text(
                       "• Device Model Name",
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -197,7 +202,7 @@ class AuthenticationService {
                     Text(
                       "• Operating System Version",
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -212,7 +217,7 @@ class AuthenticationService {
                 "3. BINDING AGREEMENT",
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
-                  fontSize: 12,
+                  fontSize: 16,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -220,7 +225,7 @@ class AuthenticationService {
               const Text(
                 "This action is irreversible by the user. Unbinding a device (e.g., lost phone, new phone) requires a formal request to the System Administrator.",
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 16,
                   color: Colors.redAccent,
                   height: 1.4,
                 ),
@@ -230,7 +235,7 @@ class AuthenticationService {
         ),
         actionsPadding: const EdgeInsets.symmetric(
           horizontal: 20,
-          vertical: 15,
+          vertical: 12,
         ),
         actions: [
           OutlinedButton(
@@ -487,12 +492,12 @@ class AuthenticationService {
           throw AuthException("Emulators are strictly prohibited.");
         }
 
-        // Example: "Samsung"
-        final brand = androidInfo.name;
+        // Example: "Galaxy S23"
+        final productName = androidInfo.name;
         // Example: "SM-G991B"
         final model = androidInfo.model;
 
-        deviceName = '$brand $model';
+        deviceName = '$productName $model';
         deviceModel = model;
         osVersion =
             'Android ${androidInfo.version.release} (SDK ${androidInfo.version.sdkInt})';
@@ -549,7 +554,8 @@ class AuthenticationService {
         data: {'email': email, 'token': token, 'newPassword': newPassword},
       );
     } on DioException catch (e) {
-      final msg = e.response?.data['message'] ?? 'Failed to reset password';
+      final msg =
+          _extractMessage(e.response?.data) ?? 'Failed to reset password';
       throw AuthException(msg, e.response?.statusCode);
     } catch (e) {
       throw AuthException('An unexpected error occurred: $e');
