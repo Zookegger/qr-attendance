@@ -164,6 +164,26 @@ const changePassword = async (req: Request, res: Response, next: NextFunction) =
 	}
 }
 
+const updateFcmToken = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user as any;
+    const { fcm_token } = req.body;
+
+    if (!fcm_token) {
+      return res.status(400).json({ message: "Missing fcm_token" });
+    }
+
+    await user.update({ fcm_token });
+
+    return res.json({ success: true });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+
+
+
 export const AuthController = {
 	login,
 	logout,
@@ -172,5 +192,6 @@ export const AuthController = {
 	forgotPassword,
 	resetPasswordLanding,
 	resetPassword,
-	changePassword
+	changePassword,
+	updateFcmToken
 };
