@@ -11,6 +11,7 @@ const REFRESH_TOKEN_DAYS = Number(process.env.REFRESH_TOKEN_DAYS || 30);
 interface RefreshTokenPayload {
 	id: string;
 	role: UserRole;
+	deviceUuid: string;
 }
 
 export default class RefreshTokenService {
@@ -20,7 +21,8 @@ export default class RefreshTokenService {
 	 */
 	static generateRefreshToken = async (
 		user: User,
-		payload: RefreshTokenPayload
+		payload: RefreshTokenPayload,
+
 	): Promise<{ refreshToken: string; accessToken: string }> => {
 		// 1. Generate Access Token (JWT)
 		const accessToken = jwt.sign(payload, JWT_SECRET, {
@@ -43,7 +45,7 @@ export default class RefreshTokenService {
 		const tokenRecord = await RefreshToken.create({
 			user_id: user.id,
 			token_hash: refreshHash,
-			device_uuid: user.device_uuid || null,
+			device_uuid: payload.deviceUuid,
 			expires_at: refreshExpires,
 			revoked: false,
 		});
@@ -120,6 +122,11 @@ export default class RefreshTokenService {
 	): Promise<{ refreshToken: string; accessToken: string; user: User }> => {
 		const tokenRecord = await this.verifyRefreshToken(oldRefreshTokenString);
 
+		if (!tokenRecord.device_uuid) {
+			// Rotation must be tied to a device. Reject if token has no device association.
+			throw new Error("Refresh token missing device UUID; rotation denied");
+		}
+
 		// 1. Revoke the used token (Rotation)
 		await tokenRecord.update({ revoked: true });
 
@@ -131,7 +138,8 @@ export default class RefreshTokenService {
 		const tokens = await this.generateRefreshToken(user, {
 			id: user.id,
 			role: user.role as UserRole,
-		});
+			deviceUuid: tokenRecord.device_uuid
+		},);
 
 		return { ...tokens, user };
 	};

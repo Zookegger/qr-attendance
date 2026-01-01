@@ -1,4 +1,4 @@
-import { OfficeConfig, Attendance, User, UserStatus, RefreshToken } from "@models";
+import { OfficeConfig, Attendance, User, UserStatus, RefreshToken, UserDevice } from "@models";
 import redis from "@config/redis";
 import { getIo } from "@utils/socket";
 import crypto from "crypto";
@@ -74,8 +74,8 @@ export default class AdminService {
 			throw new Error("User not found");
 		}
 
-		user.device_uuid = null;
-		await user.save();
+		// Remove all device bindings for this user
+		await UserDevice.destroy({ where: { user_id: userId } });
 
 		// Revoke all sessions for this user
 		await RefreshToken.destroy({

@@ -267,7 +267,7 @@ const listUserSession = async (_req: Request, res: Response, next: NextFunction)
 	}
 };
 
-const revokeUserSessions = async (_req: Request, res: Response, next: NextFunction) => {
+const revokeAllUserSessions = async (_req: Request, res: Response, next: NextFunction) => {
 	const errors = validationResult(_req);
 	if (!errors.isEmpty()) {
 		return res.status(400).json({ errors: errors.array() });
@@ -279,7 +279,7 @@ const revokeUserSessions = async (_req: Request, res: Response, next: NextFuncti
 			return res.status(400).json({ message: 'User ID is required' });
 		}
 
-		await AuthService.revokeUserSessions(userId);
+		await AuthService.revokeAllUserSessions(userId);
 		return res.status(200).json({ message: "Session revoked successfully" });
 	} catch (error) {
 		return next(error);
@@ -315,6 +315,6 @@ export const AdminController = {
 	listUsers,
 	deleteUser,
 	listUserSession,
-	revokeUserSessions,
+	revokeAllUserSessions,
 	unbindDevice,
 };

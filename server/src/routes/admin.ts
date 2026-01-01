@@ -2,7 +2,7 @@ import { Router } from "express";
 import { AdminController } from "../controllers/admin.controller";
 import { authenticate, authorize } from "@middlewares/auth.middleware";
 import { errorHandler } from "@middlewares/error.middleware";
-import { updateOfficeConfigValidator, addUserValidator, updateUserValidator, deleteUserValidator, listUserSessionValidator, revokeUserSessionsValidator, unbindDeviceValidator } from "@middlewares/validators/admin.validator";
+import { updateOfficeConfigValidator, addUserValidator, updateUserValidator, deleteUserValidator, listUserSessionValidator, revokeAllUserSessionsValidator, unbindDeviceValidator } from "@middlewares/validators/admin.validator";
 import { UserRole } from "@models/user";
 
 const adminRouter = Router();
@@ -88,8 +88,8 @@ adminRouter.delete(
 	"/admin/sessions/:id",
 	authenticate,
 	authorize([UserRole.ADMIN, UserRole.MANAGER]),
-	revokeUserSessionsValidator,
-	AdminController.revokeUserSessions,
+	revokeAllUserSessionsValidator,
+	AdminController.revokeAllUserSessions,
 	errorHandler
 );
 
