@@ -29,7 +29,11 @@ enum RequestType {
   }
 }
 
-enum RequestStatus { PENDING, APPROVED, REJECTED;
+enum RequestStatus {
+  PENDING,
+  APPROVED,
+  REJECTED;
+
   static RequestStatus fromString(String? value) {
     if (value == null) return RequestStatus.PENDING;
     final v = value.toUpperCase();
@@ -90,6 +94,7 @@ class Request {
       }
       return null;
     }
+
     return Request(
       id: json['id'],
       userId: json['user_id'],

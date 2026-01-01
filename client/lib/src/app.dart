@@ -5,11 +5,7 @@ import 'package:qr_attendance_frontend/src/models/user.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/employees/employee_detail_page.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/employees/employee_form_page.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/employees/list_employee_page.dart';
-<<<<<<< HEAD
-import 'package:qr_attendance_frontend/src/screens/shared/form/user/request_list_page.dart';
-=======
 import 'package:qr_attendance_frontend/src/screens/admin/requests/admin_request_list_page.dart';
->>>>>>> 2019e46b7c9a3d2dc2e843443f66c689318bf8f2
 import 'package:qr_attendance_frontend/src/screens/shared/schedule/schedule_page.dart';
 
 // Screens
@@ -112,15 +108,10 @@ class _AppState extends State<App> {
         '/employees': (_) => const EmployeeListPage(),
 
         // Requests
-<<<<<<< HEAD
-        '/forms': (_) => const RequestListPage(),
-        '/forms/create': (_) => const RequestFormPage(),
-=======
         '/user/requests': (_) => const RequestListPage(),
         '/user/requests/form': (_) => const RequestFormPage(),
 
         '/admin/requests': (_) => const AdminRequestListPage(),
->>>>>>> 2019e46b7c9a3d2dc2e843443f66c689318bf8f2
       },
 
       onGenerateRoute: (settings) {
