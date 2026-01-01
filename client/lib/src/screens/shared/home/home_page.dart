@@ -4,7 +4,6 @@ import 'dart:async';
 
 import '../../../models/user.dart';
 import '../../../services/auth.service.dart';
-import '../../../services/admin.service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -309,61 +308,16 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showUnbindDialog() {
-    final userIdController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Unbind Device"),
-        content: TextField(
-          controller: userIdController,
-          decoration: const InputDecoration(labelText: "User ID"),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () async {
-              final userId = userIdController.text.trim();
-              if (userId.isNotEmpty) {
-                try {
-                  await AdminService().unbindDevice(userId);
-                  if (mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Device unbound successfully"),
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Failed to unbind device: $e")),
-                    );
-                  }
-                }
-              }
-            },
-            child: const Text("Unbind"),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildManagerQuickActions() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         _buildQuickActionButton(
-          "Approvals",
+          "Review Requests",
           Icons.check_circle_outline,
           36,
           Colors.blue,
-          () => Navigator.pushNamed(context, '/approvals'),
+          () => Navigator.pushNamed(context, '/admin/requests'),
         ),
         _buildQuickActionButton(
           "Employees",
@@ -378,13 +332,6 @@ class _HomePageState extends State<HomePage> {
           36,
           Colors.orange,
           () => Navigator.pushNamed(context, '/reports'),
-        ),
-        _buildQuickActionButton(
-          "Unbind",
-          Icons.phonelink_erase,
-          36,
-          Colors.red,
-          _showUnbindDialog,
         ),
       ],
     );

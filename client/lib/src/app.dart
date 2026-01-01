@@ -5,6 +5,7 @@ import 'package:qr_attendance_frontend/src/models/user.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/employees/employee_detail_page.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/employees/employee_form_page.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/employees/list_employee_page.dart';
+import 'package:qr_attendance_frontend/src/screens/admin/requests/admin_request_list_page.dart';
 import 'package:qr_attendance_frontend/src/screens/shared/schedule/schedule_page.dart';
 
 // Screens
@@ -109,8 +110,8 @@ class _AppState extends State<App> {
         // Requests
         '/user/requests': (_) => const RequestListPage(),
         '/user/requests/form': (_) => const RequestFormPage(),
-        
-        // '/admin/form': (_) => const (),
+
+        '/admin/requests': (_) => const AdminRequestListPage(),
       },
 
       onGenerateRoute: (settings) {
