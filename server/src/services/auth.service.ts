@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { Op } from "sequelize";
-import { User, RefreshToken } from "@models";
+import { User, RefreshToken, UserDevice } from "@models";
 import { UserRole } from "@models/user";
 import { AuthResponse } from "@my-types/auth";
 import { emailQueue } from "@utils/queues/emailQueue";
@@ -16,38 +16,36 @@ export default class AuthService {
 			throw new Error("Invalid credentials");
 		}
 
-		if (!user.device_name) user.device_model = device_name;
-		if (!user.device_model) user.device_model = device_model;
-		if (!user.device_os_version) user.device_os_version = device_os_version;
-		await user.save();
-
 		const isMatch = await bcrypt.compare(password, user.password_hash);
 		if (!isMatch) {
 			throw new Error("Invalid credentials");
 		}
 
-		// Device Binding Check (Only for non-admin users)
-		if (user.role === UserRole.USER) {
-			if (!device_uuid) {
-				throw new Error("Device UUID is required for login");
-			}
-
-			if (user.device_uuid && user.device_uuid !== device_uuid) {
-				throw new Error("This account is bound to another device.");
-			}
-
-			// Bind device if not bound
-			if (!user.device_uuid) {
-				user.device_uuid = device_uuid;
-				await user.save();
-			}
+		if (!device_uuid) {
+			throw new Error("Device UUID is required for login");
 		}
 
-		// Use RefreshTokenService to generate tokens
-		const { accessToken, refreshToken } = await RefreshTokenService.generateRefreshToken(user, {
-			id: user.id,
-			role: user.role,
-		});
+		let device = await UserDevice.findOne({ where: { user_id: user.id, device_uuid } });
+
+		if (device) {
+			await device.update({ device_name, device_model, device_os_version, last_login: new Date() });
+		} else {
+			if (user.role === UserRole.USER) {
+				const deviceCount = await UserDevice.count({ where: { user_id: user.id } });
+				if (deviceCount >= 1) {
+					throw new Error("This account is already bound to another device. Contact admin to reset.");
+				}
+			}
+
+			device = await UserDevice.create({ user_id: user.id, device_uuid, device_name, device_model, device_os_version });
+		}
+
+		// Use RefreshTokenService to generate tokens (include device UUID when available)
+		const { accessToken, refreshToken } = await RefreshTokenService.generateRefreshToken(
+			user,
+			{ id: user.id, role: user.role, deviceUuid: device.device_uuid },
+
+		);
 
 		return {
 			accessToken,
@@ -57,7 +55,6 @@ export default class AuthService {
 				name: user.name,
 				email: user.email,
 				role: user.role,
-				device_uuid: user.device_uuid,
 			},
 		};
 	}
@@ -135,7 +132,7 @@ export default class AuthService {
 		});
 
 		// Revoke all sessions
-		await this.revokeUserSessions(user.id);
+		await this.revokeAllUserSessions(user.id);
 	}
 
 	static async refresh(tokenString: string): Promise<AuthResponse> {
@@ -152,7 +149,6 @@ export default class AuthService {
 				name: user.name,
 				email: user.email,
 				role: user.role,
-				device_uuid: user.device_uuid,
 			},
 		};
 	}
@@ -199,10 +195,10 @@ export default class AuthService {
 		await user.update({ password_hash: hashedNewPassword });
 
 		// Revoke all sessions
-		await this.revokeUserSessions(user.id);
+		await this.revokeAllUserSessions(user.id);
 	}
 
-	static async revokeUserSessions(userId: string) {
+	static async revokeAllUserSessions(userId: string) {
 		const transaction = await database.transaction();
 		try {
 			const user = await User.findByPk(userId, { transaction });
@@ -210,7 +206,8 @@ export default class AuthService {
 				throw new Error("User not found for session revocation.");
 			}
 
-			await user.update({ device_uuid: null, device_name: null, device_model: null, device_os_version: null }, { transaction });
+			// Remove device bindings for this user
+			await UserDevice.destroy({ where: { user_id: userId }, transaction });
 
 			await RefreshToken.update(
 				{ revoked: true },

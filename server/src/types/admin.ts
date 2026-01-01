@@ -5,7 +5,7 @@ export interface AddUserDTO {
 	role?: string;
 	position?: string;
 	department?: string;
-	date_of_birth?: string;
+	date_of_birth?: Date | string;
 	phone_number?: string;
 	address?: string;
 	gender?: string;
@@ -19,7 +19,7 @@ export interface UpdateUserDTO {
 	position?: string;
 	department?: string;
 	status?: string;
-	date_of_birth?: string;
+	date_of_birth?: Date | string;
 	phone_number?: string;
 	address?: string;
 	gender?: string;

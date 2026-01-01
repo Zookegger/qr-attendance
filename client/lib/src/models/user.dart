@@ -12,7 +12,7 @@ enum UserRole {
   }
 
   static String toTextString(UserRole value) {
-    return value.name[0] + value.name.substring(1).toLowerCase(); 
+    return value.name[0] + value.name.substring(1).toLowerCase();
   }
 }
 
@@ -31,7 +31,7 @@ enum UserStatus {
   }
 
   static String toTextString(UserStatus value) {
-    return value.name[0] + value.name.substring(1).toLowerCase(); 
+    return value.name[0] + value.name.substring(1).toLowerCase();
   }
 }
 
@@ -62,7 +62,9 @@ class User {
   final String? position;
   final String? department;
   final String? fcmToken;
-  final String? dateOfBirth;
+  final DateTime? dateOfBirth;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
   final String? phoneNumber;
   final String? address;
   final Gender? gender;
@@ -81,6 +83,8 @@ class User {
     this.department,
     this.fcmToken,
     this.dateOfBirth,
+    this.createdAt,
+    this.updatedAt,
     this.phoneNumber,
     this.address,
     this.gender,
@@ -100,10 +104,20 @@ class User {
       position: json['position'],
       department: json['department'],
       fcmToken: json['fcm_token'],
-      dateOfBirth: json['date_of_birth'],
+        dateOfBirth: json['date_of_birth'] != null
+          ? (DateTime.tryParse(json['date_of_birth'].toString())?.toLocal())
+          : null,
+        createdAt: json['createdAt'] != null
+          ? (DateTime.tryParse(json['createdAt'].toString())?.toLocal())
+          : null,
+        updatedAt: json['updatedAt'] != null
+          ? (DateTime.tryParse(json['updatedAt'].toString())?.toLocal())
+          : null,
       phoneNumber: json['phone_number'],
       address: json['address'],
-      gender: json['gender'] != null ? Gender.fromString(json['gender'].toString()) : null,
+      gender: json['gender'] != null
+          ? Gender.fromString(json['gender'].toString())
+          : null,
     );
   }
 
@@ -121,7 +135,9 @@ class User {
       'position': position,
       'department': department,
       'fcm_token': fcmToken,
-      'date_of_birth': dateOfBirth,
+      'date_of_birth': dateOfBirth != null ? dateOfBirth!.toIso8601String().split('T')[0] : null,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
       'phone_number': phoneNumber,
       'address': address,
       'gender': gender?.name,
