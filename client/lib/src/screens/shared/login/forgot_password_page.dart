@@ -53,7 +53,12 @@ class _ForgotPasswordState extends State<ForgotPasswordPage> {
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         leading: IconButton(
+<<<<<<< HEAD:client/lib/src/screens/shared/login/forgot_password_page.dart
           onPressed: () => Navigator.of(context).pop(),
+=======
+          onPressed: () =>
+              Navigator.of(context).pop(), // Use pop, not pushReplacement
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8:client/lib/src/screens/login/forgot_password_page.dart
           icon: const Icon(Icons.arrow_back),
         ),
         title: const Text("Reset password"),

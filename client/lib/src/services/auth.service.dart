@@ -336,7 +336,15 @@ class AuthenticationService {
     try {
       await _dio.post(
         ApiEndpoints.resetPassword,
+<<<<<<< HEAD
         data: {'email': email, 'token': token, 'newPassword': newPassword},
+=======
+        data: {
+          'email': email,
+          'token': token,
+          'newPassword': newPassword,
+        },
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8
       );
     } on DioException catch (e) {
       final msg = e.response?.data['message'] ?? 'Failed to reset password';

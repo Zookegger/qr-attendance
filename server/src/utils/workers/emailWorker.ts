@@ -9,7 +9,11 @@ import { Worker, Job } from "bullmq";
 import redis from "@config/redis";
 import { EmailJobData } from "@utils/queues/emailQueue";
 import logger from "@utils/logger";
+<<<<<<< HEAD
 import EmailService from "@services/email.service";
+=======
+import { EmailService } from "@services/email.service";
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8
 
 /**
  * BullMQ email worker instance.
@@ -49,6 +53,7 @@ emailWorker.on("failed", (job, err) => {
 });
 
 export default emailWorker;
+<<<<<<< HEAD
 
 export const shutdownEmailWorker = async () => {
 	try {
@@ -58,3 +63,5 @@ export const shutdownEmailWorker = async () => {
 		logger.warn(`Email worker close error: ${err}`);
 	}
 };
+=======
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8

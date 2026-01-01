@@ -64,7 +64,10 @@ dependencies:
 
     shared_preferences: ^2.5.4
     app_links: ^7.0.0
+<<<<<<< HEAD
     file_picker: ^10.3.8
+=======
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8
 
 dev_dependencies:
     flutter_test:

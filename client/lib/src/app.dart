@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:qr_attendance_frontend/src/models/user.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/employees/employee_detail_page.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/employees/employee_form_page.dart';
@@ -22,6 +23,19 @@ import 'screens/shared/setup/server_setup_page.dart';
 import 'screens/shared/history/history_page.dart';
 import 'screens/shared/profile/profile.dart';
 
+=======
+import 'package:qr_attendance_frontend/src/screens/login/forgot_password_page.dart';
+import 'package:qr_attendance_frontend/src/screens/login/reset_password_confirm_page.dart';
+import 'package:qr_attendance_frontend/src/screens/splash/splash_screen.dart';
+import 'screens/login/login_page.dart';
+import 'screens/home/home_page.dart';
+import 'screens/attendance/attendance_page.dart';
+import 'screens/setup/server_setup_page.dart';
+import 'screens/history/history_page.dart';
+import 'screens/schedule/schedule_page.dart';
+import 'theme/app_theme.dart';
+
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8
 class App extends StatefulWidget {
   const App({super.key});
 
@@ -49,18 +63,29 @@ class _AppState extends State<App> {
   Future<void> _initDeepLinks() async {
     _appLinks = AppLinks();
 
+<<<<<<< HEAD
     // Check initial link (if app was launched via link)
+=======
+    // Check initial link
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8
     try {
       final initialLink = await _appLinks.getInitialLink();
       if (initialLink != null) {
         _handleDeepLink(initialLink);
       }
     } catch (e) {
+<<<<<<< HEAD
       // Handle error gracefully or log it
       debugPrint("Deep Link Init Error: $e");
     }
 
     // Listen to link changes (if app is already running in background)
+=======
+      // Handle error
+    }
+
+    // Listen to link changes
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8
     _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
       _handleDeepLink(uri);
     });
@@ -96,10 +121,14 @@ class _AppState extends State<App> {
         // Auth
         '/login': (_) => const LoginPage(),
         '/forgot-password': (_) => const ForgotPasswordPage(),
+<<<<<<< HEAD
         ResetPasswordConfirmPage.routeName: (_) =>
             const ResetPasswordConfirmPage(),
 
         // Main
+=======
+        ResetPasswordConfirmPage.routeName: (_) => const ResetPasswordConfirmPage(),
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8
         '/home': (_) => const HomePage(),
         '/attendance': (_) => const AttendancePage(),
         '/history': (_) => const HistoryPage(),

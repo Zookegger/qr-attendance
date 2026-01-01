@@ -16,7 +16,9 @@ export const createRequestValidator = [
 		.isISO8601()
 		.withMessage("Invalid to_date format"),
 	body("reason")
+		.optional()
 		.isString()
+<<<<<<< HEAD
 		.notEmpty()
 		.withMessage("Reason must be a non-empty string"),
 	// Attachments are handled by multer as files; no image_url string expected
@@ -46,4 +48,11 @@ export const reviewRequestValidator = [
 
 export const requestIdParamValidator = [
 	param("id").isUUID().withMessage("Invalid request id"),
+=======
+		.withMessage("Reason must be a string"),
+	body("image_url")
+		.optional()
+		.isString()
+		.withMessage("Image URL must be a string"),
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8
 ];
