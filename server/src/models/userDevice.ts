@@ -8,6 +8,7 @@ export default class UserDevice extends Model {
    public declare device_name: string | null;
    public declare device_model: string | null;
    public declare device_os_version: string | null;
+   public declare fcm_token: string | null;
    public declare last_login: Date;
 
    public declare readonly createdAt: Date;
@@ -40,6 +41,11 @@ UserDevice.init(
       device_os_version: {
          type: DataTypes.STRING,
          allowNull: true,
+      },
+      fcm_token: {
+         type: DataTypes.STRING,
+         allowNull: true,
+         comment: "FCM token associated with this device (migrated from users.fcm_token)",
       },
       last_login: {
          type: DataTypes.DATE,
