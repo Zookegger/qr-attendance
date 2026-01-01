@@ -28,7 +28,6 @@ interface UserAttributes {
 	role: UserRole;
 	position?: string | null;
 	department?: string | null;
-	fcm_token?: string | null;
 	date_of_birth?: Date | null;
 	phone_number?: string | null;
 	address?: string | null;
@@ -63,7 +62,6 @@ export default class User
 	public declare role: UserRole;
 	public declare position: string | null;
 	public declare department: string | null;
-	public declare fcm_token: string | null;
 	public declare date_of_birth: Date | null;
 	public declare phone_number: string | null;
 	public declare address: string | null;
@@ -109,11 +107,6 @@ User.init(
 			type: DataTypes.ENUM(...Object.values(UserRole)),
 			defaultValue: UserRole.USER,
 			allowNull: false,
-		},
-		fcm_token: {
-			type: DataTypes.STRING,
-			allowNull: true,
-			comment: "Firebase Cloud Messaging Token for Push Notifications",
 		},
 		position: {
 			type: DataTypes.STRING,
