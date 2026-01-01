@@ -71,7 +71,6 @@ const me = async (req: Request, res: Response, next: NextFunction) => {
 					name: user.name,
 					email: user.email,
 					role: user.role,
-					device_uuid: user.device_uuid,
 				},
 			});
 		}

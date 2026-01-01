@@ -26,13 +26,8 @@ interface UserAttributes {
 	status: UserStatus;
 	password_hash: string;
 	role: UserRole;
-	device_uuid?: string | null;
-	device_name?: string | null;
-	device_model?: string | null;
-	device_os_version?: string | null;
 	position?: string | null;
 	department?: string | null;
-	fcm_token?: string | null;
 	date_of_birth?: Date | null;
 	phone_number?: string | null;
 	address?: string | null;
@@ -46,10 +41,6 @@ interface UserCreationAttributes
 		UserAttributes,
 		| "id"
 		| "status"
-		| "device_uuid"
-		| "device_name"
-		| "device_model"
-		| "device_os_version"
 		| "position"
 		| "department"
 		| "date_of_birth"
@@ -69,13 +60,8 @@ export default class User
 	public declare status: UserStatus;
 	public declare password_hash: string;
 	public declare role: UserRole;
-	public declare device_uuid: string | null;
-	public declare device_name: string | null;
-	public declare device_model: string | null;
-	public declare device_os_version: string | null;
 	public declare position: string | null;
 	public declare department: string | null;
-	public declare fcm_token: string | null;
 	public declare date_of_birth: Date | null;
 	public declare phone_number: string | null;
 	public declare address: string | null;
@@ -122,31 +108,6 @@ User.init(
 			defaultValue: UserRole.USER,
 			allowNull: false,
 		},
-		device_uuid: {
-			type: DataTypes.STRING,
-			allowNull: true,
-			comment: "Unique device ID for device binding",
-		},
-		device_name: {
-			type: DataTypes.STRING,
-			allowNull: true,
-			comment: "Device name (e.g. John's iPhone)",
-		},
-		device_model: {
-			type: DataTypes.STRING,
-			allowNull: true,
-			comment: "Device model (e.g. iPhone 13)",
-		},
-		device_os_version: {
-			type: DataTypes.STRING,
-			allowNull: true,
-			comment: "Device OS version (e.g. iOS 15.0)",
-		},
-		fcm_token: {
-			type: DataTypes.STRING,
-			allowNull: true,
-			comment: "Firebase Cloud Messaging Token for Push Notifications",
-		},
 		position: {
 			type: DataTypes.STRING,
 			allowNull: true,
@@ -182,7 +143,7 @@ User.init(
 	},
 	{
 		sequelize,
-		tableName: "users", 
+		tableName: "users",
 		timestamps: true,
 	}
 );

@@ -129,7 +129,6 @@ class _HomePageState extends State<HomePage> {
     if (mounted) {
       setState(() => _user = cached);
     }
-    
   }
 
   void _setupNotificationListener() {
@@ -719,26 +718,41 @@ class _HomePageState extends State<HomePage> {
     Color color,
     VoidCallback onTap,
   ) {
-    return Column(
-      children: <Widget>[
-        IconButton(
-          onPressed: onTap,
-          icon: Icon(icon),
-          iconSize: iconSize,
-          color: color,
-          style: ButtonStyle(
-            shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-            ),
-
-            backgroundColor: WidgetStateProperty.all(
-              color.withValues(alpha: 0.08),
+    return SizedBox(
+      width: 85, // Static width to force text wrapping
+      height: 80, // Increased height slightly to accommodate more lines
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: <Widget>[
+          IconButton(
+            onPressed: onTap,
+            icon: Icon(icon),
+            iconSize: iconSize,
+            color: color,
+            style: ButtonStyle(
+              shape: WidgetStateProperty.all(
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              ),
+              backgroundColor: WidgetStateProperty.all(
+                color.withValues(alpha: 0.08),
+              ),
             ),
           ),
-        ),
-        SizedBox(height: 4),
-        Text(label),
-      ],
+          const SizedBox(height: 4),
+          Flexible(
+            // Flexible lets the text wrap and fill remaining height
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              softWrap: true,
+              style: const TextStyle(
+                fontSize: 12,
+                height: 1.1, // Tighter line height helps fit more text
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
