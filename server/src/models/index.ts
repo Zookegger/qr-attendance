@@ -13,6 +13,10 @@ Attendance.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 User.hasMany(RequestModel, { foreignKey: 'user_id', as: 'requests' });
 RequestModel.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+// Reviewer association: a request may be reviewed by a user (reviewer)
+User.hasMany(RequestModel, { foreignKey: 'reviewed_by', as: 'reviewedRequests' });
+RequestModel.belongsTo(User, { foreignKey: 'reviewed_by', as: 'reviewer' });
+
 User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens' });
 RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 

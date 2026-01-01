@@ -5,14 +5,19 @@ import 'package:qr_attendance_frontend/src/models/user.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/employees/employee_detail_page.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/employees/employee_form_page.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/employees/list_employee_page.dart';
+<<<<<<< HEAD
 import 'package:qr_attendance_frontend/src/screens/shared/form/user/request_list_page.dart';
+=======
+import 'package:qr_attendance_frontend/src/screens/admin/requests/admin_request_list_page.dart';
+>>>>>>> 2019e46b7c9a3d2dc2e843443f66c689318bf8f2
 import 'package:qr_attendance_frontend/src/screens/shared/schedule/schedule_page.dart';
 
 // Screens
 import 'package:qr_attendance_frontend/src/screens/shared/splash/splash_screen.dart';
 import 'package:qr_attendance_frontend/src/screens/shared/login/forgot_password_page.dart';
 import 'package:qr_attendance_frontend/src/screens/shared/login/reset_password_confirm_page.dart';
-import 'package:qr_attendance_frontend/src/screens/shared/form/user/request_form_page.dart';
+import 'package:qr_attendance_frontend/src/screens/user/requests/request_form_page.dart';
+import 'package:qr_attendance_frontend/src/screens/user/requests/request_list_page.dart';
 import 'package:qr_attendance_frontend/src/theme/app_theme.dart';
 import 'screens/shared/login/login_page.dart';
 import 'screens/shared/home/home_page.dart';
@@ -107,8 +112,15 @@ class _AppState extends State<App> {
         '/employees': (_) => const EmployeeListPage(),
 
         // Requests
+<<<<<<< HEAD
         '/forms': (_) => const RequestListPage(),
         '/forms/create': (_) => const RequestFormPage(),
+=======
+        '/user/requests': (_) => const RequestListPage(),
+        '/user/requests/form': (_) => const RequestFormPage(),
+
+        '/admin/requests': (_) => const AdminRequestListPage(),
+>>>>>>> 2019e46b7c9a3d2dc2e843443f66c689318bf8f2
       },
 
       onGenerateRoute: (settings) {

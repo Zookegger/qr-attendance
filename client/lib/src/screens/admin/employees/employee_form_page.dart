@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:intl/intl.dart';
 import '../../../models/user.dart';
 import '../../../services/admin.service.dart';
 
@@ -23,6 +24,9 @@ class _EmployeeFormPageState extends State<EmployeeFormPage> {
   final _positionController = TextEditingController();
   final _departmentController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _dobController = TextEditingController();
+  DateTime? _selectedDOB;
 
   // Field errors coming from backend validation (param -> message)
   final Map<String, String?> _fieldErrors = {};
@@ -42,11 +46,24 @@ class _EmployeeFormPageState extends State<EmployeeFormPage> {
   }
 
   void _populateFields(User user) {
+    debugPrint(user.address);
+    debugPrint(user.phoneNumber);
+    debugPrint(user.dateOfBirth?.toIso8601String());
+
     _nameController.text = user.name;
     _emailController.text = user.email;
     _positionController.text = user.position ?? '';
     _departmentController.text = user.department ?? '';
     _phoneController.text = user.phoneNumber ?? '';
+    _addressController.text = user.address ?? '';
+
+    
+    if (user.dateOfBirth != null) {
+      _selectedDOB = user.dateOfBirth;
+      if (_selectedDOB != null) {
+        _dobController.text = DateFormat('dd/MM/yyyy').format(_selectedDOB!);
+      }
+    }
     _selectedRole = user.role;
     _selectedStatus = user.status;
     _selectedGender = user.gender ?? Gender.MALE;
@@ -67,15 +84,19 @@ class _EmployeeFormPageState extends State<EmployeeFormPage> {
         'position': _positionController.text.trim(),
         'department': _departmentController.text.trim(),
         'phone_number': _phoneController.text.trim(),
+        'address': _addressController.text.trim(),
         'gender': _selectedGender.name.toUpperCase(),
       };
+      if (_selectedDOB != null) {
+        data['date_of_birth'] = _selectedDOB!.toIso8601String().split('T')[0];
+      }
 
       if (isEditing) {
         // Update Logic
         data['status'] = _selectedStatus.name.toUpperCase();
         // Only send password if you want to allow resetting it here (optional)
         // if (_passwordController.text.isNotEmpty) data['password'] = ...
-        
+
         await AdminService().updateUser(widget.user!.id, data);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -84,8 +105,9 @@ class _EmployeeFormPageState extends State<EmployeeFormPage> {
       } else {
         // Create Logic
         data['password'] = _passwordController.text; // Required for new users
-        data['status'] = UserStatus.ACTIVE.name.toUpperCase(); // Default for new
-        
+        data['status'] = UserStatus.ACTIVE.name
+            .toUpperCase(); // Default for new
+
         await AdminService().createUser(data);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -108,16 +130,25 @@ class _EmployeeFormPageState extends State<EmployeeFormPage> {
           if (mounted) setState(() {});
         } else if (resp is Map && resp['message'] != null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${resp['message']}'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('Error: ${resp['message']}'),
+              backgroundColor: Colors.red,
+            ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${e.message}'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('Error: ${e.message}'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -127,9 +158,7 @@ class _EmployeeFormPageState extends State<EmployeeFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEditing ? 'Edit Employee' : 'New Employee'),
-      ),
+      appBar: AppBar(title: Text(isEditing ? 'Edit Employee' : 'New Employee')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -159,9 +188,9 @@ class _EmployeeFormPageState extends State<EmployeeFormPage> {
                 validator: (v) => v == null || v.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 12),
-              
+
               // Password Field (Only show when creating a new user)
-              if (!isEditing) 
+              if (!isEditing)
                 TextFormField(
                   controller: _passwordController,
                   decoration: InputDecoration(
@@ -170,7 +199,8 @@ class _EmployeeFormPageState extends State<EmployeeFormPage> {
                     errorText: _fieldErrors['password'],
                   ),
                   obscureText: true,
-                  validator: (v) => v == null || v.length < 6 ? 'Min 6 chars' : null,
+                  validator: (v) =>
+                      v == null || v.length < 6 ? 'Min 6 chars' : null,
                 ),
 
               const SizedBox(height: 24),
@@ -180,9 +210,15 @@ class _EmployeeFormPageState extends State<EmployeeFormPage> {
                   Expanded(
                     child: DropdownButtonFormField<UserRole>(
                       initialValue: _selectedRole,
-                      decoration: InputDecoration(labelText: 'Role', errorText: _fieldErrors['role']),
+                      decoration: InputDecoration(
+                        labelText: 'Role',
+                        errorText: _fieldErrors['role'],
+                      ),
                       items: UserRole.values.map((role) {
-                        return DropdownMenuItem(value: role, child: Text(UserRole.toTextString(role)));
+                        return DropdownMenuItem(
+                          value: role,
+                          child: Text(UserRole.toTextString(role)),
+                        );
                       }).toList(),
                       onChanged: (v) => setState(() => _selectedRole = v!),
                     ),
@@ -193,9 +229,14 @@ class _EmployeeFormPageState extends State<EmployeeFormPage> {
                       initialValue: _selectedStatus,
                       decoration: const InputDecoration(labelText: 'Status'),
                       // Disable status change for new users (default active)
-                      onChanged: isEditing ? (v) => setState(() => _selectedStatus = v!) : null,
+                      onChanged: isEditing
+                          ? (v) => setState(() => _selectedStatus = v!)
+                          : null,
                       items: UserStatus.values.map((status) {
-                        return DropdownMenuItem(value: status, child: Text(UserStatus.toTextString(status)));
+                        return DropdownMenuItem(
+                          value: status,
+                          child: Text(UserStatus.toTextString(status)),
+                        );
                       }).toList(),
                     ),
                   ),
@@ -205,36 +246,100 @@ class _EmployeeFormPageState extends State<EmployeeFormPage> {
               const SizedBox(height: 12),
               DropdownButtonFormField<Gender>(
                 initialValue: _selectedGender,
-                decoration: InputDecoration(labelText: 'Gender', errorText: _fieldErrors['gender']),
+                decoration: InputDecoration(
+                  labelText: 'Gender',
+                  errorText: _fieldErrors['gender'],
+                ),
                 items: Gender.values.map((g) {
                   final label = g.name[0] + g.name.substring(1).toLowerCase();
                   return DropdownMenuItem(value: g, child: Text(label));
                 }).toList(),
-                onChanged: (v) => setState(() => _selectedGender = v ?? Gender.MALE),
+                onChanged: (v) =>
+                    setState(() => _selectedGender = v ?? Gender.MALE),
               ),
 
               const SizedBox(height: 24),
               _buildSectionTitle('Job Details'),
               TextFormField(
                 controller: _positionController,
-                decoration: InputDecoration(labelText: 'Position', prefixIcon: const Icon(Icons.badge), errorText: _fieldErrors['position']),
+                decoration: InputDecoration(
+                  labelText: 'Position',
+                  prefixIcon: const Icon(Icons.badge),
+                  errorText: _fieldErrors['position'],
+                ),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _departmentController,
-                decoration: InputDecoration(labelText: 'Department', prefixIcon: const Icon(Icons.apartment), errorText: _fieldErrors['department']),
+                decoration: InputDecoration(
+                  labelText: 'Department',
+                  prefixIcon: const Icon(Icons.apartment),
+                  errorText: _fieldErrors['department'],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+              _buildSectionTitle('Personal Details'),
+              TextFormField(
+                controller: _dobController,
+                decoration: InputDecoration(
+                  labelText: 'Date of Birth',
+                  prefixIcon: const Icon(Icons.cake),
+                  errorText: _fieldErrors['date_of_birth'],
+                ),
+                readOnly: true,
+                onTap: () async {
+                  final now = DateTime.now();
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedDOB ?? DateTime(now.year - 20),
+                    firstDate: DateTime(1900),
+                    lastDate: now,
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _selectedDOB = picked;
+                      _dobController.text = DateFormat(
+                        'dd/MM/yyyy',
+                      ).format(picked);
+                    });
+                  }
+                },
+              ),
+
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _phoneController,
+                decoration: InputDecoration(
+                  labelText: 'Phone',
+                  prefixIcon: const Icon(Icons.phone),
+                  errorText: _fieldErrors['phone_number'],
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _addressController,
+                decoration: InputDecoration(
+                  labelText: 'Address',
+                  prefixIcon: const Icon(Icons.home),
+                  errorText: _fieldErrors['address'],
+                ),
               ),
 
               const SizedBox(height: 32),
               SizedBox(
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
-                  child: _isLoading 
-                    ? const CircularProgressIndicator() 
-                    : Text(isEditing ? 'Save Changes' : 'Create User'),
+                    onPressed: _isLoading ? null : _submit,
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text(isEditing ? 'Save Changes' : 'Create User', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),),
                 ),
               ),
+              const SizedBox(height: 16),
             ],
           ),
         ),

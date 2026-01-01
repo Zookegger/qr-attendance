@@ -1,14 +1,54 @@
 import 'dart:convert';
 
+enum RequestType {
+  LEAVE,
+  SICK,
+  UNPAID,
+  LATE_EARLY,
+  OVERTIME,
+  BUSINESS_TRIP,
+  SHIFT_CHANGE,
+  REMOTE_WORK,
+  ATTENDANCE_CONFIRMATION,
+  ATTENDANCE_ADJUSTMENT,
+  EXPLANATION,
+  OTHER;
+
+  static RequestType fromString(String? value) {
+    if (value == null) return RequestType.OTHER;
+    final v = value.toUpperCase();
+    return RequestType.values.firstWhere(
+      (e) => e.name == v,
+      orElse: () => RequestType.OTHER,
+    );
+  }
+
+  String toTextString() {
+    final s = name.replaceAll('_', ' ').toLowerCase();
+    return s[0].toUpperCase() + s.substring(1);
+  }
+}
+
+enum RequestStatus { PENDING, APPROVED, REJECTED;
+  static RequestStatus fromString(String? value) {
+    if (value == null) return RequestStatus.PENDING;
+    final v = value.toUpperCase();
+    return RequestStatus.values.firstWhere(
+      (e) => e.name == v,
+      orElse: () => RequestStatus.PENDING,
+    );
+  }
+}
+
 class Request {
   final String? id;
   final String userId;
-  final String type;
+  final RequestType type;
   final DateTime? fromDate;
   final DateTime? toDate;
   final String? reason;
   final List<String>? attachments;
-  final String status;
+  final RequestStatus status;
   final String? reviewedBy;
   final String? reviewNote;
   final DateTime? createdAt;
@@ -22,7 +62,7 @@ class Request {
     this.toDate,
     this.reason,
     this.attachments,
-    this.status = 'pending',
+    this.status = RequestStatus.PENDING,
     this.reviewedBy,
     this.reviewNote,
     this.createdAt,
@@ -53,14 +93,14 @@ class Request {
     return Request(
       id: json['id'],
       userId: json['user_id'],
-      type: json['type'],
+      type: RequestType.fromString(json['type'] ?? json['requestType']),
       fromDate: json['from_date'] != null
           ? DateTime.parse(json['from_date'])
           : null,
       toDate: json['to_date'] != null ? DateTime.parse(json['to_date']) : null,
       reason: json['reason'],
       attachments: parseAttachments(json['attachments'] ?? json['attachments']),
-      status: json['status'] ?? 'pending',
+      status: RequestStatus.fromString(json['status'] ?? json['status']),
       reviewedBy: json['reviewed_by'] ?? json['reviewedBy'],
       reviewNote: json['review_note'] ?? json['reviewNote'],
       createdAt: parseDate(json['created_at'] ?? json['createdAt']),
@@ -71,13 +111,14 @@ class Request {
   Map<String, dynamic> toJson() {
     return {
       'user_id': userId,
-      'type': type,
+      'type': type.name,
       'from_date': fromDate?.toIso8601String(),
       'to_date': toDate?.toIso8601String(),
       'reason': reason,
       'attachments': attachments != null ? jsonEncode(attachments) : null,
       'reviewed_by': reviewedBy,
       'review_note': reviewNote,
+      'status': status.name,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };

@@ -13,6 +13,7 @@ class AdminService {
 
       if (response.statusCode == 200) {
         final data = response.data;
+
         if (data is List) {
           return data
               .map((e) => User.fromJson(e as Map<String, dynamic>))

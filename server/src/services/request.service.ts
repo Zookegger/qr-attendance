@@ -79,7 +79,7 @@ export default class RequestService {
 
 		return await RequestModel.findAll({
 			where,
-			order: [['created_at', 'DESC']], 
+			order: [['createdAt', 'DESC']],
 			include: [
 				{
 					model: User,
