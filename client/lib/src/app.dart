@@ -5,6 +5,7 @@ import 'package:qr_attendance_frontend/src/models/user.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/employees/employee_detail_page.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/employees/employee_form_page.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/employees/list_employee_page.dart';
+import 'package:qr_attendance_frontend/src/screens/shared/form/user/request_list_page.dart';
 import 'package:qr_attendance_frontend/src/screens/shared/schedule/schedule_page.dart';
 
 // Screens
@@ -106,11 +107,11 @@ class _AppState extends State<App> {
         '/employees': (_) => const EmployeeListPage(),
 
         // Requests
-        '/form': (_) => const RequestFormPage(),
+        '/forms': (_) => const RequestListPage(),
+        '/forms/create': (_) => const RequestFormPage(),
       },
 
       onGenerateRoute: (settings) {
-        
         // 1. Employee FORM (Create or Edit)
         // Accepts User? (null = create, user object = edit)
         if (settings.name == '/employee/form') {
@@ -130,13 +131,14 @@ class _AppState extends State<App> {
             );
           }
           // Fallback if arguments are missing/wrong
-          return _errorRoute(); 
+          return _errorRoute();
         }
 
         return null; // Standard 'Route Not Found' behavior
       },
     );
   }
+
   MaterialPageRoute _errorRoute() {
     return MaterialPageRoute(
       builder: (_) => Scaffold(

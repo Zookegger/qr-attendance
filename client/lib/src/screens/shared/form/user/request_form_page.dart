@@ -79,7 +79,9 @@ class _RequestFormPageState extends State<RequestFormPage> {
       debugPrint('Failed to load user: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load user. Please log in again.')),
+          const SnackBar(
+            content: Text('Failed to load user. Please log in again.'),
+          ),
         );
         Navigator.of(context).pop();
       }
@@ -124,8 +126,6 @@ class _RequestFormPageState extends State<RequestFormPage> {
     }
   }
 
-
-
   // ================= SUBMIT REQUEST =================
   Future<void> submitRequest() async {
     if (_currentUser == null) {
@@ -145,12 +145,17 @@ class _RequestFormPageState extends State<RequestFormPage> {
     try {
       setState(() => _isLoading = true);
 
-      final files = _selectedFiles.where((f) => f.path != null).map((f) => File(f.path!)).toList();
+      final files = _selectedFiles
+          .where((f) => f.path != null)
+          .map((f) => File(f.path!))
+          .toList();
 
       if (_isEditing) {
         if (!_isEditable) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Only pending requests can be edited')),
+            const SnackBar(
+              content: Text('Only pending requests can be edited'),
+            ),
           );
           return;
         }
@@ -376,7 +381,7 @@ class _RequestFormPageState extends State<RequestFormPage> {
       child: ElevatedButton(
         onPressed: _isLoading ? null : submitRequest,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
+          backgroundColor: const Color.fromARGB(255, 12, 159, 17),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -387,8 +392,8 @@ class _RequestFormPageState extends State<RequestFormPage> {
                 'Submit',
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
                 ),
               ),
       ),
