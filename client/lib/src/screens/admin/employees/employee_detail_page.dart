@@ -110,6 +110,7 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
                   'Phone',
                   _user.phoneNumber ?? 'N/A',
                 ),
+
                 _buildInfoTile(
                   Icons.location_on,
                   'Address',
@@ -139,7 +140,7 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
                   Icons.cake,
                   'DOB',
                   (_user.dateOfBirth != null)
-                      ? DateFormat("dd/MM/yyyy").format(_user.dateOfBirth!)
+                      ? DateFormat('dd/MM/yyyy').format(_user.dateOfBirth!)
                       : 'N/A',
                 ),
                 const Divider(height: 32),
@@ -225,6 +226,22 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
                         : Colors.red,
                   ),
                 ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Joined: ${_user.createdAt != null ? DateFormat('dd/MM/yyyy').format(_user.createdAt!) : 'N/A'}',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Last Updated: ${_user.updatedAt != null ? DateFormat('dd/MM/yyyy HH:mm').format(_user.updatedAt!) : 'N/A'}',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),

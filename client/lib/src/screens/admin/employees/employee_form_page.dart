@@ -46,19 +46,23 @@ class _EmployeeFormPageState extends State<EmployeeFormPage> {
   }
 
   void _populateFields(User user) {
+    debugPrint(user.address);
+    debugPrint(user.phoneNumber);
+    debugPrint(user.dateOfBirth?.toIso8601String());
+
     _nameController.text = user.name;
     _emailController.text = user.email;
     _positionController.text = user.position ?? '';
     _departmentController.text = user.department ?? '';
     _phoneController.text = user.phoneNumber ?? '';
     _addressController.text = user.address ?? '';
+
+    
     if (user.dateOfBirth != null) {
-      try {
-        _selectedDOB = user.dateOfBirth;
-        if (_selectedDOB != null) {
-          _dobController.text = _selectedDOB!.toIso8601String().split('T')[0];
-        }
-      } catch (_) {}
+      _selectedDOB = user.dateOfBirth;
+      if (_selectedDOB != null) {
+        _dobController.text = DateFormat('dd/MM/yyyy').format(_selectedDOB!);
+      }
     }
     _selectedRole = user.role;
     _selectedStatus = user.status;

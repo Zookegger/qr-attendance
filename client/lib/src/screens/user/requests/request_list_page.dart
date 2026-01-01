@@ -26,13 +26,7 @@ class _RequestListPageState extends State<RequestListPage>
 
   final List<String> _types = [
     'All',
-    'Leave request',
-    'Sick leave',
-    'Unpaid leave',
-    'Late arrival / early leave',
-    'Overtime request (OT)',
-    'Business trip',
-    'Other...',
+    ...RequestType.values.map((e) => e.toTextString()),
   ];
 
   @override
@@ -53,43 +47,45 @@ class _RequestListPageState extends State<RequestListPage>
   Future<void> _loadRequests() async {
     try {
       final User user = await _auth.getCachedUser() ?? await _auth.me();
-
       final data = await RequestService().listRequests(userId: user.id);
 
-      setState(() {
-        _allRequests = data;
-        _isLoading = false;
-      });
-
-      _applyFilters();
+      if (mounted) {
+        setState(() {
+          _allRequests = data;
+          _isLoading = false;
+        });
+        _applyFilters();
+      }
     } catch (e) {
       debugPrint('Load history error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load requests: $e')),
         );
+        setState(() => _isLoading = false);
       }
-      setState(() => _isLoading = false);
     }
   }
 
-  // ================= FILTER =================
+  // ================= FILTER LOGIC =================
   void _applyFilters() {
+    if (!mounted) return; // Safety check
+    
     List<Request> list = [..._allRequests];
 
-    // Filter theo TAB
+    // Filter by TAB
     switch (_tabController.index) {
       case 1: // Submitted
-        list = list.where((r) => r.status.toLowerCase() == 'pending').toList();
+        list = list.where((r) => r.status == RequestStatus.PENDING).toList();
         break;
       case 2: // Approved
-        list = list.where((r) => r.status.toLowerCase() == 'approved').toList();
+        list = list.where((r) => r.status == RequestStatus.APPROVED).toList();
         break;
     }
 
-    // Filter theo loại đơn
+    // Filter by TYPE
     if (_filterType != 'All') {
-      list = list.where((r) => r.type == _filterType).toList();
+      list = list.where((r) => r.type.toTextString() == _filterType).toList();
     }
 
     setState(() => _filteredRequests = list);
@@ -102,21 +98,52 @@ class _RequestListPageState extends State<RequestListPage>
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: const BackButton(color: Colors.black),
-        title: const Text('Request List', style: TextStyle(color: Colors.black)),
+        title: const Text(
+          'Request List',
+          style: TextStyle(color: Colors.black),
+        ),
         backgroundColor: Colors.white,
         elevation: 0.5,
+        // --- ACTION BUTTON ADDED HERE ---
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.green),
-            tooltip: 'Create request',
-            onPressed: () {
-              Navigator.pushNamed(
-                context,
-                '/forms/create',
-              ).then((_) => _loadRequests()); // reload khi quay về
+          PopupMenuButton<String>(
+            icon: Icon(
+              Icons.filter_list, 
+              color: _filterType == 'All' ? Colors.black : Colors.green
+            ),
+            tooltip: 'Filter by type',
+            onSelected: (String value) {
+              setState(() {
+                _filterType = value;
+              });
+              _applyFilters();
+            },
+            itemBuilder: (BuildContext context) {
+              return _types.map((String choice) {
+                final isSelected = _filterType == choice;
+                return PopupMenuItem<String>(
+                  value: choice,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        choice,
+                        style: TextStyle(
+                          color: isSelected ? Colors.green : Colors.black87,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                      ),
+                      if (isSelected)
+                        const Icon(Icons.check, color: Colors.green, size: 18),
+                    ],
+                  ),
+                );
+              }).toList();
             },
           ),
+          const SizedBox(width: 8),
         ],
+        // --------------------------------
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.green,
@@ -129,42 +156,25 @@ class _RequestListPageState extends State<RequestListPage>
           ],
         ),
       ),
+      // Cleaned up body: No more Column/Expanded needed
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                _buildFilter(),
-                Expanded(child: _buildList()),
-              ],
-            ),
+          : _buildList(),
+      floatingActionButton: _buildNewRequestButton(context),
     );
   }
 
-  // ================= FILTER BAR =================
-  Widget _buildFilter() {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-          const Text('Type:', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: DropdownButtonFormField<String>(
-              value: _filterType,
-              decoration: const InputDecoration(
-                isDense: true,
-                border: OutlineInputBorder(),
-              ),
-              items: _types
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
-              onChanged: (value) {
-                _filterType = value!;
-                _applyFilters();
-              },
-            ),
-          ),
-        ],
+  Widget _buildNewRequestButton(BuildContext context) {
+    return SizedBox(
+      width: 65,
+      height: 65,
+      child: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/user/requests/form');
+        },
+        elevation: 1,
+        clipBehavior: Clip.hardEdge,
+        child: const Icon(Icons.add, fontWeight: FontWeight.bold, size: 24),
       ),
     );
   }
@@ -172,10 +182,19 @@ class _RequestListPageState extends State<RequestListPage>
   // ================= LIST =================
   Widget _buildList() {
     if (_filteredRequests.isEmpty) {
-      return const Center(
-        child: Text(
-          'No requests found',
-          style: TextStyle(color: Colors.black54),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.inbox_outlined, size: 48, color: Colors.black26),
+            const SizedBox(height: 12),
+            Text(
+              _filterType == 'All' 
+                  ? 'No requests found' 
+                  : 'No ${_filterType.toLowerCase()}s found',
+              style: const TextStyle(color: Colors.black54),
+            ),
+          ],
         ),
       );
     }
@@ -185,7 +204,7 @@ class _RequestListPageState extends State<RequestListPage>
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: _filteredRequests.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (_, index) => _buildRequestItem(_filteredRequests[index]),
       ),
     );
@@ -195,7 +214,7 @@ class _RequestListPageState extends State<RequestListPage>
   Widget _buildRequestItem(Request request) {
     return InkWell(
       onTap: () {
-        // TODO: mở chi tiết đơn
+        // TODO: Open detail
       },
       child: Container(
         padding: const EdgeInsets.all(14),
@@ -210,7 +229,7 @@ class _RequestListPageState extends State<RequestListPage>
               children: [
                 Expanded(
                   child: Text(
-                    request.type,
+                    request.type.toTextString(),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -227,31 +246,34 @@ class _RequestListPageState extends State<RequestListPage>
                 style: const TextStyle(color: Colors.black54),
               ),
             const SizedBox(height: 6),
-            Text(
-              request.reason ?? '',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
+            if (request.reason != null && request.reason!.isNotEmpty)
+              Text(
+                request.reason!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13),
+              ),
           ],
         ),
       ),
     );
   }
 
-  // ================= STATUS =================
-  Widget _buildStatus(String? status) {
+  // ================= STATUS & HELPERS =================
+  Widget _buildStatus(RequestStatus? status) {
     Color color;
     String text;
 
     switch (status) {
-      case 'approved':
+      case RequestStatus.APPROVED:
         color = Colors.green;
         text = 'Approved';
         break;
-      case 'rejected':
+      case RequestStatus.REJECTED:
         color = Colors.red;
         text = 'Rejected';
         break;
+      case RequestStatus.PENDING:
       default:
         color = Colors.orange;
         text = 'Pending';

@@ -22,6 +22,8 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
   }
 
   Future<void> _fetchUsers() async {
+    try {
+
     final users = await AdminService().getUsers();
 
     setState(() {
@@ -29,6 +31,9 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
       _filteredUsers = users;
       _isLoading = false;
     });
+    } catch (err) {
+      debugPrint(err.toString());
+    }
   }
 
   void _runSearch(String query) {
