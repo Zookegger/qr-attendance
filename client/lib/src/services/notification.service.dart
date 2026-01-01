@@ -1,6 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:qr_attendance_frontend/src/services/auth.service.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -19,6 +20,7 @@ class NotificationService {
   static const String _channelDefaultDesc = 'Standard reminders and updates.';
 
   static final NotificationService _instance = NotificationService._internal();
+  final AuthenticationService _authService = AuthenticationService();
 
   factory NotificationService() {
     return _instance;
@@ -102,6 +104,15 @@ class NotificationService {
     debugPrint("============================================");
     debugPrint("YOUR FCM TOKEN: $fcmToken");
     debugPrint("============================================");
+
+    if (fcmToken != null) {
+      try {
+        await _authService.updateFcmToken(fcmToken);
+        debugPrint("✅ FCM token saved to backend");
+      } catch (e) {
+        debugPrint("❌ Failed to save FCM token: $e");
+      }
+    }
   }
 
   Future<void> _showLocalNotification(RemoteMessage message) async {

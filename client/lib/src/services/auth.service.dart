@@ -77,6 +77,17 @@ class AuthenticationService {
     return null;
   }
 
+  Future<void> updateFcmToken(String token) async {
+    final accessToken = await getAccessToken();
+    if (accessToken == null) return;
+
+    await _dio.post(
+      ApiEndpoints.updateFcmToken,
+      data: {"fcm_token": token},
+      options: Options(headers: {"Authorization": "Bearer $accessToken"}),
+    );
+  }
+
   Future<bool> logout() async {
     try {
       final refreshToken = await getRefreshToken();
