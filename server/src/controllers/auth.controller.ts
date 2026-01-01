@@ -1,8 +1,12 @@
 import { NextFunction, Request, Response } from "express";
+<<<<<<< HEAD
 import AuthService from "@services/auth.service";
 import { validationResult } from "express-validator";
 import { ChangePasswordRequestDTO, LoginRequestDTO, LogoutRequestDTO, RefreshRequestDTO, ForgotPasswordRequestDTO, ResetPasswordRequestDTO } from "@my-types/auth";
 import { RefreshToken, User } from "@models";
+=======
+import { AuthService } from "@services/auth.service";
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8
 
 const login = async (req: Request, res: Response, next: NextFunction) => {
 	try {
@@ -83,8 +87,15 @@ const me = async (req: Request, res: Response, next: NextFunction) => {
 
 const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
 	try {
+<<<<<<< HEAD
 		const dto: ForgotPasswordRequestDTO = req.body;
 		await AuthService.forgotPassword(dto.email);
+=======
+		const { email } = req.body;
+
+
+		await AuthService.forgotPassword(email);
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8
 		return res.status(200).json({ success: true, message: "Password reset email sent" });
 	} catch (error) {
 		return next(error);
@@ -127,6 +138,7 @@ const resetPasswordLanding = async (req: Request, res: Response, next: NextFunct
 
 const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
 	try {
+<<<<<<< HEAD
 		const dto: ResetPasswordRequestDTO = req.body;
 
 		if (!dto.email || !dto.token || !dto.newPassword) {
@@ -135,12 +147,22 @@ const resetPassword = async (req: Request, res: Response, next: NextFunction) =>
 
 		await AuthService.resetPassword(dto.email, dto.token, dto.newPassword);
 
+=======
+		const { email, token, newPassword } = req.body;
+
+		if (!email || !token || !newPassword) {
+			return res.status(400).json({ message: "Missing required fields" });
+		}
+
+		await AuthService.resetPassword(email, token, newPassword);
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8
 		return res.status(200).json({ success: true, message: "Password reset successfully" });
 	} catch (error) {
 		return next(error);
 	}
 };
 
+<<<<<<< HEAD
 const changePassword = async (req: Request, res: Response, next: NextFunction) => {
 	const errors = validationResult(req);
 	if (!errors.isEmpty()) {
@@ -183,6 +205,8 @@ const updateFcmToken = async (req: Request, res: Response, next: NextFunction) =
 
 
 
+=======
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8
 export const AuthController = {
 	login,
 	logout,
@@ -191,6 +215,10 @@ export const AuthController = {
 	forgotPassword,
 	resetPasswordLanding,
 	resetPassword,
+<<<<<<< HEAD
 	changePassword,
 	updateFcmToken
 };
+=======
+};
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8

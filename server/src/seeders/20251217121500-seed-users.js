@@ -6,6 +6,10 @@ module.exports = {
 	up: async (queryInterface, Sequelize) => {
 		const now = new Date();
 		const adminHash = await bcrypt.hash("adminpass123", 10);
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8
 		const userHash = await bcrypt.hash("userpass123", 10);
 
 		await queryInterface.bulkInsert(

@@ -10,7 +10,10 @@
 analyzer:
     errors:
         curly_braces_in_flow_control_structures: ignore
+<<<<<<< HEAD
         constant_identifier_names: ignore
+=======
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8
 include: package:flutter_lints/flutter.yaml
 
 linter:

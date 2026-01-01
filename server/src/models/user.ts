@@ -49,7 +49,11 @@ interface UserCreationAttributes
 		| "gender"
 		| "password_reset_token"
 		| "password_reset_expires"
+<<<<<<< HEAD
 	> { }
+=======
+	> {}
+>>>>>>> 2b987e63c41171be42634f317c09b78ab48e0fd8
 
 export default class User
 	extends Model<UserAttributes, UserCreationAttributes>
