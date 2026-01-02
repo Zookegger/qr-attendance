@@ -7,12 +7,12 @@ import {
 	deleteWorkshiftValidator,
 } from '@middlewares/validators/workshift.validator';
 
-const router = Router();
+const workshiftRouter = Router();
 
-router.get('/workshifts', WorkshiftController.listWorkshifts);
-router.get('/workshifts/:id', getWorkshiftValidator, WorkshiftController.getWorkshift);
-router.post('/workshifts', createWorkshiftValidator, WorkshiftController.createWorkshift);
-router.put('/workshifts/:id', updateWorkshiftValidator, WorkshiftController.updateWorkshift);
-router.delete('/workshifts/:id', deleteWorkshiftValidator, WorkshiftController.deleteWorkshift);
+workshiftRouter.get('/workshifts', WorkshiftController.listWorkshifts);
+workshiftRouter.get('/workshifts/:id', getWorkshiftValidator, WorkshiftController.getWorkshift);
+workshiftRouter.post('/workshifts', createWorkshiftValidator, WorkshiftController.createWorkshift);
+workshiftRouter.put('/workshifts/:id', updateWorkshiftValidator, WorkshiftController.updateWorkshift);
+workshiftRouter.delete('/workshifts/:id', deleteWorkshiftValidator, WorkshiftController.deleteWorkshift);
 
-export default router;
+export default workshiftRouter;

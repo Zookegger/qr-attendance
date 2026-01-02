@@ -8,13 +8,13 @@ import {
 	searchScheduleValidator,
 } from '@middlewares/validators/schedule.validator';
 
-const router = Router();
+const scheduleRouter = Router();
 
-router.get('/schedules', ScheduleController.listSchedules);
-router.get('/schedules/search', searchScheduleValidator, ScheduleController.searchSchedules);
-router.get('/schedules/:id', getScheduleValidator, ScheduleController.getSchedule);
-router.post('/schedules', createScheduleValidator, ScheduleController.createSchedule);
-router.put('/schedules/:id', updateScheduleValidator, ScheduleController.updateSchedule);
-router.delete('/schedules/:id', deleteScheduleValidator, ScheduleController.deleteSchedule);
+scheduleRouter.get('/schedules', ScheduleController.listSchedules);
+scheduleRouter.get('/schedules/search', searchScheduleValidator, ScheduleController.searchSchedules);
+scheduleRouter.get('/schedules/:id', getScheduleValidator, ScheduleController.getSchedule);
+scheduleRouter.post('/schedules', createScheduleValidator, ScheduleController.createSchedule);
+scheduleRouter.put('/schedules/:id', updateScheduleValidator, ScheduleController.updateSchedule);
+scheduleRouter.delete('/schedules/:id', deleteScheduleValidator, ScheduleController.deleteSchedule);
 
-export default router;
+export default scheduleRouter;
