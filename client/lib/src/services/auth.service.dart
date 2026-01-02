@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -291,6 +292,9 @@ class AuthenticationService {
 
     final deviceDetails = await _getDeviceDetails();
 
+    // Lấy FCM token
+    final fcmToken = await FirebaseMessaging.instance.getToken();
+
     try {
       final res = await _dio.post(
         ApiEndpoints.login,
@@ -298,6 +302,7 @@ class AuthenticationService {
           'email': email,
           'password': password,
           'device_uuid': deviceUuid,
+          'fcm_token': fcmToken, // thêm đây
           ...deviceDetails,
         },
       );

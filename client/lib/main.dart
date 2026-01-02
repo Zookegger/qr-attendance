@@ -9,24 +9,27 @@ import 'src/app.dart';
 import 'firebase_options.dart';
 
 void main() {
-  runZonedGuarded(() async {
-    WidgetsFlutterBinding.ensureInitialized();
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
 
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
 
-    await ConfigService().init();
+      await ConfigService().init();
 
-    runApp(const MyApp());
+      runApp(const MyApp());
 
-    // Don't block the first frame on notification setup.
-    unawaited(NotificationService().init());
-  }, (error, stack) {
-    // Handle uncaught errors safely
-    log('Uncaught error: $error', stackTrace: stack);
-    // You can also show an error screen or report to a service here
-  });
+      // Don't block the first frame on notification setup.
+      unawaited(NotificationService().init());
+    },
+    (error, stack) {
+      // Handle uncaught errors safely
+      log('Uncaught error: $error', stackTrace: stack);
+      // You can also show an error screen or report to a service here
+    },
+  );
 }
 
 class MyApp extends StatelessWidget {

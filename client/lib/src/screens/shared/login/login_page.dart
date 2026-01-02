@@ -38,7 +38,7 @@ class _LoginPageState extends State<LoginPage> {
       final session = await AuthenticationService().login(
         email: login,
         password: password,
-        context: context
+        context: context,
       );
 
       if (!mounted) return;
@@ -56,7 +56,8 @@ class _LoginPageState extends State<LoginPage> {
           builder: (context) => AlertDialog(
             title: const Text("Device Mismatch"),
             content: const Text(
-                "Tài khoản này đã gắn với thiết bị khác. Vui lòng liên hệ Quản lý để mở khóa thiết bị (Unbind)."),
+              "Tài khoản này đã gắn với thiết bị khác. Vui lòng liên hệ Quản lý để mở khóa thiết bị (Unbind).",
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -262,13 +263,19 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 12),
                   Center(
                     child: TextButton.icon(
-                      onPressed: () => Navigator.of(context).pushNamed('/setup'),
-                      icon: const Icon(Icons.settings, color: Colors.deepPurple),
+                      onPressed: () =>
+                          Navigator.of(context).pushNamed('/setup'),
+                      icon: const Icon(
+                        Icons.settings,
+                        color: Colors.deepPurple,
+                      ),
                       label: const Text(
                         'Setup / Connect to Server',
                         style: TextStyle(color: Colors.deepPurple),
                       ),
-                      style: TextButton.styleFrom(foregroundColor: Colors.deepPurple),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.deepPurple,
+                      ),
                     ),
                   ),
                 ],
