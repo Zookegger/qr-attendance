@@ -27,10 +27,10 @@ const logout = async (req: Request, res: Response, next: NextFunction) => {
 const refresh = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const dto: RefreshRequestDTO = req.body;
-		
+
 		if (!dto.refreshToken) {
-      return res.status(400).json({ message: "Refresh token is required" });
-    }
+			return res.status(400).json({ message: "Refresh token is required" });
+		}
 
 		const result = await AuthService.refresh(dto.refreshToken, dto.deviceUuid);
 		return res.status(200).json(result);
@@ -169,20 +169,20 @@ const changePassword = async (req: Request, res: Response, next: NextFunction) =
 }
 
 const updateFcmToken = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const user = req.user as any;
-    const { fcm_token } = req.body;
+	try {
+		const user = req.user as any;
+		const { fcm_token } = req.body;
 
-    if (!fcm_token) {
-      return res.status(400).json({ message: "Missing fcm_token" });
-    }
+		if (!fcm_token) {
+			return res.status(400).json({ message: "Missing fcm_token" });
+		}
 
-    await user.update({ fcm_token });
+		await user.update({ fcm_token });
 
-    return res.json({ success: true });
-  } catch (error) {
-    return next(error);
-  }
+		return res.json({ success: true });
+	} catch (error) {
+		return next(error);
+	}
 };
 
 export const AuthController = {
