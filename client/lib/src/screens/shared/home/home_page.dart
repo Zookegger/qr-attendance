@@ -1,5 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:qr_attendance_frontend/src/models/Notification.dart';
+import 'package:qr_attendance_frontend/src/screens/shared/NotificationScreen.dart';
 import 'dart:async';
 
 import '../../../models/user.dart';
@@ -13,6 +15,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  List<AppNotification> notifications = [];
+
   User? _user;
   int notificationCount = 0;
 
@@ -134,17 +138,22 @@ class _HomePageState extends State<HomePage> {
   void _setupNotificationListener() {
     _onMessageSub?.cancel();
     _onMessageSub = FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      final noti = AppNotification(
+        title: message.notification?.title ?? "Notification",
+        body: message.notification?.body ?? "",
+        time: DateTime.now(),
+      );
+
       if (mounted) {
         setState(() {
-          notificationCount++;
+          notifications.insert(0, noti);
+          notificationCount = notifications.length;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(message.notification?.title ?? "New Notification"),
-            action: SnackBarAction(label: 'View', onPressed: () {}),
+            content: Text(noti.title),
             behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.indigo,
           ),
         );
       }
@@ -509,13 +518,22 @@ class _HomePageState extends State<HomePage> {
     return Stack(
       children: [
         IconButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    NotificationScreen(notifications: notifications),
+              ),
+            );
+          },
           icon: const Icon(
             Icons.notifications_outlined,
             color: Colors.white,
             size: 28,
           ),
         ),
+
         if (notificationCount > 0)
           Positioned(
             right: 8,

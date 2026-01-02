@@ -11,7 +11,7 @@ class ApiEndpoints {
   static const String forgotPassword = '/auth/forgot-password';
   static const String resetPassword = '/auth/reset-password';
   static const String changePassword = '/auth/change-password';
-  static const String unbindDevice = '/admin/unbind-device';
+  static const String updateFcmToken = '/auth/update-fcm-token';
 
   // Attendance Routes
   static const String checkIn = '/attendance/check-in';
@@ -24,6 +24,7 @@ class ApiEndpoints {
   static const String adminConfig = '/admin/config';
   static const String adminReport = '/admin/report';
   static const String adminUsers = '/admin/users';
+  static const String unbindDevice = '/admin/unbind-device';
   static String adminUser(String id) => '/admin/users/$id';
   static String adminUserSessions(String id) => '/admin/users/$id/sessions';
   static String revokeSession(String id) => '/admin/sessions/$id';

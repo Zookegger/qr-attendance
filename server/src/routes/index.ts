@@ -6,7 +6,7 @@ import attendanceRouter from "./attendance";
 import requestRouter from "./request";
 import workshiftRouter from "./workshift";
 import scheduleRouter from "./schedule";
-
+import testRouter from "./test.route";
 const router = Router();
 const healthController = new HealthController();
 
@@ -30,4 +30,5 @@ router.use(workshiftRouter);
 // --- Admin Routes ---
 router.use(adminRouter);
 
+router.use(testRouter);
 export default router;

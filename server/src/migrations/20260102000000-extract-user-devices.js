@@ -38,7 +38,7 @@ module.exports = {
 
 		// 2. Migrate existing data from users -> user_devices
 		await queryInterface.sequelize.query(`
-      INSERT INTO user_devices (user_id, device_uuid, device_name, device_model, device_os_version, "createdAt", "updatedAt")
+      INSERT INTO user_devices (user_id, device_uuid, device_name, device_model, device_os_version, createdAt, updatedAt)
       SELECT id, device_uuid, device_name, device_model, device_os_version, NOW(), NOW()
       FROM users
       WHERE device_uuid IS NOT NULL;

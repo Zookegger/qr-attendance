@@ -15,5 +15,6 @@ authRouter.get("/auth/forgot-password", AuthController.forgotPassword, errorHand
 authRouter.get("/auth/reset-password", AuthController.resetPasswordLanding, errorHandler);
 authRouter.post("/auth/reset-password", AuthController.resetPassword, errorHandler);
 authRouter.post("/auth/change-password", authenticate, changePasswordValidator, AuthController.changePassword, errorHandler);
+authRouter.post("/auth/update-fcm-token", authenticate, AuthController.updateFcmToken, errorHandler);
 
 export default authRouter;

@@ -7,6 +7,7 @@ export interface LoginRequestDTO {
 	device_name: string;
 	device_model: string;
 	device_os_version: string;
+	fcm_token?: string;
 }
 
 export interface AuthResponse {

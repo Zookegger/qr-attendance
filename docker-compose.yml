@@ -49,6 +49,9 @@ services:
             - DB_DIALECT=mysql
             - REDIS_HOST=redis
             - REDIS_PORT=6379
+            - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+            - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL}
+            - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
         depends_on:
             mysql:
                 condition: service_healthy

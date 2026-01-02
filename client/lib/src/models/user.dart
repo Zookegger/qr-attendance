@@ -1,3 +1,5 @@
+import 'package:qr_attendance_frontend/src/models/user_device.dart';
+
 enum UserRole {
   ADMIN,
   MANAGER,
@@ -59,6 +61,7 @@ class User {
   final String? deviceName;
   final String? deviceModel;
   final String? deviceOsVersion;
+  final List<UserDevice>? devices;
   final String? position;
   final String? department;
   final String? fcmToken;
@@ -79,6 +82,7 @@ class User {
     this.deviceName,
     this.deviceModel,
     this.deviceOsVersion,
+    this.devices,
     this.position,
     this.department,
     this.fcmToken,
@@ -101,16 +105,35 @@ class User {
       deviceName: json['device_name'],
       deviceModel: json['device_model'],
       deviceOsVersion: json['device_os_version'],
+      devices: (json['devices'] is List)
+          ? (json['devices'] as List)
+                .map((e) => UserDevice.fromJson(e as Map<String, dynamic>))
+                .toList()
+          : (json['user_devices'] is List)
+          ? (json['user_devices'] as List)
+                .map((e) => UserDevice.fromJson(e as Map<String, dynamic>))
+                .toList()
+          : (json['device_uuid'] != null)
+          ? [
+              UserDevice(
+                deviceUuid: json['device_uuid'],
+                deviceName: json['device_name'],
+                deviceModel: json['device_model'],
+                deviceOsVersion: json['device_os_version'],
+                fcmToken: json['fcm_token'],
+              ),
+            ]
+          : null,
       position: json['position'],
       department: json['department'],
       fcmToken: json['fcm_token'],
-        dateOfBirth: json['date_of_birth'] != null
+      dateOfBirth: json['date_of_birth'] != null
           ? (DateTime.tryParse(json['date_of_birth'].toString())?.toLocal())
           : null,
-        createdAt: json['createdAt'] != null
+      createdAt: json['createdAt'] != null
           ? (DateTime.tryParse(json['createdAt'].toString())?.toLocal())
           : null,
-        updatedAt: json['updatedAt'] != null
+      updatedAt: json['updatedAt'] != null
           ? (DateTime.tryParse(json['updatedAt'].toString())?.toLocal())
           : null,
       phoneNumber: json['phone_number'],
@@ -132,10 +155,13 @@ class User {
       'device_name': deviceName,
       'device_model': deviceModel,
       'device_os_version': deviceOsVersion,
+      'devices': devices?.map((d) => d.toJson()).toList(),
       'position': position,
       'department': department,
       'fcm_token': fcmToken,
-      'date_of_birth': dateOfBirth != null ? dateOfBirth!.toIso8601String().split('T')[0] : null,
+      'date_of_birth': dateOfBirth != null
+          ? dateOfBirth!.toIso8601String().split('T')[0]
+          : null,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'phone_number': phoneNumber,

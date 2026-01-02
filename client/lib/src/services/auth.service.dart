@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -75,6 +76,17 @@ class AuthenticationService {
     final decoded = _tryDecodeJson(raw);
     if (decoded is Map<String, dynamic>) return User.fromJson(decoded);
     return null;
+  }
+
+  Future<void> updateFcmToken(String token) async {
+    final accessToken = await getAccessToken();
+    if (accessToken == null) return;
+
+    await _dio.post(
+      ApiEndpoints.updateFcmToken,
+      data: {"fcm_token": token},
+      options: Options(headers: {"Authorization": "Bearer $accessToken"}),
+    );
   }
 
   Future<bool> logout() async {
@@ -280,6 +292,9 @@ class AuthenticationService {
 
     final deviceDetails = await _getDeviceDetails();
 
+    // Lấy FCM token
+    final fcmToken = await FirebaseMessaging.instance.getToken();
+
     try {
       final res = await _dio.post(
         ApiEndpoints.login,
@@ -287,6 +302,7 @@ class AuthenticationService {
           'email': email,
           'password': password,
           'device_uuid': deviceUuid,
+          'fcm_token': fcmToken, // thêm đây
           ...deviceDetails,
         },
       );
