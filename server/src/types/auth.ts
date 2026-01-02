@@ -28,6 +28,7 @@ export interface LogoutRequestDTO {
 
 export interface RefreshRequestDTO {
 	refreshToken: string;
+	deviceUuid: string;
 }
 
 export interface ForgotPasswordRequestDTO {

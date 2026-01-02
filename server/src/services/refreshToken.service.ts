@@ -118,23 +118,28 @@ export default class RefreshTokenService {
 	 * The main flow: Verify old token -> Revoke it -> Issue new pair
 	 */
 	static rotateRefreshToken = async (
-		oldRefreshTokenString: string
+		oldRefreshTokenString: string,
+		deviceUuid: string,
 	): Promise<{ refreshToken: string; accessToken: string; user: User }> => {
+		// 1. Verify and fetch the record from DB
 		const tokenRecord = await this.verifyRefreshToken(oldRefreshTokenString);
 
-		if (!tokenRecord.device_uuid) {
-			// Rotation must be tied to a device. Reject if token has no device association.
-			throw new Error("Refresh token missing device UUID; rotation denied");
+		// 2. Validate Device Binding (Security Check)
+		// Ensure the device trying to refresh is the same one that created the token
+		if (!tokenRecord.device_uuid || tokenRecord.device_uuid !== deviceUuid) {
+			// Optional: Revoke token immediately if this looks like a theft attempt
+			await tokenRecord.update({ revoked: true });
+			throw new Error("Invalid device for this session");
 		}
 
-		// 1. Revoke the used token (Rotation)
+		// 3. Revoke the used token (Rotation)
 		await tokenRecord.update({ revoked: true });
 
-		// 2. Ensure User exists
+		// 4. Ensure User exists
 		const user = await User.findByPk(tokenRecord.user_id);
 		if (!user) throw new Error("User not found");
 
-		// 3. Generate New Pair
+		// 5. Generate New Pair
 		const tokens = await this.generateRefreshToken(user, {
 			id: user.id,
 			role: user.role as UserRole,

@@ -8,7 +8,7 @@ import 'package:qr_attendance_frontend/src/screens/admin/employees/employee_form
 import 'package:qr_attendance_frontend/src/screens/admin/employees/list_employee_page.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/requests/admin_request_list_page.dart';
 import 'package:qr_attendance_frontend/src/screens/shared/schedule/schedule_page.dart';
-import 'package:qr_attendance_frontend/src/screens/admin/schedule/employee_schedule_page.dart';
+import 'package:qr_attendance_frontend/src/screens/admin/schedule/manage_schedule_page.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/workshift/workshift_list_page.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/workshift/workshift.form_page.dart';
 
@@ -154,7 +154,7 @@ class _AppState extends State<App> {
           if (settings.arguments is User) {
             final user = settings.arguments as User;
             return MaterialPageRoute(
-              builder: (_) => EmployeeSchedulePage(user: user),
+              builder: (_) => ManageEmployeeSchedulePage(user: user),
             );
           }
           return _errorRoute();

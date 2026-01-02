@@ -6,16 +6,16 @@ import '../../../models/workshift.dart';
 import '../../../services/schedule.service.dart';
 import '../../../services/workshift.service.dart';
 
-class EmployeeSchedulePage extends StatefulWidget {
+class ManageEmployeeSchedulePage extends StatefulWidget {
   final User user;
 
-  const EmployeeSchedulePage({super.key, required this.user});
+  const ManageEmployeeSchedulePage({super.key, required this.user});
 
   @override
-  State<EmployeeSchedulePage> createState() => _EmployeeSchedulePageState();
+  State<ManageEmployeeSchedulePage> createState() => _ManageEmployeeSchedulePageState();
 }
 
-class _EmployeeSchedulePageState extends State<EmployeeSchedulePage> {
+class _ManageEmployeeSchedulePageState extends State<ManageEmployeeSchedulePage> {
   final ScheduleService _scheduleService = ScheduleService();
   final WorkshiftService _shiftService = WorkshiftService();
 

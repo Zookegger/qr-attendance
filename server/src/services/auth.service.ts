@@ -10,41 +10,60 @@ import RefreshTokenService from "./refreshToken.service";
 import { database } from "@config/index";
 
 export default class AuthService {
-	static async login(email: string, password: string, device_uuid: string, device_name: string, device_model: string, device_os_version: string): Promise<AuthResponse> {
+	// server/src/services/auth.service.ts
+
+	static async login(
+		email: string,
+		password: string,
+		device_uuid: string,
+		device_name: string,
+		device_model: string,
+		device_os_version: string,
+		fcm_token?: string
+	): Promise<AuthResponse> {
 		const user = await User.findOne({ where: { email } });
-		if (!user) {
-			throw new Error("Invalid credentials");
-		}
+		if (!user) throw new Error("Invalid credentials");
 
 		const isMatch = await bcrypt.compare(password, user.password_hash);
-		if (!isMatch) {
-			throw new Error("Invalid credentials");
-		}
+		if (!isMatch) throw new Error("Invalid credentials");
 
-		if (!device_uuid) {
-			throw new Error("Device UUID is required for login");
-		}
+		if (!device_uuid) throw new Error("Device UUID is required for login");
 
 		let device = await UserDevice.findOne({ where: { user_id: user.id, device_uuid } });
 
 		if (device) {
-			await device.update({ device_name, device_model, device_os_version, last_login: new Date() });
+			//  Update existing device (including FCM)
+			await device.update({
+				device_name,
+				device_model,
+				device_os_version,
+				last_login: new Date(),
+				fcm_token: fcm_token ?? device.fcm_token // <--- Update here
+			});
 		} else {
+			// Check Binding Constraints
 			if (user.role === UserRole.USER) {
 				const deviceCount = await UserDevice.count({ where: { user_id: user.id } });
 				if (deviceCount >= 1) {
+					// This logic ALREADY protects you. The controller check was redundant.
 					throw new Error("This account is already bound to another device. Contact admin to reset.");
 				}
 			}
 
-			device = await UserDevice.create({ user_id: user.id, device_uuid, device_name, device_model, device_os_version });
+			// Create new device (including FCM)
+			device = await UserDevice.create({
+				user_id: user.id,
+				device_uuid,
+				device_name,
+				device_model,
+				device_os_version,
+				fcm_token: fcm_token || null // <--- Insert here
+			});
 		}
 
-		// Use RefreshTokenService to generate tokens (include device UUID when available)
 		const { accessToken, refreshToken } = await RefreshTokenService.generateRefreshToken(
 			user,
 			{ id: user.id, role: user.role, deviceUuid: device.device_uuid },
-
 		);
 
 		return {
@@ -135,10 +154,11 @@ export default class AuthService {
 		await this.revokeAllUserSessions(user.id);
 	}
 
-	static async refresh(tokenString: string): Promise<AuthResponse> {
+	static async refresh(tokenString: string, deviceUuid: string): Promise<AuthResponse> {
 		// Use RefreshTokenService to rotate tokens
 		const { accessToken, refreshToken, user } = await RefreshTokenService.rotateRefreshToken(
-			tokenString
+			tokenString,
+			deviceUuid,
 		);
 
 		return {

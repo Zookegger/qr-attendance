@@ -3,67 +3,15 @@ import AuthService from "@services/auth.service";
 import { validationResult } from "express-validator";
 import { ChangePasswordRequestDTO, LoginRequestDTO, LogoutRequestDTO, RefreshRequestDTO, ForgotPasswordRequestDTO, ResetPasswordRequestDTO } from "@my-types/auth";
 import { RefreshToken, User } from "@models";
-import { UserDevice } from "@models";
 
 const login = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const dto: LoginRequestDTO = req.body;
-
-    // 1️⃣ Xác thực user và lấy session/token
-    const result = await AuthService.login(
-      dto.email,
-      dto.password,
-      dto.device_uuid,
-      dto.device_name,
-      dto.device_model,
-      dto.device_os_version
-    );
-
-    const user = result.user as User;
-
-    // 2️⃣ Lưu hoặc cập nhật thiết bị vào user_devices
-// 2️⃣ Xử lý device binding
-if (user && dto.device_uuid) {
-  const existingDevice = await UserDevice.findOne({
-    where: { user_id: user.id },
-  });
-
-  if (existingDevice) {
-    // ❌ đăng nhập từ thiết bị khác
-    if (existingDevice.device_uuid !== dto.device_uuid) {
-      return res.status(403).json({
-        message: "Account is bound to another device",
-        code: "DEVICE_MISMATCH",
-      });
-    }
-
-    // ✅ cùng thiết bị → update
-    await existingDevice.update({
-      device_name: dto.device_name,
-      device_model: dto.device_model,
-      device_os_version: dto.device_os_version,
-      fcm_token: dto.fcm_token ?? existingDevice.fcm_token,
-      last_login: new Date(),
-    });
-  } else {
-    // ✅ lần đầu login → bind thiết bị
-    await UserDevice.create({
-      user_id: user.id,
-      device_uuid: dto.device_uuid,
-      device_name: dto.device_name,
-      device_model: dto.device_model,
-      device_os_version: dto.device_os_version,
-      fcm_token: dto.fcm_token ?? null,
-      last_login: new Date(),
-    });
-  }
-}
-
-
-    return res.status(200).json(result);
-  } catch (error) {
-    return next(error);
-  }
+	try {
+		const dto: LoginRequestDTO = req.body;
+		const result = await AuthService.login(dto.email, dto.password, dto.device_uuid, dto.device_name, dto.device_model, dto.device_os_version);
+		return res.status(200).json(result);
+	} catch (error) {
+		return next(error);
+	}
 };
 
 const logout = async (req: Request, res: Response, next: NextFunction) => {
@@ -79,7 +27,12 @@ const logout = async (req: Request, res: Response, next: NextFunction) => {
 const refresh = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const dto: RefreshRequestDTO = req.body;
-		const result = await AuthService.refresh(dto.refreshToken);
+		
+		if (!dto.refreshToken) {
+      return res.status(400).json({ message: "Refresh token is required" });
+    }
+
+		const result = await AuthService.refresh(dto.refreshToken, dto.deviceUuid);
 		return res.status(200).json(result);
 	} catch (error) {
 		return next(error);
@@ -215,23 +168,6 @@ const changePassword = async (req: Request, res: Response, next: NextFunction) =
 	}
 }
 
-const updateFcmToken = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const user = req.user as any;
-    const { fcm_token } = req.body;
-
-    if (!fcm_token) {
-      return res.status(400).json({ message: "Missing fcm_token" });
-    }
-
-    await user.update({ fcm_token });
-
-    return res.json({ success: true });
-  } catch (error) {
-    return next(error);
-  }
-};
-
 export const AuthController = {
 	login,
 	logout,
@@ -240,6 +176,5 @@ export const AuthController = {
 	forgotPassword,
 	resetPasswordLanding,
 	resetPassword,
-	changePassword,
-	updateFcmToken
+	changePassword
 };
