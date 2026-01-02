@@ -4,8 +4,8 @@ import 'package:qr_attendance_frontend/src/models/Notification.dart';
 import 'package:qr_attendance_frontend/src/screens/shared/NotificationScreen.dart';
 import 'dart:async';
 
-import '../../../models/user.dart';
-import '../../../services/auth.service.dart';
+import 'package:qr_attendance_frontend/src/models/user.dart';
+import 'package:qr_attendance_frontend/src/services/auth.service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,13 +20,13 @@ class _HomePageState extends State<HomePage> {
   User? _user;
   int notificationCount = 0;
 
-  // Shift Data
+  // Shift Data (Mock)
   final String checkInTime = "08:02 AM";
   final String checkOutTime = "--:--";
   final String totalTime = "1h 39m";
-  final bool isCheckedIn = true; // Simulated status
+  final bool isCheckedIn = true; 
 
-  // Stats Data
+  // Stats Data (Mock)
   final int daysWorked = 22;
   final int daysOff = 1;
   final String overtimeHours = "4.5h";
@@ -75,11 +75,9 @@ class _HomePageState extends State<HomePage> {
                     context: context,
                     builder: (BuildContext dctx) {
                       return AlertDialog(
-                        // Modern shape
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        // Icon for quick visual context
                         icon: const Icon(
                           Icons.logout,
                           color: Colors.redAccent,
@@ -90,10 +88,8 @@ class _HomePageState extends State<HomePage> {
                           'Are you sure you want to end your session?',
                           textAlign: TextAlign.center,
                         ),
-                        actionsAlignment: MainAxisAlignment
-                            .spaceEvenly, // Spreads buttons out
+                        actionsAlignment: MainAxisAlignment.spaceEvenly,
                         actions: [
-                          // Neutral Cancel Button
                           TextButton(
                             onPressed: () => Navigator.pop(dctx),
                             child: const Text(
@@ -101,14 +97,13 @@ class _HomePageState extends State<HomePage> {
                               style: TextStyle(color: Colors.grey),
                             ),
                           ),
-                          // Destructive Action Button (Red)
                           TextButton(
                             onPressed: () {
                               Navigator.pop(dctx);
                               _handleLogout();
                             },
                             style: TextButton.styleFrom(
-                              foregroundColor: Colors.red, // The important part
+                              foregroundColor: Colors.red,
                             ),
                             child: const Text(
                               'Logout',
@@ -168,8 +163,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint(_user?.role.name);
-
     // Using a slightly off-white background for better contrast
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -334,12 +327,13 @@ class _HomePageState extends State<HomePage> {
           Colors.purple,
           () => Navigator.pushNamed(context, '/employees'),
         ),
+        // UPDATED: Replaced Reports with Workshifts
         _buildQuickActionButton(
-          "Reports",
-          Icons.bar_chart,
+          "Workshifts",
+          Icons.access_time_filled,
           36,
-          Colors.orange,
-          () => Navigator.pushNamed(context, '/reports'),
+          Colors.teal,
+          () => Navigator.pushNamed(context, '/admin/workshifts'),
         ),
       ],
     );

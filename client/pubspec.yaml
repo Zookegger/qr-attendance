@@ -65,6 +65,7 @@ dependencies:
     shared_preferences: ^2.5.4
     app_links: ^7.0.0
     file_picker: ^10.3.8
+    connectivity_plus: ^7.0.0
 
 dev_dependencies:
     flutter_test:
