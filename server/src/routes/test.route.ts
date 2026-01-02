@@ -12,8 +12,8 @@ testRouter.post("/test-push", async (req, res) => {
 
     await sendPushNotification(
       token,
-      "Test Firebase",
-      "Push notification OK"
+      "Thông báo từ hệ thống QR Attendance",
+      "dEmo gửi thông báo push notification"
     );
 
     res.json({ message: "Send success" });

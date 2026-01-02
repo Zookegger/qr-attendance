@@ -5,8 +5,8 @@ module.exports = {
 		// 1. Insert existing fcm_token values into user_devices as a migrated device row
 		// Use a deterministic device_uuid so we can revert the change if needed
 		await queryInterface.sequelize.query(`
-			INSERT INTO user_devices (user_id, device_uuid, device_name, device_model, device_os_version, fcm_token, last_login, "createdAt", "updatedAt")
-			SELECT id, ('migrated-fcm-' || id)::text, NULL, NULL, NULL, fcm_token, NOW(), NOW(), NOW()
+			INSERT INTO user_devices (user_id, device_uuid, device_name, device_model, device_os_version, fcm_token, last_login, createdAt, updatedAt)
+			SELECT id, CONCAT('migrated-fcm-', id), NULL, NULL, NULL, fcm_token, NOW(), NOW(), NOW()
 			FROM users
 			WHERE fcm_token IS NOT NULL;
 		`);
