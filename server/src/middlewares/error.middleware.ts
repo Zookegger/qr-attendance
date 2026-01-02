@@ -27,6 +27,8 @@ export const errorHandler = (
 ) => {
 	logger.error({
 		err,
+		message: err.message,
+		stack: err.stack,
 		method: req.method,
 		path: req.originalUrl,
 		ip: req.ip,
