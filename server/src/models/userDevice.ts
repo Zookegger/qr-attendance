@@ -56,6 +56,7 @@ UserDevice.init(
    {
       sequelize,
       tableName: "user_devices",
+      underscored: true,
       timestamps: true,
       indexes: [
          {

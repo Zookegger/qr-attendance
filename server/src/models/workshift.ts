@@ -75,5 +75,6 @@ Workshift.init({
 }, {
    sequelize,
    tableName: 'shifts',
+   underscored: true,
    timestamps: true
 });

@@ -94,7 +94,7 @@ export const createTempConnection = (): Sequelize => {
  * @returns {Promise<void>} Resolves when database creation is complete
  * @throws {Error} If database creation fails
  */
-const created_atabase = async () => {
+const createDatabase = async () => {
 	const temp_connection = createTempConnection();
 
 	try {
@@ -137,7 +137,7 @@ const created_atabase = async () => {
  */
 export const connectToDatabase = async (): Promise<void> => {
 	try {
-		await created_atabase();
+		await createDatabase();
 		logger.info("Connecting to Database Server...");
 		await sequelize.authenticate();
 		logger.info("Database connected");
