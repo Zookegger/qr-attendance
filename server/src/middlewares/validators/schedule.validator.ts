@@ -24,4 +24,6 @@ export const searchScheduleValidator = [
   query("shift_id").optional().isInt().withMessage("shift_id must be an integer"),
   query("start_date").optional().isISO8601().withMessage("start_date must be a valid date"),
   query("end_date").optional().isISO8601().withMessage("end_date must be a valid date"),
+  query("from").optional().isISO8601().withMessage("from must be a valid date"),
+  query("to").optional().isISO8601().withMessage("to must be a valid date"),
 ];

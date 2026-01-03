@@ -15,6 +15,14 @@ const qrWorker = new Worker<QRJobData>(
       try {
          logger.debug(`[QR Worker] Job ${job.id} started`);
 
+         // Time Guard: Only run between 7 AM and 7 PM
+         const now = new Date();
+         const hour = now.getHours();
+         if (hour < 7 || hour >= 19) {
+            logger.debug(`[QR Worker] Skipping job ${job.id} outside working hours`);
+            return;
+         }
+
          // If officeId provided, limit to that; otherwise generate for all configured offices
          const offices = job.data.officeId
             ? await OfficeConfig.findAll({ where: { id: job.data.officeId } })

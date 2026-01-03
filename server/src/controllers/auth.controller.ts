@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import AuthService from "@services/auth.service";
 import { validationResult } from "express-validator";
-import { ChangePasswordRequestDTO, LoginRequestDTO, LogoutRequestDTO, RefreshRequestDTO, ForgotPasswordRequestDTO, ResetPasswordRequestDTO } from "@my-types/auth";
+import { ChangePasswordRequestDTO, LoginRequestDTO, LogoutRequestDTO, RefreshRequestDTO, ForgotPasswordRequestDTO, ResetPasswordRequestDTO, VerifyPasswordRequestDTO } from "@my-types/auth";
 import { RefreshToken, User } from "@models";
 
 const login = async (req: Request, res: Response, next: NextFunction) => {
@@ -19,6 +19,19 @@ const logout = async (req: Request, res: Response, next: NextFunction) => {
 		const dto: LogoutRequestDTO = req.body;
 		await AuthService.logout(dto.refreshToken);
 		return res.status(200).json({ success: true, message: "Logged out successfully" });
+	} catch (error) {
+		return next(error);
+	}
+};
+
+const verifyPassword = async (req: Request, res: Response, next: NextFunction) => {
+	try {
+		const dto: VerifyPasswordRequestDTO = req.body;
+		const isValid = await AuthService.verifyPassword(dto.email, dto.password);
+		if (!isValid) {
+			return res.status(401).json({ success: false, message: "Invalid password" });
+		}
+		return res.status(200).json({ success: true, message: "Password verified" });
 	} catch (error) {
 		return next(error);
 	}
@@ -187,8 +200,7 @@ const updateFcmToken = async (req: Request, res: Response, next: NextFunction) =
 
 export const AuthController = {
 	login,
-	logout,
-	refresh,
+	logout,	verifyPassword,	refresh,
 	me,
 	forgotPassword,
 	resetPasswordLanding,

@@ -1,5 +1,6 @@
 import { Schedule } from "@models";
 import { CreateScheduleDTO, UpdateScheduleDTO, ScheduleQuery } from '@my-types/schedule';
+import { Op } from "sequelize";
 
 export default class ScheduleService {
    static async createSchedule(data: CreateScheduleDTO) {
@@ -46,6 +47,24 @@ export default class ScheduleService {
       if (query.startDate) where.startDate = query.startDate;
       if (query.endDate) where.endDate = query.endDate;
 
-      return Schedule.findAll({ where, order: [["startDate", "DESC"]] });
+      // Range Overlap Logic:
+      // Schedule starts before the end of the range AND (ends after the start of the range OR is indefinite)
+      if (query.from && query.to) {
+         where[Op.and] = [
+            { startDate: { [Op.lte]: query.to } },
+            {
+               [Op.or]: [
+                  { endDate: { [Op.gte]: query.from } },
+                  { endDate: null }
+               ]
+            }
+         ];
+      }
+
+      return Schedule.findAll({ 
+         where, 
+         order: [["startDate", "DESC"]],
+         include: ["Shift", "User"] // Include relations for the roster
+      });
    }
 }

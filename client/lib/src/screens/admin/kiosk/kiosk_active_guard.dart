@@ -1,0 +1,180 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:qr_attendance_frontend/src/services/auth.service.dart';
+
+class KioskActiveGuard extends StatefulWidget {
+  final Widget child;
+  final int startHour;
+  final int endHour;
+
+  const KioskActiveGuard({
+    super.key,
+    required this.child,
+    this.startHour = 6,
+    this.endHour = 22,
+  });
+
+  @override
+  State<KioskActiveGuard> createState() => _KioskActiveGuardState();
+}
+
+class _KioskActiveGuardState extends State<KioskActiveGuard> {
+  Timer? _timer;
+  bool _isLocked = false;
+  final TextEditingController _passwordController = TextEditingController();
+  bool _isAuthenticating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkTime();
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) => _checkTime());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _checkTime() {
+    final now = DateTime.now();
+    final hour = now.hour;
+    final shouldLock = hour < widget.startHour || hour >= widget.endHour;
+
+    if (shouldLock != _isLocked) {
+      setState(() => _isLocked = shouldLock);
+    }
+  }
+
+  Future<void> _handleUnlock() async {
+    final password = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Unlock Station'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Enter your password to exit Kiosk mode.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, _passwordController.text),
+            child: const Text('Unlock'),
+          ),
+        ],
+      ),
+    );
+
+    if (password != null && password.isNotEmpty) {
+      setState(() => _isAuthenticating = true);
+      try {
+        final authService = AuthenticationService();
+        final user = await authService.getCachedUser();
+        if (user != null) {
+          // Verify password without creating new session
+          final isValid = await authService.verifyPassword(user.email, password);
+          
+          if (isValid) {
+            if (mounted) {
+              Navigator.of(context).pop(); // Exit Kiosk Page
+            }
+          } else {
+             if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Invalid password.')),
+              );
+            }
+          }
+        } else {
+           if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Could not verify user identity.')),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Unlock failed: ${e.toString()}')),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isAuthenticating = false);
+          _passwordController.clear();
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        widget.child,
+        if (_isLocked)
+          AbsorbPointer(
+            absorbing: true,
+            child: Container(
+              color: Colors.black.withOpacity(0.95),
+              width: double.infinity,
+              height: double.infinity,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.nightlight_round, color: Colors.blueGrey, size: 80),
+                    const SizedBox(height: 24),
+                    const Text(
+                      "Shift Ended",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      "Station is locked until ${widget.startHour}:00",
+                      style: const TextStyle(color: Colors.grey, fontSize: 18),
+                    ),
+                    const SizedBox(height: 48),
+                    if (_isAuthenticating)
+                      const CircularProgressIndicator()
+                    else
+                      ElevatedButton.icon(
+                        onPressed: _handleUnlock,
+                        icon: const Icon(Icons.lock_open),
+                        label: const Text("Unlock Station"),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          textStyle: const TextStyle(fontSize: 18),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}

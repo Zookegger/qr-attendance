@@ -11,6 +11,8 @@ import 'package:qr_attendance_frontend/src/screens/shared/schedule/schedule_page
 import 'package:qr_attendance_frontend/src/screens/admin/schedule/manage_schedule_page.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/workshift/workshift_list_page.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/workshift/workshift.form_page.dart';
+import 'package:qr_attendance_frontend/src/screens/admin/kiosk/kiosk_page.dart';
+import 'package:qr_attendance_frontend/src/screens/admin/schedule/roster_page.dart';
 
 // Screens
 import 'package:qr_attendance_frontend/src/screens/shared/splash/splash_screen.dart';
@@ -121,8 +123,10 @@ class _AppState extends State<App> {
         // Requests
         '/user/requests': (_) => const RequestListPage(),
         '/user/requests/form': (_) => const RequestFormPage(),
-
         '/admin/requests': (_) => const AdminRequestListPage(),
+
+        '/admin/kiosk': (_) => const KioskPage(),
+        '/admin/roster': (_) => const RosterPage(),
       },
 
       onGenerateRoute: (settings) {

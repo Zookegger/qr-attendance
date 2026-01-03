@@ -83,6 +83,14 @@ export default class AuthService {
 		await RefreshTokenService.revokeRefreshToken(refreshToken);
 	}
 
+	static async verifyPassword(email: string, password: string): Promise<boolean> {
+		const user = await User.findOne({ where: { email } });
+		if (!user) return false;
+
+		const isMatch = await bcrypt.compare(password, user.passwordHash);
+		return isMatch;
+	}
+
 	static async forgotPassword(email: string): Promise<void> {
 		if (!email) {
 			throw { status: 400, message: "" };

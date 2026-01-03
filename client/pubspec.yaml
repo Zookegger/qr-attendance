@@ -48,6 +48,8 @@ dependencies:
     fl_chart: ^1.1.1
 
     # Required for "Xem bảng công" (Calendar View)
+    qr_flutter: ^4.1.0
+    wakelock_plus: ^1.2.8
     table_calendar: ^3.2.0
 
     # Helper for formatting dates (e.g., "dd/MM/yyyy") in logs/calendar

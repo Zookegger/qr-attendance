@@ -327,13 +327,26 @@ class _HomePageState extends State<HomePage> {
           Colors.purple,
           () => Navigator.pushNamed(context, '/employees'),
         ),
-        // UPDATED: Replaced Reports with Workshifts
+        _buildQuickActionButton(
+          "Schedules",
+          Icons.calendar_month,
+          36,
+          Colors.teal,
+          () => Navigator.pushNamed(context, '/admin/roster'),
+        ),
         _buildQuickActionButton(
           "Workshifts",
           Icons.access_time_filled,
           36,
           Colors.teal,
           () => Navigator.pushNamed(context, '/admin/workshifts'),
+        ),
+        _buildQuickActionButton(
+          "Attendance",
+          Icons.qr_code_2,
+          36,
+          Colors.orange,
+          () => Navigator.pushNamed(context, '/admin/kiosk'),
         ),
       ],
     );

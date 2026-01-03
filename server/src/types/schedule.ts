@@ -19,4 +19,6 @@ export interface ScheduleQuery {
   shiftId?: number | string;
   startDate?: string;
   endDate?: string;
+  from?: string;
+  to?: string;
 }

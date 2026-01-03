@@ -283,6 +283,18 @@ class AuthenticationService {
     return created;
   }
 
+  Future<bool> verifyPassword(String email, String password) async {
+    try {
+      final res = await _dio.post(
+        ApiEndpoints.verifyPassword,
+        data: {'email': email, 'password': password},
+      );
+      return res.statusCode == 200 && res.data['success'] == true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<AuthSession> login({
     required String email,
     required String password,

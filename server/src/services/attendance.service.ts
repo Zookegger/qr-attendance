@@ -1,4 +1,4 @@
-import { Attendance, OfficeConfig, Schedule, Workshift, RequestModel } from "@models";
+import { Attendance, OfficeConfig, Schedule, Workshift, RequestModel, User } from "@models";
 import { RequestType } from "@models/request";
 import { calculateDistance } from "@utils/geo";
 import { Op } from "sequelize";
@@ -6,6 +6,7 @@ import { format, startOfMonth, endOfMonth } from "date-fns";
 import { AttendanceMethod, AttendanceStatus } from "@models/attendance";
 import { CheckInOutDTO } from '@my-types/attendance';
 import redis from '@config/redis';
+import { getIo } from "@utils/socket";
 
 export default class AttendanceService {
 		static async checkIn(dto: CheckInOutDTO) {
@@ -125,6 +126,21 @@ export default class AttendanceService {
 			checkInMethod: AttendanceMethod.QR,
 			status: status,
 		});
+
+		// Emit socket event for kiosk feedback
+		try {
+			const user = await User.findByPk(userId);
+			const userName = user ? user.name : "Unknown User";
+			const io = getIo();
+			io.to(`office_${officeIdToUse}`).emit("attendance:log", {
+				userName,
+				action: "Check In",
+				time: new Date(),
+			});
+		} catch (err) {
+			console.error("Socket emit error:", err);
+		}
+
 		return attendance;
 	}
 

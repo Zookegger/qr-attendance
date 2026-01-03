@@ -47,3 +47,8 @@ export interface ChangePasswordRequestDTO {
 	confirmNewPassword: string;
 }
 
+export interface VerifyPasswordRequestDTO {
+	email: string;
+	password: string;
+}
+
