@@ -199,7 +199,7 @@ export default class AdminService {
 	}
 
 	static async getUserById(id: string) {
-		return await User.findByPk(id, { attributes: ["id", "name", "status", "email", "role", "device_name", "gender", "position", "date_of_birth", "phone_number", "address", "createdAt", "updatedAt"] });
+		return await User.findByPk(id, { attributes: ["id", "name", "status", "email", "role", "device_name", "gender", "position", "date_of_birth", "phone_number", "address", "created_at", "updated_at"] });
 	}
 
 	static async updateUser(id: string, dto: UpdateUserDTO) {
@@ -267,7 +267,7 @@ export default class AdminService {
 	static async listUsers() {
 		const users = await User.findAll({
 			attributes: { exclude: ["password_hash"] },
-			order: [["createdAt", "DESC"]],
+			order: [["created_at", "DESC"]],
 		});
 		return users;
 	}

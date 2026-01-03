@@ -25,8 +25,8 @@ export default class OfficeConfig
 	declare public radius: number;
 	declare public wifi_ssid: string | null;
 
-	declare public readonly createdAt: Date;
-	declare public readonly updatedAt: Date;
+	declare public readonly created_at: Date;
+	declare public readonly updated_at: Date;
 }
 
 OfficeConfig.init(
@@ -61,6 +61,7 @@ OfficeConfig.init(
 	{
 		sequelize,
 		tableName: "office_configs", 
+		underscored: true,
 		timestamps: true,
 	},
 );

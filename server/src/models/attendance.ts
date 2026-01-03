@@ -69,8 +69,8 @@ export default class Attendance
 	declare public readonly schedule?: Schedule;
 	declare public readonly request?: Request; 
 
-	declare public readonly createdAt: Date;
-	declare public readonly updatedAt: Date;
+	declare public readonly created_at: Date;
+	declare public readonly updated_at: Date;
 }
 
 Attendance.init(
@@ -141,6 +141,7 @@ Attendance.init(
 	{
 		sequelize,
 		tableName: "attendances",
+		underscored: true,
 		timestamps: true,
 		indexes: [
 			{

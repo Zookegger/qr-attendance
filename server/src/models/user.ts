@@ -70,8 +70,8 @@ export default class User
 	public declare password_reset_token: string | null;
 	public declare password_reset_expires: Date | null;
 
-	public declare readonly createdAt: Date;
-	public declare readonly updatedAt: Date;
+	public declare readonly created_at: Date;
+	public declare readonly updated_at: Date;
 }
 
 User.init(
@@ -144,6 +144,7 @@ User.init(
 	{
 		sequelize,
 		tableName: "users",
+		underscored: true,
 		timestamps: true,
 	}
 );

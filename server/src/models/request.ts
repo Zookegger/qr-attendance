@@ -84,8 +84,8 @@ export default class RequestModel
 	public declare reviewed_by: string | null;
 	public declare review_note: string | null;
 
-	public declare readonly createdAt: Date;
-	public declare readonly updatedAt: Date;
+	public declare readonly created_at: Date;
+	public declare readonly updated_at: Date;
 }
 
 RequestModel.init(
@@ -137,6 +137,7 @@ RequestModel.init(
 	{
 		sequelize,
 		tableName: "requests",
+		underscored: true,
 		timestamps: true,
 	}
 );

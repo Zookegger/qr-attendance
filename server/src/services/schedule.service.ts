@@ -13,7 +13,7 @@ export default class ScheduleService {
       const offset = (pageNum - 1) * pageSize;
 
       const items = await Schedule.findAll({
-         order: [["createdAt", "DESC"]],
+         order: [["created_at", "DESC"]],
          limit: pageSize,
          offset,
       });

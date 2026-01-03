@@ -20,8 +20,8 @@ export interface RequestResponse {
 	status: RequestStatus;
 	reviewed_by: string | null;
 	review_note: string | null;
-	createdAt: Date;
-	updatedAt: Date;
+	created_at: Date;
+	updated_at: Date;
 }
 
 export interface ReviewRequestDTO {

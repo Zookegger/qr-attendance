@@ -25,8 +25,8 @@ module.exports = {
 					phone_number: null,
 					address: null,
 					gender: null,
-					createdAt: now,
-					updatedAt: now,
+					created_at: now,
+					updated_at: now,
 				},
 				{
 					id: "00000000-0000-0000-0000-000000000002",
@@ -42,8 +42,8 @@ module.exports = {
 					phone_number: null,
 					address: null,
 					gender: null,
-					createdAt: now,
-					updatedAt: now,
+					created_at: now,
+					updated_at: now,
 				},
 			],
 			{}

@@ -11,8 +11,8 @@ export default class UserDevice extends Model {
    public declare fcm_token: string | null;
    public declare last_login: Date;
 
-   public declare readonly createdAt: Date;
-   public declare readonly updatedAt: Date;
+   public declare readonly created_at: Date;
+   public declare readonly updated_at: Date;
 }
 
 UserDevice.init(

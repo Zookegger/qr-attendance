@@ -8,7 +8,7 @@ export default class WorkshiftService {
   }
 
    static async listWorkshifts() {
-      return Workshift.findAll({ order: [['createdAt', 'DESC']] });
+      return Workshift.findAll({ order: [['created_at', 'DESC']] });
    }
 
    static async getWorkshiftById(id: number) {

@@ -26,8 +26,8 @@ export default class Workshift extends Model<WorkshiftAttributes, WorkshifCreati
    declare public workDays: number[];
    declare public office_config_id?: number | null;
 
-   declare public readonly createdAt: Date;
-   declare public readonly updatedAt: Date;
+   declare public readonly created_at: Date;
+   declare public readonly updated_at: Date;
 }
 
 Workshift.init({
