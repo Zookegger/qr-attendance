@@ -2,10 +2,10 @@ import { Schedule } from "@models";
 import { CreateScheduleDTO, UpdateScheduleDTO, ScheduleQuery } from '@my-types/schedule';
 
 export default class ScheduleService {
-  static async createSchedule(data: CreateScheduleDTO) {
-    const created = await Schedule.create(data as any);
-    return created;
-  }
+   static async createSchedule(data: CreateScheduleDTO) {
+      const created = await Schedule.create(data as any);
+      return created;
+   }
 
    static async listSchedules(page = 1, limit = 50) {
       const pageNum = Math.max(1, Number(page) || 1);
@@ -13,7 +13,7 @@ export default class ScheduleService {
       const offset = (pageNum - 1) * pageSize;
 
       const items = await Schedule.findAll({
-         order: [["created_at", "DESC"]],
+         order: [["createdAt", "DESC"]],
          limit: pageSize,
          offset,
       });
