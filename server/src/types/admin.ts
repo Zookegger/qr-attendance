@@ -5,8 +5,8 @@ export interface AddUserDTO {
 	role?: string;
 	position?: string;
 	department?: string;
-	date_of_birth?: Date | string;
-	phone_number?: string;
+	dateOfBirth?: Date | string;
+	phoneNumber?: string;
 	address?: string;
 	gender?: string;
 }
@@ -19,8 +19,8 @@ export interface UpdateUserDTO {
 	position?: string;
 	department?: string;
 	status?: string;
-	date_of_birth?: Date | string;
-	phone_number?: string;
+	dateOfBirth?: Date | string;
+	phoneNumber?: string;
 	address?: string;
 	gender?: string;
 }
@@ -30,7 +30,7 @@ export interface AddOfficeConfigDTO {
 	latitude: number;
 	longitude: number;
 	radius?: number;
-	wifi_ssid: string;
+	wifiSsid: string;
 }
 
 export interface UpdateOfficeConfigDTO {
@@ -38,5 +38,5 @@ export interface UpdateOfficeConfigDTO {
 	latitude?: number;
 	longitude?: number;
 	radius?: number;
-	wifi_ssid?: string;
+	wifiSsid?: string;
 }

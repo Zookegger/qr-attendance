@@ -117,8 +117,8 @@ const addUser = async (req: Request, res: Response, next: NextFunction) => {
 			role,
 			position,
 			department,
-			date_of_birth,
-			phone_number,
+			dateOfBirth: date_of_birth,
+			phoneNumber: phone_number,
 			address,
 			gender,
 		});
@@ -198,8 +198,8 @@ const updateUser = async (req: Request, res: Response, next: NextFunction) => {
 			position,
 			department,
 			status,
-			date_of_birth,
-			phone_number,
+			dateOfBirth: date_of_birth,
+			phoneNumber: phone_number,
 			address,
 			gender,
 		});

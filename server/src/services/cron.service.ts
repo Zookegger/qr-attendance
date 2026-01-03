@@ -32,7 +32,7 @@ export const initCronJobs = () => {
 				// Check if attendance exists for today
 				const attendance = await Attendance.findOne({
 					where: {
-						user_id: user.id,
+						userId: user.id,
 						date: today,
 					},
 				});
@@ -40,11 +40,11 @@ export const initCronJobs = () => {
 				if (!attendance) {
 					// Mark as Absent
 					await Attendance.create({
-						user_id: user.id,
+						userId: user.id,
 						date: today,
 						status: AttendanceStatus.ABSENT,
-						check_in_method: AttendanceMethod.NONE,
-						check_out_method: AttendanceMethod.NONE,
+						checkInMethod: AttendanceMethod.NONE,
+						checkOutMethod: AttendanceMethod.NONE,
 					});
 					logger.info(
 						`Marked user ${user.id} as Absent for ${today}`
@@ -63,7 +63,7 @@ export const initCronJobs = () => {
 		try {
 			const result = await RefreshToken.destroy({
 				where: {
-					expires_at: {
+					expiresAt: {
 						[Op.lt]: new Date(),
 					},
 				},

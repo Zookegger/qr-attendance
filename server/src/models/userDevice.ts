@@ -3,16 +3,16 @@ import { sequelize } from "@config/database";
 
 export default class UserDevice extends Model {
    public declare id: number;
-   public declare user_id: string;
-   public declare device_uuid: string;
-   public declare device_name: string | null;
-   public declare device_model: string | null;
-   public declare device_os_version: string | null;
-   public declare fcm_token: string | null;
-   public declare last_login: Date;
+   public declare userId: string;
+   public declare deviceUuid: string;
+   public declare deviceName: string | null;
+   public declare deviceModel: string | null;
+   public declare deviceOsVersion: string | null;
+   public declare fcmToken: string | null;
+   public declare lastLogin: Date;
 
-   public declare readonly created_at: Date;
-   public declare readonly updated_at: Date;
+   public declare readonly createdAt: Date;
+   public declare readonly updatedAt: Date;
 }
 
 UserDevice.init(
@@ -22,32 +22,32 @@ UserDevice.init(
          autoIncrement: true,
          primaryKey: true,
       },
-      user_id: {
+      userId: {
          type: DataTypes.UUID,
          allowNull: false,
       },
-      device_uuid: {
+      deviceUuid: {
          type: DataTypes.STRING,
          allowNull: false,
       },
-      device_name: {
+      deviceName: {
          type: DataTypes.STRING,
          allowNull: true,
       },
-      device_model: {
+      deviceModel: {
          type: DataTypes.STRING,
          allowNull: true,
       },
-      device_os_version: {
+      deviceOsVersion: {
          type: DataTypes.STRING,
          allowNull: true,
       },
-      fcm_token: {
+      fcmToken: {
          type: DataTypes.STRING,
          allowNull: true,
          comment: "FCM token associated with this device (migrated from users.fcm_token)",
       },
-      last_login: {
+      lastLogin: {
          type: DataTypes.DATE,
          allowNull: true,
          defaultValue: DataTypes.NOW,

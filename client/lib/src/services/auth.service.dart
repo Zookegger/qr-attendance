@@ -332,6 +332,7 @@ class AuthenticationService {
 
   Future<AuthSession> refresh() async {
     final refreshToken = await getRefreshToken();
+    final deviceUuid = await _storage.read(key: _deviceUuidKey);
     if (refreshToken == null || refreshToken.trim().isEmpty) {
       throw AuthException('Missing refresh token. Please login again.');
     }
@@ -339,7 +340,7 @@ class AuthenticationService {
     try {
       final res = await _dio.post(
         ApiEndpoints.refresh,
-        data: {'refreshToken': refreshToken},
+        data: {'refreshToken': refreshToken, 'deviceUuid': deviceUuid},
       );
 
       return _persistAndReturnSession(
@@ -347,7 +348,6 @@ class AuthenticationService {
         invalidMessage: 'Refresh succeeded but response was invalid.',
       );
     } on DioException catch (e) {
-      await logout();
       throw AuthException(
         _extractMessage(e.response?.data) ?? 'Token refresh failed',
         e.response?.statusCode,

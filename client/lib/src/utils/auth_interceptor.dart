@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:qr_attendance_frontend/src/consts/api_endpoints.dart';
 import '../services/auth.service.dart';
 
 class AuthInterceptor extends Interceptor {
@@ -30,8 +31,7 @@ class AuthInterceptor extends Interceptor {
     //    and aren't the refresh call itself.
     if (err.response?.statusCode == 401 &&
         reqOptions.extra['retried'] != true &&
-        !reqOptions.path.contains('/auth/refresh')) {
-      
+        !reqOptions.path.contains(ApiEndpoints.refresh)) {
       final authService = AuthenticationService();
 
       // 2. CHECK: Do we even have a refresh token?
@@ -62,14 +62,15 @@ class AuthInterceptor extends Interceptor {
         final newToken = await _refreshFuture;
 
         // 5. The Retry: Once awake, retry with the new token.
-        final retryOpts = reqOptions.copyWith();
+        final retryOpts = reqOptions.copyWith(
+          extra: {...reqOptions.extra, 'retried': true},
+        );
         retryOpts.headers['Authorization'] = 'Bearer $newToken';
-        retryOpts.extra['retried'] = true;
 
         final response = await _dio.fetch(retryOpts);
         return handler.resolve(response);
       } catch (e) {
-        // If the shared refresh failed (e.g. refresh token expired), 
+        // If the shared refresh failed (e.g. refresh token expired),
         // everyone waiting fails gracefully with the original 401.
         return handler.next(err);
       }

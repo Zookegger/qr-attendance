@@ -1,31 +1,31 @@
 import { RequestType, RequestStatus } from "@models/request";
 
 export interface CreateRequestDTO {
-	user_id: string;
+	userId: string;
 	type: RequestType;
-	from_date?: string;
-	to_date?: string;
+	fromDate?: string;
+	toDate?: string;
 	reason: string;
 	attachments?: string | null;
 }
 
 export interface RequestResponse {
 	id: string;
-	user_id: string;
+	userId: string;
 	type: RequestType;
-	from_date: Date | null;
-	to_date: Date | null;
+	fromDate: Date | null;
+	toDate: Date | null;
 	reason: string;
 	attachments: string | null;
 	status: RequestStatus;
-	reviewed_by: string | null;
-	review_note: string | null;
-	created_at: Date;
-	updated_at: Date;
+	reviewedBy: string | null;
+	reviewNote: string | null;
+	createdAt: Date;
+	updatedAt: Date;
 }
 
 export interface ReviewRequestDTO {
 	status: RequestStatus;
-	review_note?: string | null;
-	reviewed_by: string;
+	reviewNote?: string | null;
+	reviewedBy: string;
 }

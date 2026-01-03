@@ -7,12 +7,12 @@ interface OfficeConfigAttributes {
 	latitude: number;
 	longitude: number;
 	radius: number; // in meters
-	wifi_ssid?: string | null;
+	wifiSsid?: string | null;
 }
 
 interface OfficeConfigCreationAttributes extends Optional<
 	OfficeConfigAttributes,
-	"id" | "wifi_ssid"
+	"id" | "wifiSsid"
 > { }
 
 export default class OfficeConfig
@@ -23,10 +23,10 @@ export default class OfficeConfig
 	declare public latitude: number;
 	declare public longitude: number;
 	declare public radius: number;
-	declare public wifi_ssid: string | null;
+	declare public wifiSsid: string | null;
 
-	declare public readonly created_at: Date;
-	declare public readonly updated_at: Date;
+	declare public readonly createdAt: Date;
+	declare public readonly updatedAt: Date;
 }
 
 OfficeConfig.init(
@@ -53,7 +53,7 @@ OfficeConfig.init(
 			allowNull: false,
 			defaultValue: 100,
 		},
-		wifi_ssid: {
+		wifiSsid: {
 			type: DataTypes.STRING,
 			allowNull: true,
 		},

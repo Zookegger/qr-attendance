@@ -7,18 +7,18 @@ import { Op } from "sequelize";
 interface RequestFilters {
 	status?: string;
 	type?: string;
-	from_date?: string;
-	user_id?: string; // Admin can filter by user
+	fromDate?: string;
+	userId?: string; // Admin can filter by user
 }
 export default class RequestService {
 	static async createRequest(
 		dto: CreateRequestDTO
 	): Promise<RequestResponse> {
 		const request = await RequestModel.create({
-			user_id: dto.user_id,
+			userId: dto.userId,
 			type: dto.type,
-			from_date: dto.from_date ? new Date(dto.from_date) : null,
-			to_date: dto.to_date ? new Date(dto.to_date) : null,
+			fromDate: dto.fromDate ? new Date(dto.fromDate) : null,
+			toDate: dto.toDate ? new Date(dto.toDate) : null,
 			reason: dto.reason,
 			attachments: dto.attachments ?? null,
 			status: RequestStatus.PENDING
@@ -37,7 +37,7 @@ export default class RequestService {
       if (!request) throw { status: 404, message: "Request not found" };
 
       // 1. Ownership Check
-      if (request.user_id !== userId) {
+      if (request.userId !== userId) {
          throw { status: 403, message: "Unauthorized: You can only edit your own requests" };
       }
 
@@ -49,8 +49,8 @@ export default class RequestService {
       // 3. Update 
       const updatedRequest = await request.update({
          type: dto.type ?? request.type,
-         from_date: dto.from_date ? new Date(dto.from_date) : request.from_date,
-         to_date: dto.to_date ? new Date(dto.to_date) : request.to_date,
+         fromDate: dto.fromDate ? new Date(dto.fromDate) : request.fromDate,
+         toDate: dto.toDate ? new Date(dto.toDate) : request.toDate,
          reason: dto.reason ?? request.reason,
          attachments: dto.attachments ?? request.attachments,
       });
@@ -63,11 +63,11 @@ export default class RequestService {
 
 		// 1. SECURITY: If USER, force them to only see their own requests
 		if (currentUser.role === UserRole.USER) {
-			where.user_id = currentUser.id;
+			where.userId = currentUser.id;
 		}
 		// 2. ADMIN/MANAGER: Can see all, but can optionally filter by a specific user_id
-		else if (filters.user_id) {
-			where.user_id = filters.user_id;
+		else if (filters.userId) {
+			where.userId = filters.userId;
 		}
 
 		// 3. General Filters
@@ -75,11 +75,11 @@ export default class RequestService {
 		if (filters.type) where.type = filters.type;
 
 		// 4. Date range filtering
-		if (filters.from_date) where.from_date = { [Op.gte]: new Date(filters.from_date) };
+		if (filters.fromDate) where.fromDate = { [Op.gte]: new Date(filters.fromDate) };
 
 		return await RequestModel.findAll({
 			where,
-			order: [['created_at', 'DESC']],
+			order: [['createdAt', 'DESC']],
 			include: [
 				{
 					model: User,
@@ -103,7 +103,7 @@ export default class RequestService {
 		if (!request) throw new Error("Request not found");
 
 		// SECURITY: Users can only view their own
-		if (currentUser.role === UserRole.USER && request.user_id !== currentUser.id) {
+		if (currentUser.role === UserRole.USER && request.userId !== currentUser.id) {
 			throw new Error("Unauthorized access to this request");
 		}
 
@@ -113,10 +113,10 @@ export default class RequestService {
 	static async reviewRequest(
 		id: string,
 		dto: ReviewRequestDTO,
-		reviewer_id: string
+		reviewerId: string
 	): Promise<RequestModel> {
 		// Find and verify if user is authorized
-		const user = await User.findByPk(reviewer_id);
+		const user = await User.findByPk(reviewerId);
 		if (!user) {
 			throw { status: 404, message: "Reviewer not found" };
 		}
@@ -134,8 +134,8 @@ export default class RequestService {
 		// Update the request
 		const result = await request.update({
 			status: dto.status,
-			review_note: dto.review_note ?? null,
-			reviewed_by: reviewer_id,
+			reviewNote: dto.reviewNote ?? null,
+			reviewedBy: reviewerId,
 		});
 
 		return result;
@@ -145,7 +145,7 @@ export default class RequestService {
 		const request = await RequestModel.findByPk(id);
 		if (!request) throw new Error("Request not found");
 
-		if (request.user_id !== userId) {
+		if (request.userId !== userId) {
 			throw new Error("Unauthorized");
 		}
 

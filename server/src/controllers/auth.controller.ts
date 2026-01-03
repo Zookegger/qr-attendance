@@ -7,7 +7,7 @@ import { RefreshToken, User } from "@models";
 const login = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const dto: LoginRequestDTO = req.body;
-		const result = await AuthService.login(dto.email, dto.password, dto.device_uuid, dto.device_name, dto.device_model, dto.device_os_version);
+		const result = await AuthService.login(dto.email, dto.password, dto.deviceUuid, dto.deviceName, dto.deviceModel, dto.deviceOsVersion);
 		return res.status(200).json(result);
 	} catch (error) {
 		return next(error);
@@ -48,7 +48,7 @@ const me = async (req: Request, res: Response, next: NextFunction) => {
 		}
 
 		const now = new Date();
-		const token = await RefreshToken.findOne({ where: { user_id: user.id }, order: [['created_at', 'DESC']] });
+		const token = await RefreshToken.findOne({ where: { userId: user.id }, order: [['createdAt', 'DESC']] });
 
 		if (!token) {
 			return res.status(401).json({ message: "No active session" });
@@ -58,7 +58,7 @@ const me = async (req: Request, res: Response, next: NextFunction) => {
 			return res.status(401).json({ message: "Session revoked. Please sign in again." });
 		}
 
-		if (token.expires_at && now >= token.expires_at) {
+		if (token.expiresAt && now >= token.expiresAt) {
 			await token.update({ revoked: true });
 			return res.status(401).json({ message: "Session expired. Please sign in again." });
 		}

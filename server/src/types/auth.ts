@@ -3,11 +3,11 @@ import { UserRole } from "@models/user";
 export interface LoginRequestDTO {
 	email: string;
 	password: string;
-	device_uuid: string;
-	device_name: string;
-	device_model: string;
-	device_os_version: string;
-	fcm_token?: string;
+	deviceUuid: string;
+	deviceName: string;
+	deviceModel: string;
+	deviceOsVersion: string;
+	fcmToken?: string;
 }
 
 export interface AuthResponse {
@@ -18,7 +18,7 @@ export interface AuthResponse {
 		name: string;
 		email: string;
 		role: UserRole;
-		device_uuid?: string | null;
+		deviceUuid?: string | null;
 	};
 }
 

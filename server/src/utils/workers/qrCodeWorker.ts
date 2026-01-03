@@ -21,7 +21,7 @@ const qrWorker = new Worker<QRJobData>(
             : await OfficeConfig.findAll();
 
          for (const office of offices) {
-            const officeId = (office as any).id;
+            const officeId = (office as OfficeConfig).id;
             const num = crypto.randomInt(0, 10000);
             const code = num.toString().padStart(4, "0");
 

@@ -24,16 +24,16 @@ interface UserAttributes {
 	name: string;
 	email: string;
 	status: UserStatus;
-	password_hash: string;
+	passwordHash: string;
 	role: UserRole;
 	position?: string | null;
 	department?: string | null;
-	date_of_birth?: Date | null;
-	phone_number?: string | null;
+	dateOfBirth?: Date | null;
+	phoneNumber?: string | null;
 	address?: string | null;
 	gender?: Gender | null;
-	password_reset_token?: string | null;
-	password_reset_expires?: Date | null;
+	passwordResetToken?: string | null;
+	passwordResetExpires?: Date | null;
 }
 
 interface UserCreationAttributes
@@ -43,12 +43,12 @@ interface UserCreationAttributes
 		| "status"
 		| "position"
 		| "department"
-		| "date_of_birth"
-		| "phone_number"
+		| "dateOfBirth"
+		| "phoneNumber"
 		| "address"
 		| "gender"
-		| "password_reset_token"
-		| "password_reset_expires"
+		| "passwordResetToken"
+		| "passwordResetExpires"
 	> { }
 
 export default class User
@@ -58,20 +58,20 @@ export default class User
 	public declare name: string;
 	public declare email: string;
 	public declare status: UserStatus;
-	public declare password_hash: string;
+	public declare passwordHash: string;
 	public declare role: UserRole;
 	public declare position: string | null;
 	public declare department: string | null;
-	public declare date_of_birth: Date | null;
-	public declare phone_number: string | null;
+	public declare dateOfBirth: Date | null;
+	public declare phoneNumber: string | null;
 	public declare address: string | null;
 	public declare gender: Gender | null;
 
-	public declare password_reset_token: string | null;
-	public declare password_reset_expires: Date | null;
+	public declare passwordResetToken: string | null;
+	public declare passwordResetExpires: Date | null;
 
-	public declare readonly created_at: Date;
-	public declare readonly updated_at: Date;
+	public declare readonly createdAt: Date;
+	public declare readonly updatedAt: Date;
 }
 
 User.init(
@@ -99,7 +99,7 @@ User.init(
 				isEmail: true,
 			},
 		},
-		password_hash: {
+		passwordHash: {
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
@@ -116,11 +116,11 @@ User.init(
 			type: DataTypes.STRING,
 			allowNull: true,
 		},
-		date_of_birth: {
+		dateOfBirth: {
 			type: DataTypes.DATEONLY,
 			allowNull: true,
 		},
-		phone_number: {
+		phoneNumber: {
 			type: DataTypes.STRING,
 			allowNull: true,
 		},
@@ -132,11 +132,11 @@ User.init(
 			type: DataTypes.ENUM(...Object.values(Gender)),
 			allowNull: true,
 		},
-		password_reset_token: {
+		passwordResetToken: {
 			type: DataTypes.STRING,
 			allowNull: true,
 		},
-		password_reset_expires: {
+		passwordResetExpires: {
 			type: DataTypes.DATE,
 			allowNull: true,
 		},

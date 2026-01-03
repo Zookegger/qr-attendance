@@ -21,7 +21,7 @@ const checkIn = async (req: Request, res: Response, next: NextFunction) => {
 
 	try {
 		const dto: CheckInOutDTO = {
-			user_id: user.id,
+			userId: user.id,
 			code,
 			latitude,
 			longitude,
@@ -53,7 +53,7 @@ const checkOut = async (req: Request, res: Response, next: NextFunction) => {
 
 	try {
 		const dto: CheckInOutDTO = {
-			user_id: user.id,
+			userId: user.id,
 			code,
 			latitude,
 			longitude,

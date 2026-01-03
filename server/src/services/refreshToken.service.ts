@@ -43,10 +43,10 @@ export default class RefreshTokenService {
 		);
 
 		const tokenRecord = await RefreshToken.create({
-			user_id: user.id,
-			token_hash: refreshHash,
-			device_uuid: payload.deviceUuid,
-			expires_at: refreshExpires,
+			userId: user.id,
+			tokenHash: refreshHash,
+			deviceUuid: payload.deviceUuid,
+			expiresAt: refreshExpires,
 			revoked: false,
 		});
 
@@ -91,7 +91,7 @@ export default class RefreshTokenService {
 			throw new Error("Refresh token revoked");
 		}
 
-		if (new Date() > tokenRecord.expires_at) {
+		if (new Date() > tokenRecord.expiresAt) {
 			throw new Error("Refresh token expired");
 		}
 
@@ -104,7 +104,7 @@ export default class RefreshTokenService {
 		// Use timingSafeEqual to prevent timing attacks
 		const hashMatch = crypto.timingSafeEqual(
 			Buffer.from(inputHash),
-			Buffer.from(tokenRecord.token_hash)
+			Buffer.from(tokenRecord.tokenHash)
 		);
 
 		if (!hashMatch) {
@@ -126,7 +126,7 @@ export default class RefreshTokenService {
 
 		// 2. Validate Device Binding (Security Check)
 		// Ensure the device trying to refresh is the same one that created the token
-		if (!tokenRecord.device_uuid || tokenRecord.device_uuid !== deviceUuid) {
+		if (!tokenRecord.deviceUuid || tokenRecord.deviceUuid !== deviceUuid) {
 			// Optional: Revoke token immediately if this looks like a theft attempt
 			await tokenRecord.update({ revoked: true });
 			throw new Error("Invalid device for this session");
@@ -136,14 +136,14 @@ export default class RefreshTokenService {
 		await tokenRecord.update({ revoked: true });
 
 		// 4. Ensure User exists
-		const user = await User.findByPk(tokenRecord.user_id);
+		const user = await User.findByPk(tokenRecord.userId);
 		if (!user) throw new Error("User not found");
 
 		// 5. Generate New Pair
 		const tokens = await this.generateRefreshToken(user, {
 			id: user.id,
 			role: user.role as UserRole,
-			deviceUuid: tokenRecord.device_uuid
+			deviceUuid: tokenRecord.deviceUuid
 		},);
 
 		return { ...tokens, user };
@@ -172,7 +172,7 @@ export default class RefreshTokenService {
 		try {
 			const user = await User.findByPk(userId);
 			if (!user) throw new Error("User not found");
-			const tokens = await RefreshToken.findAll({ where: { user_id: userId } });
+			const tokens = await RefreshToken.findAll({ where: { userId: userId } });
 			return tokens;
 		} catch (err) {
 			throw err;
