@@ -15,7 +15,7 @@ class RequestService {
     return _storage.read(key: 'auth_access_token');
   }
 
-  /// CREATE REQUEST (SAFE)
+  /// CREATE REQUEST (SAFE) with detailed debug
   Future<void> createRequest(Request request, List<File> files) async {
     final token = await _getAccessToken();
     if (token == null || token.isEmpty) {
@@ -23,62 +23,63 @@ class RequestService {
     }
 
     try {
-      final formData = FormData();
+      dynamic dataToSend;
 
-      // Add request fields
-      request.toJson().forEach((key, value) {
-        if (value != null) {
-          formData.fields.add(MapEntry(key, value.toString()));
+      // Nếu có file, dùng FormData
+      if (files.isNotEmpty) {
+        final formData = FormData();
+
+        // Bắt buộc các field là string
+        formData.fields.add(MapEntry('type', request.type.name));
+        formData.fields.add(MapEntry('reason', (request.reason ?? '').trim()));
+        formData.fields.add(MapEntry('user_id', request.userId));
+
+        if (request.fromDate != null)
+          formData.fields.add(
+            MapEntry('from_date', request.fromDate!.toIso8601String()),
+          );
+        if (request.toDate != null)
+          formData.fields.add(
+            MapEntry('to_date', request.toDate!.toIso8601String()),
+          );
+
+        formData.fields.add(MapEntry('status', request.status.name));
+
+        // Add files
+        for (final file in files) {
+          final filename = file.path.split(Platform.pathSeparator).last;
+          formData.files.add(
+            MapEntry(
+              'attachments',
+              MultipartFile.fromFileSync(file.path, filename: filename),
+            ),
+          );
         }
-      });
 
-      // Add files under the `attachments` field (server expects this)
-      for (final file in files) {
-        final filename = file.path.split(Platform.pathSeparator).last;
-        formData.files.add(
-          MapEntry(
-            'attachments',
-            MultipartFile.fromFileSync(file.path, filename: filename),
-          ),
-        );
+        dataToSend = formData;
+      } else {
+        // Không có file thì gửi JSON bình thường
+        final jsonData = request.toJson();
+        dataToSend = jsonData;
       }
 
       final response = await _dio.post(
         ApiEndpoints.createRequest,
-        data: formData
+        data: dataToSend,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            // Nếu gửi FormData, Dio tự set Content-Type
+            if (files.isEmpty) 'Content-Type': 'application/json',
+          },
+        ),
       );
 
-      // Debug: print server response
-      debugPrint('Create Request Response: ${response.data}');
-
-      // Optional: check the type of the returned data
-      if (response.data is Map<String, dynamic>) {
-        // Log success or parse further if needed
-        debugPrint('Request created successfully.');
-      } else {
-        debugPrint('Unexpected response type: ${response.data.runtimeType}');
-      }
+      debugPrint('--- Create Request Response ---');
+      debugPrint(response.data.toString());
     } on DioException catch (e) {
-      final respData = e.response?.data;
-      String msg;
-
-      if (respData == null) {
-        msg = 'Create request failed';
-      } else if (respData is Map) {
-        msg = respData['message'] ?? respData['error'] ?? respData.toString();
-      } else if (respData is List) {
-        // Join list items into a readable string (validation errors, etc.)
-        try {
-          msg = respData.map((i) => i.toString()).join('; ');
-        } catch (_) {
-          msg = respData.toString();
-        }
-      } else {
-        // respData might be a plain string or other type
-        msg = respData.toString();
-      }
-
-      throw Exception(msg);
+      debugPrint('DioException: ${e.response?.data}');
+      throw Exception(e.response?.data.toString() ?? e.message);
     }
   }
 
@@ -100,12 +101,16 @@ class RequestService {
         queryParameters: query,
       );
 
-      if (resp.statusCode == null || resp.statusCode! < 200 || resp.statusCode! >= 300) {
+      if (resp.statusCode == null ||
+          resp.statusCode! < 200 ||
+          resp.statusCode! >= 300) {
         throw Exception(ApiClient().parseErrorMessage(resp));
       }
 
       final data = resp.data;
-      if (data == null || data['requests'] == null || data['requests'] is! List) {
+      if (data == null ||
+          data['requests'] == null ||
+          data['requests'] is! List) {
         throw Exception('Invalid response from server');
       }
 
@@ -125,7 +130,9 @@ class RequestService {
     try {
       final resp = await _dio.get('${ApiEndpoints.createRequest}/$id');
 
-      if (resp.statusCode == null || resp.statusCode! < 200 || resp.statusCode! >= 300) {
+      if (resp.statusCode == null ||
+          resp.statusCode! < 200 ||
+          resp.statusCode! >= 300) {
         throw Exception(ApiClient().parseErrorMessage(resp));
       }
 
@@ -151,8 +158,13 @@ class RequestService {
       final payload = {'status': status};
       if (reviewNote != null) payload['review_note'] = reviewNote;
 
-      final resp = await _dio.post('${ApiEndpoints.createRequest}/$id/review', data: payload);
-      if (resp.statusCode == null || resp.statusCode! < 200 || resp.statusCode! >= 300) {
+      final resp = await _dio.post(
+        '${ApiEndpoints.createRequest}/$id/review',
+        data: payload,
+      );
+      if (resp.statusCode == null ||
+          resp.statusCode! < 200 ||
+          resp.statusCode! >= 300) {
         throw Exception(ApiClient().parseErrorMessage(resp));
       }
     } on DioException catch (e) {
@@ -164,7 +176,8 @@ class RequestService {
 
   Future<void> updateRequest(Request request, List<File> files) async {
     try {
-      if (request.id == null) throw Exception('Request id is required for update');
+      if (request.id == null)
+        throw Exception('Request id is required for update');
 
       final formData = FormData();
       request.toJson().forEach((key, value) {
@@ -183,8 +196,13 @@ class RequestService {
         );
       }
 
-      final resp = await _dio.put('${ApiEndpoints.createRequest}/${request.id}', data: formData);
-      if (resp.statusCode == null || resp.statusCode! < 200 || resp.statusCode! >= 300) {
+      final resp = await _dio.put(
+        '${ApiEndpoints.createRequest}/${request.id}',
+        data: formData,
+      );
+      if (resp.statusCode == null ||
+          resp.statusCode! < 200 ||
+          resp.statusCode! >= 300) {
         throw Exception(ApiClient().parseErrorMessage(resp));
       }
     } on DioException catch (e) {
@@ -197,7 +215,9 @@ class RequestService {
   Future<void> cancelRequest(String id) async {
     try {
       final resp = await _dio.delete('${ApiEndpoints.createRequest}/$id');
-      if (resp.statusCode == null || resp.statusCode! < 200 || resp.statusCode! >= 300) {
+      if (resp.statusCode == null ||
+          resp.statusCode! < 200 ||
+          resp.statusCode! >= 300) {
         throw Exception(ApiClient().parseErrorMessage(resp));
       }
     } on DioException catch (e) {

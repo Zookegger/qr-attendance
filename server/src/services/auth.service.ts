@@ -33,6 +33,14 @@ export default class AuthService {
 
 		if (device) {
 			//  Update existing device (including FCM)
+			console.log("Updating device:", {
+				userId: user.id,
+				deviceUuid,
+				fcmToken,
+				deviceName,
+				deviceModel,
+				deviceOsVersion
+				});
 			await device.update({
 				deviceName,
 				deviceModel,
@@ -51,13 +59,21 @@ export default class AuthService {
 			}
 
 			// Create new device (including FCM)
+			console.log("Updating device:", {
+			userId: user.id,
+			deviceUuid,
+			fcmToken,
+			deviceName,
+			deviceModel,
+			deviceOsVersion
+			});
 			device = await UserDevice.create({
 				userId: user.id,
 				deviceUuid,
 				deviceName,
 				deviceModel,
 				deviceOsVersion,
-				fcmToken: fcmToken || null // <--- Insert here
+				fcmToken: fcmToken  // <--- Insert here
 			});
 		}
 
@@ -65,7 +81,6 @@ export default class AuthService {
 			user,
 			{ id: user.id, role: user.role, deviceUuid: device.deviceUuid },
 		);
-
 		return {
 			accessToken,
 			refreshToken,

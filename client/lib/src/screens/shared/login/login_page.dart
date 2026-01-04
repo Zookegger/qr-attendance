@@ -42,6 +42,9 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (!mounted) return;
+      debugPrint('Logged in as ${session.user.email}');
+      debugPrint('Access Token: ${session.accessToken}');
+      debugPrint('Refresh Token: ${session.refreshToken}');
 
       debugPrint('Logged in as ${session.user.email}');
       Navigator.of(context).pushReplacementNamed('/home');

@@ -25,16 +25,24 @@ class UserDevice {
 
   factory UserDevice.fromJson(Map<String, dynamic> json) {
     return UserDevice(
-      id: json['id'] is int ? json['id'] : (json['id'] != null ? int.tryParse(json['id'].toString()) : null),
+      id: json['id'] is int
+          ? json['id']
+          : (json['id'] != null ? int.tryParse(json['id'].toString()) : null),
       userId: json['user_id']?.toString(),
       deviceUuid: json['device_uuid'] ?? json['deviceUuid'] ?? '',
       deviceName: json['device_name'] ?? json['deviceName'],
       deviceModel: json['device_model'] ?? json['deviceModel'],
       deviceOsVersion: json['device_os_version'] ?? json['deviceOsVersion'],
       fcmToken: json['fcm_token'] ?? json['fcmToken'],
-      lastLogin: json['last_login'] != null ? DateTime.tryParse(json['last_login'].toString())?.toLocal() : null,
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString())?.toLocal() : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'].toString())?.toLocal() : null,
+      lastLogin: json['last_login'] != null
+          ? DateTime.tryParse(json['last_login'].toString())?.toLocal()
+          : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())?.toLocal()
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'].toString())?.toLocal()
+          : null,
     );
   }
 
