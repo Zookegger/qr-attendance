@@ -11,6 +11,7 @@ class KioskService {
   factory KioskService() => _instance;
   KioskService._internal();
 
+  int? _officeId;
   final Dio _dio = ApiClient().client;
   IO.Socket? _socket;
 
@@ -41,6 +42,9 @@ class KioskService {
       final response = await _dio.get(ApiEndpoints.adminQr);
       if (response.statusCode == 200 && response.data != null) {
         _qrController.add(Map<String, dynamic>.from(response.data));
+        if (response.data['officeId'] != null) {
+          _officeId = response.data['officeId'];
+        }
       }
     } catch (e) {
       debugPrint("Error fetching initial QR: $e");
@@ -65,6 +69,9 @@ class KioskService {
     _socket?.on('connect', (_) {
       debugPrint("Kiosk Socket Connected");
       _connectionController.add(true);
+      if (_officeId != null) {
+        _socket?.emit('join:office', _officeId);
+      }
     });
 
     _socket?.on('disconnect', (_) {

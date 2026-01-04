@@ -24,7 +24,7 @@ class _HomePageState extends State<HomePage> {
   final String checkInTime = "08:02 AM";
   final String checkOutTime = "--:--";
   final String totalTime = "1h 39m";
-  final bool isCheckedIn = true; 
+  final bool isCheckedIn = true;
 
   // Stats Data (Mock)
   final int daysWorked = 22;
@@ -311,7 +311,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildManagerQuickActions() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _buildQuickActionButton(
           "Review Requests",
@@ -703,6 +703,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildQuickActions() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      
       children: [
         _buildQuickActionButton(
           "History",
@@ -744,8 +745,8 @@ class _HomePageState extends State<HomePage> {
     VoidCallback onTap,
   ) {
     return SizedBox(
-      width: 85, // Static width to force text wrapping
-      height: 80, // Increased height slightly to accommodate more lines
+      width: 65,
+      height: 90, // Increased height slightly to accommodate more lines
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: <Widget>[
@@ -763,7 +764,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Flexible(
             // Flexible lets the text wrap and fill remaining height
             child: Text(

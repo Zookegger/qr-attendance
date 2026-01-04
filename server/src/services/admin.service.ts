@@ -11,7 +11,7 @@ import { AddUserDTO, UpdateUserDTO, AddOfficeConfigDTO, UpdateOfficeConfigDTO } 
 import RefreshTokenService from "./refreshToken.service";
 
 export default class AdminService {
-	static async generateQR(officeId?: number): Promise<{ code: string; refreshAt: number }> {
+	static async generateQR(officeId?: number): Promise<{ code: string; refreshAt: number; officeId: number }> {
 		// generate 4-digit code, store in redis, emit to socket room
 		const num = crypto.randomInt(0, 10000);
 		const code = num.toString().padStart(4, "0");
@@ -25,12 +25,12 @@ export default class AdminService {
 
 		try {
 			const io = getIo();
-			io.to(`office_${idToUse}`).emit("qr:update", { code, refreshAt: 30 });
+			io.to(`office_${idToUse}`).emit("qr:update", { code, refreshAt: 30, officeId: idToUse });
 		} catch (err) {
 			// ignore if socket not initialized
 		}
 
-		return { code, refreshAt: 30 };
+		return { code, refreshAt: 30, officeId: idToUse };
 	}
 
 	static async listOfficeConfig() {
