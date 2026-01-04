@@ -314,7 +314,7 @@ class AuthenticationService {
           'email': email,
           'password': password,
           'deviceUuid': deviceUuid,
-          'fcmToken': fcmToken, // thêm đây
+          'fcmToken': fcmToken,
           ...deviceDetails,
         },
       );
