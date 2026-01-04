@@ -1,6 +1,8 @@
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:qr_attendance_frontend/src/services/attendance.service.dart';
 
 // Simple model to track history for the session
 class AttendanceRecord {
@@ -22,8 +24,9 @@ class _AttendancePageState extends State<AttendancePage> {
   // Switched to a List to track history + mode, but we use a Set for quick duplicate checks
   final List<AttendanceRecord> _history = [];
   final Set<String> _processedCodes = {};
+  final AttendanceService _attendanceService = AttendanceService();
 
-  void _recordAttendance(String code, String mode) {
+  Future<void> _recordAttendance(String code, String mode) async {
     if (_processedCodes.contains(code)) {
       _showMessage(
         'Attendance already recorded for this code!',
@@ -32,14 +35,64 @@ class _AttendancePageState extends State<AttendancePage> {
       return;
     }
 
-    setState(() {
-      _processedCodes.add(code);
-      _history.insert(0, AttendanceRecord(code, mode)); // Add to top of list
-    });
+    try {
+      // Check permissions first
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw Exception('Location permissions are denied');
+        }
+      }
 
-    _showMessage(
-      '$mode successful for: $code',
-      color: mode == 'Check-In' ? Colors.green : Colors.orange,
+      final position = await Geolocator.getCurrentPosition();
+
+      if (mode == 'Check-In') {
+        await _attendanceService.checkIn(
+          code: code,
+          latitude: position.latitude,
+          longitude: position.longitude,
+        );
+      } else {
+        await _attendanceService.checkOut(
+          code: code,
+          latitude: position.latitude,
+          longitude: position.longitude,
+        );
+      }
+
+      setState(() {
+        _processedCodes.add(code);
+        _history.insert(0, AttendanceRecord(code, mode)); // Add to top of list
+      });
+
+      _showMessage(
+        '$mode successful for: $code',
+        color: mode == 'Check-In' ? Colors.green : Colors.orange,
+      );
+    } catch (e) {
+      final msg = e.toString();
+      if (msg.contains("No scheduled shift found for today")) {
+        _showNoScheduleDialog();
+      } else {
+        _showMessage(msg.replaceAll("Exception: ", ""), color: Colors.red);
+      }
+    }
+  }
+
+  void _showNoScheduleDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("No Schedule Found"),
+        content: const Text("You do not have a scheduled shift for today."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
     );
   }
 

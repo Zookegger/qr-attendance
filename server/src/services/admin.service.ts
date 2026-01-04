@@ -11,12 +11,23 @@ import { AddUserDTO, UpdateUserDTO, AddOfficeConfigDTO, UpdateOfficeConfigDTO } 
 import RefreshTokenService from "./refreshToken.service";
 
 export default class AdminService {
-	static async generateQR(officeId?: number): Promise<{ code: string; refreshAt: number }> {
+	static async generateQR(officeId?: number): Promise<{ code: string; refreshAt: number; officeId: number }> {
 		// generate 4-digit code, store in redis, emit to socket room
 		const num = crypto.randomInt(0, 10000);
 		const code = num.toString().padStart(4, "0");
 
-		const office = officeId ? await OfficeConfig.findByPk(officeId) : await OfficeConfig.findOne();
+		let office = officeId ? await OfficeConfig.findByPk(officeId) : await OfficeConfig.findOne();
+		
+		// Lazy init: Create default office if none exists
+		if (!office && !officeId) {
+			office = await OfficeConfig.create({
+				name: "Default Office",
+				latitude: 0,
+				longitude: 0,
+				radius: 100,
+			});
+		}
+
 		const idToUse = office ? (office as any).id : officeId;
 		const ttlSeconds = 45;
 		const key = `checkin:office:${idToUse}:code:${code}`;
@@ -25,12 +36,12 @@ export default class AdminService {
 
 		try {
 			const io = getIo();
-			io.to(`office_${idToUse}`).emit("qr:update", { code, refreshAt: 30 });
+			io.to(`office_${idToUse}`).emit("qr:update", { code, refreshAt: 30, officeId: idToUse });
 		} catch (err) {
 			// ignore if socket not initialized
 		}
 
-		return { code, refreshAt: 30 };
+		return { code, refreshAt: 30, officeId: idToUse };
 	}
 
 	static async listOfficeConfig() {

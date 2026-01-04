@@ -2,12 +2,11 @@ import { Gender, UserRole, UserStatus } from "@models/user";
 import { body, param } from "express-validator";
 
 export const updateOfficeConfigValidator = [
+	body("name").optional().isString().withMessage("Name must be a string"),
 	body("latitude").optional().isFloat({ min: -90, max: 90 }).withMessage("Invalid latitude"),
 	body("longitude").optional().isFloat({ min: -180, max: 180 }).withMessage("Invalid longitude"),
 	body("radius").optional().isFloat({ min: 0 }).withMessage("Radius must be positive"),
-	body("start_hour").optional().matches(/^([01]\d|2[0-3]):([0-5]\d)$/).withMessage("Invalid start hour format (HH:MM)"),
-	body("end_hour").optional().matches(/^([01]\d|2[0-3]):([0-5]\d)$/).withMessage("Invalid end hour format (HH:MM)"),
-	body("wifi_ssid").optional().isString().withMessage("WiFi SSID must be a string"),
+	body("wifiSsid").optional().isString().withMessage("WiFi SSID must be a string"),
 ];
 
 export const addUserValidator = [

@@ -317,7 +317,7 @@ class AuthenticationService {
           'email': email,
           'password': password,
           'deviceUuid': deviceUuid,
-          'fcm_token': fcmToken, // thêm đây
+          'fcmToken': fcmToken, // thêm đây
           ...deviceDetails,
         },
       );
@@ -554,9 +554,9 @@ class AuthenticationService {
     }
 
     return {
-      'device_name': deviceName,
-      'device_model': deviceModel,
-      'os_version': osVersion,
+      'deviceName': deviceName,
+      'deviceModel': deviceModel,
+      'deviceOsVersion': osVersion,
     };
   }
 

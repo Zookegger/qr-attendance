@@ -15,10 +15,10 @@ const qrWorker = new Worker<QRJobData>(
       try {
          logger.debug(`[QR Worker] Job ${job.id} started`);
 
-         // Time Guard: Only run between 7 AM and 7 PM
+         // Time Guard: Only run between 6 AM and 10 PM (22:00)
          const now = new Date();
          const hour = now.getHours();
-         if (hour < 7 || hour >= 19) {
+         if (hour < 6 || hour >= 22) {
             logger.debug(`[QR Worker] Skipping job ${job.id} outside working hours`);
             return;
          }
@@ -27,6 +27,10 @@ const qrWorker = new Worker<QRJobData>(
          const offices = job.data.officeId
             ? await OfficeConfig.findAll({ where: { id: job.data.officeId } })
             : await OfficeConfig.findAll();
+
+         if (offices.length === 0) {
+            logger.warn("[QR Worker] No offices found to update QR codes for.");
+         }
 
          for (const office of offices) {
             const officeId = (office as OfficeConfig).id;
@@ -41,6 +45,7 @@ const qrWorker = new Worker<QRJobData>(
                io.to(`office_${officeId}`).emit("qr:update", {
                   code,
                   refreshAt: refreshSeconds,
+                  officeId,
                });
             } catch (err) {
                logger.warn(`[QR Worker] Failed to emit socket for office ${officeId}: ${err}`);

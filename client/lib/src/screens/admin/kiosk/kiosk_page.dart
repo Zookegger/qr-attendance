@@ -5,6 +5,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:qr_attendance_frontend/src/services/kiosk.service.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/kiosk/kiosk_active_guard.dart';
+import 'package:qr_attendance_frontend/src/services/auth.service.dart';
 
 class KioskPage extends StatefulWidget {
   const KioskPage({super.key});
@@ -13,14 +14,15 @@ class KioskPage extends StatefulWidget {
   State<KioskPage> createState() => _KioskPageState();
 }
 
-class _KioskPageState extends State<KioskPage> {
+class _KioskPageState extends State<KioskPage> with TickerProviderStateMixin {
   final KioskService _kioskService = KioskService();
-  
+
   String? _qrData;
   String? _backupCode;
   bool _isConnected = true;
   String? _lastLog;
   Timer? _logTimer;
+  late AnimationController _progressController;
 
   StreamSubscription? _qrSub;
   StreamSubscription? _logSub;
@@ -30,13 +32,23 @@ class _KioskPageState extends State<KioskPage> {
   void initState() {
     super.initState();
     WakelockPlus.enable();
+
+    _progressController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 30),
+    );
+
     _kioskService.start();
-    
+
     _qrSub = _kioskService.qrStream.listen((data) {
       if (mounted) {
         setState(() {
           _backupCode = data['code'];
-          _qrData = data['code']; 
+          _qrData = data['code'];
+          final refreshAt = data['refreshAt'] ?? 30;
+          _progressController.duration = Duration(seconds: refreshAt);
+          _progressController.reset();
+          _progressController.forward();
         });
       }
     });
@@ -66,7 +78,52 @@ class _KioskPageState extends State<KioskPage> {
     _logSub?.cancel();
     _connSub?.cancel();
     _logTimer?.cancel();
+    _progressController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleExit() async {
+    final password = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const PasswordExitDialog(),
+    );
+
+    if (password != null && password.isNotEmpty) {
+      try {
+        final authService = AuthenticationService();
+        final user = await authService.getCachedUser();
+        if (user != null) {
+          final isValid = await authService.verifyPassword(
+            user.email,
+            password,
+          );
+          if (isValid) {
+            if (mounted) {
+              Navigator.of(context).pop();
+            }
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Invalid password.')),
+              );
+            }
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Could not verify user identity.')),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Exit failed: ${e.toString()}')),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -75,133 +132,299 @@ class _KioskPageState extends State<KioskPage> {
       startHour: 6,
       endHour: 22,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: const Color(0xFF121212),
         body: Stack(
           children: [
-            Row(
-              children: [
-                // Left Side: Clock & Status
-                Expanded(
-                  flex: 4,
-                  child: Container(
-                    color: const Color(0xFF1E1E1E),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildClock(),
-                        const SizedBox(height: 40),
-                        if (_lastLog != null)
-                          Container(
-                            padding: const EdgeInsets.all(20),
-                            margin: const EdgeInsets.symmetric(horizontal: 20),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.green),
-                            ),
-                            child: Text(
-                              _lastLog!,
-                              style: const TextStyle(color: Colors.green, fontSize: 24, fontWeight: FontWeight.bold),
-                              textAlign: TextAlign.center,
-                            ),
-                          )
-                        else
-                          const Text(
-                            "Ready to Scan",
-                            style: TextStyle(color: Colors.grey, fontSize: 24),
-                          ),
-                      ],
-                    ),
-                  ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: OrientationBuilder(
+                  builder: (context, orientation) {
+                    return orientation == Orientation.portrait
+                        ? _buildPortraitLayout()
+                        : _buildLandscapeLayout();
+                  },
                 ),
-                
-                // Right Side: QR Code
-                Expanded(
-                  flex: 6,
-                  child: Container(
-                    color: Colors.white,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (_qrData != null)
-                          QrImageView(
-                            data: _qrData!,
-                            version: QrVersions.auto,
-                            size: 400.0,
-                          )
-                        else
-                          const CircularProgressIndicator(),
-                        
-                        const SizedBox(height: 40),
-                        const Text(
-                          "Backup Code",
-                          style: TextStyle(fontSize: 20, color: Colors.grey),
-                        ),
-                        Text(
-                          _backupCode ?? "----",
-                          style: const TextStyle(
-                            fontSize: 60, 
-                            fontWeight: FontWeight.bold, 
-                            letterSpacing: 10,
-                            color: Colors.black
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-            
+
+            // Progress Bar
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                bottom: false,
+                child: AnimatedBuilder(
+                  animation: _progressController,
+                  builder: (context, child) {
+                    return LinearProgressIndicator(
+                      value: 1.0 - _progressController.value,
+                      backgroundColor: Colors.transparent,
+                      color: Colors.greenAccent,
+                      minHeight: 4,
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            // Back Button
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 10,
+              left: 10,
+              child: IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white70,
+                ),
+                onPressed: _handleExit,
+              ),
+            ),
+
+            // Offline Overlay
             if (!_isConnected)
               Container(
-                color: Colors.black.withOpacity(0.8),
-                child: const Center(
+                color: Colors.black.withOpacity(0.85),
+                child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(color: Colors.red),
-                      SizedBox(height: 20),
+                      const Icon(
+                        Icons.wifi_off_rounded,
+                        color: Colors.redAccent,
+                        size: 60,
+                      ),
+                      const SizedBox(height: 20),
                       Text(
-                        "Reconnecting...",
-                        style: TextStyle(color: Colors.red, fontSize: 24, fontWeight: FontWeight.bold),
-                      )
+                        "No Connection",
+                        style: TextStyle(
+                          color: Colors.redAccent.shade100,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
-
-            Positioned(
-              top: 40,
-              left: 20,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildClock() {
+  // --- Layouts ---
+
+  Widget _buildPortraitLayout() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        Expanded(flex: 2, child: Center(child: _buildClock(fontSize: 64))),
+        Expanded(
+          flex: 5,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Center(child: _buildQrCard()),
+          ),
+        ),
+        Expanded(
+          flex: 2,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildStatusPill(),
+              const SizedBox(height: 16),
+              _buildCodeDisplay(fontSize: 48),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLandscapeLayout() {
+    return Row(
+      children: [
+        // Left: Big QR Code
+        Expanded(
+          flex: 3,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _buildQrCard(),
+            ),
+          ),
+        ),
+
+        // Right: Info Column
+        Expanded(
+          flex: 2,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Spacer(),
+              _buildClock(fontSize: 50),
+              const Spacer(),
+              _buildStatusPill(),
+              const SizedBox(height: 20),
+              _buildCodeDisplay(fontSize: 60),
+              const Spacer(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // --- Components ---
+
+  Widget _buildQrCard() {
+    return AspectRatio(
+      aspectRatio: 1,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.white.withOpacity(0.1),
+              blurRadius: 20,
+              spreadRadius: 5,
+            ),
+          ],
+        ),
+
+        padding: const EdgeInsets.all(6),
+        child: _qrData != null
+            ? QrImageView(
+                data: _qrData!,
+                version: QrVersions.auto,
+                backgroundColor: Colors.white,
+              )
+            : const Center(
+                child: CircularProgressIndicator(color: Colors.black),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildClock({required double fontSize}) {
     return StreamBuilder(
       stream: Stream.periodic(const Duration(seconds: 1)),
       builder: (context, snapshot) {
+        final now = DateTime.now();
         return Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              DateFormat('HH:mm').format(DateTime.now()),
-              style: const TextStyle(color: Colors.white, fontSize: 80, fontWeight: FontWeight.bold),
+              DateFormat('HH:mm').format(now),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: fontSize,
+                fontWeight: FontWeight.bold,
+                height: 1.0,
+              ),
             ),
+            const SizedBox(height: 8),
             Text(
-              DateFormat('EEEE, d MMMM').format(DateTime.now()),
-              style: const TextStyle(color: Colors.grey, fontSize: 24),
+              DateFormat('EEEE, d MMMM').format(now).toUpperCase(),
+              style: TextStyle(
+                color: Colors.grey.shade400,
+                fontSize: fontSize * 0.25, // Scale date relative to time
+                letterSpacing: 1.2,
+              ),
             ),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildStatusPill() {
+    if (_lastLog == null) return const SizedBox(height: 0);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.green.withOpacity(0.5)),
+      ),
+      child: Text(
+        _lastLog!,
+        style: const TextStyle(
+          color: Colors.greenAccent,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  Widget _buildCodeDisplay({required double fontSize}) {
+    return Text(
+      _backupCode ?? "----",
+      style: TextStyle(
+        fontSize: fontSize,
+        fontFamily: 'monospace',
+        fontWeight: FontWeight.bold,
+        letterSpacing: 8,
+        color: Colors.white,
+      ),
+    );
+  }
+}
+
+class PasswordExitDialog extends StatefulWidget {
+  const PasswordExitDialog({super.key});
+
+  @override
+  State<PasswordExitDialog> createState() => _PasswordExitDialogState();
+}
+
+class _PasswordExitDialogState extends State<PasswordExitDialog> {
+  // Controller is now owned by this widget, preventing external dispose errors
+  final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Exit Kiosk Mode'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('Enter your password to exit.'),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _passwordController,
+            obscureText: true,
+            autofocus: true, // Quality of life improvement
+            decoration: const InputDecoration(
+              labelText: 'Password',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, _passwordController.text),
+          child: const Text('Exit'),
+        ),
+      ],
     );
   }
 }

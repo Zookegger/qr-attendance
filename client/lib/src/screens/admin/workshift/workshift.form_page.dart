@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../models/workshift.dart';
+import '../../../models/office_config.dart';
 import '../../../services/workshift.service.dart';
+import '../../../services/office_config.service.dart';
 
 class WorkshiftFormPage extends StatefulWidget {
   final Workshift? workshift;
@@ -14,6 +16,7 @@ class WorkshiftFormPage extends StatefulWidget {
 class _WorkshiftFormPageState extends State<WorkshiftFormPage> {
   final _formKey = GlobalKey<FormState>();
   final WorkshiftService _service = WorkshiftService();
+  final OfficeConfigService _officeService = OfficeConfigService();
 
   late TextEditingController _nameCtrl;
   late TextEditingController _graceCtrl;
@@ -27,10 +30,14 @@ class _WorkshiftFormPageState extends State<WorkshiftFormPage> {
   // Days: 0=Sun, 1=Mon... 6=Sat
   final Set<int> _selectedDays = {};
   bool _isLoading = false;
+  
+  List<OfficeConfig> _offices = [];
+  int? _selectedOfficeId;
 
   @override
   void initState() {
     super.initState();
+    _loadOffices();
     final w = widget.workshift;
     _nameCtrl = TextEditingController(text: w?.name ?? '');
     _graceCtrl = TextEditingController(text: w?.gracePeriod.toString() ?? '15');
@@ -41,11 +48,25 @@ class _WorkshiftFormPageState extends State<WorkshiftFormPage> {
       _breakStart = _parseTime(w.breakStart);
       _breakEnd = _parseTime(w.breakEnd);
       _selectedDays.addAll(w.workDays);
+      _selectedOfficeId = w.officeConfigId;
     } else {
       // Defaults
       _startTime = const TimeOfDay(hour: 8, minute: 0);
       _endTime = const TimeOfDay(hour: 17, minute: 0);
       _selectedDays.addAll([1, 2, 3, 4, 5]); // Mon-Fri default
+    }
+  }
+
+  Future<void> _loadOffices() async {
+    try {
+      final offices = await _officeService.getOfficeConfigs();
+      if (mounted) {
+        setState(() {
+          _offices = offices;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading offices: $e');
     }
   }
 
@@ -73,12 +94,13 @@ class _WorkshiftFormPageState extends State<WorkshiftFormPage> {
 
     final data = {
       'name': _nameCtrl.text.trim(),
-      'startTime': _formatTime(_startTime!),
-      'endTime': _formatTime(_endTime!),
-      'breakStart': _breakStart != null ? _formatTime(_breakStart!) : null,
-      'breakEnd': _breakEnd != null ? _formatTime(_breakEnd!) : null,
-      'gracePeriod': int.tryParse(_graceCtrl.text) ?? 0,
-      'workDays': (_selectedDays.toList()..sort()),
+      'start_time': _formatTime(_startTime!),
+      'end_time': _formatTime(_endTime!),
+      'break_start': _breakStart != null ? _formatTime(_breakStart!) : null,
+      'break_end': _breakEnd != null ? _formatTime(_breakEnd!) : null,
+      'grace_period': int.tryParse(_graceCtrl.text) ?? 0,
+      'work_days': (_selectedDays.toList()..sort()),
+      'office_config_id': _selectedOfficeId,
     };
 
     try {
@@ -134,6 +156,25 @@ class _WorkshiftFormPageState extends State<WorkshiftFormPage> {
                   border: OutlineInputBorder(),
                 ),
                 validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<int>(
+                decoration: const InputDecoration(
+                  labelText: 'Office / Location',
+                  border: OutlineInputBorder(),
+                ),
+                value: _selectedOfficeId,
+                items: [
+                  const DropdownMenuItem<int>(
+                    value: null,
+                    child: Text('None (Default)'),
+                  ),
+                  ..._offices.map((o) => DropdownMenuItem<int>(
+                        value: o.id,
+                        child: Text(o.name),
+                      )),
+                ],
+                onChanged: (v) => setState(() => _selectedOfficeId = v),
               ),
               const SizedBox(height: 16),
 

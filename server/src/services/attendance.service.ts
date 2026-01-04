@@ -43,15 +43,21 @@ export default class AttendanceService {
 			],
 		});
 
+		if (!schedule) {
+			const err: any = new Error("No scheduled shift found for today");
+			err.status = 400;
+			throw err;
+		}
+
 		let officeConfig = null as any;
 		if (schedule && (schedule as any).Shift && (schedule as any).Shift.officeConfigId) {
 			officeConfig = await OfficeConfig.findByPk((schedule as any).Shift.officeConfigId);
-		} else {
-			officeConfig = await OfficeConfig.findOne();
 		}
 
 		if (!officeConfig) {
-			throw new Error("Office configuration not found");
+			const err: any = new Error("Scheduled shift has no assigned office configuration");
+			err.status = 400;
+			throw err;
 		}
 
 		// 1. Verify code exists in Redis for this office
@@ -177,15 +183,21 @@ export default class AttendanceService {
 			],
 		});
 
+		if (!schedule) {
+			const err: any = new Error("No scheduled shift found for today");
+			err.status = 400;
+			throw err;
+		}
+
 		let officeConfig = null as any;
 		if (schedule && (schedule as any).Shift && (schedule as any).Shift.officeConfigId) {
 			officeConfig = await OfficeConfig.findByPk((schedule as any).Shift.officeConfigId);
-		} else {
-			officeConfig = await OfficeConfig.findOne();
 		}
 
 		if (!officeConfig) {
-			throw new Error("Office configuration not found");
+			const err: any = new Error("Scheduled shift has no assigned office configuration");
+			err.status = 400;
+			throw err;
 		}
 
 		// Verify code exists in Redis for this office

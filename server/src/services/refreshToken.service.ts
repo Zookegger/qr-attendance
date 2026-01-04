@@ -82,7 +82,7 @@ export default class RefreshTokenService {
 		});
 
 		if (!tokenRecord) {
-			throw new Error("Invalid refresh token");
+			throw new Error("Invalid refresh token, token not found");
 		}
 
 		// 3. Security Checks

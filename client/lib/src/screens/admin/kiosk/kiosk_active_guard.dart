@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:qr_attendance_frontend/src/services/auth.service.dart';
 
 class KioskActiveGuard extends StatefulWidget {
@@ -27,12 +28,17 @@ class _KioskActiveGuardState extends State<KioskActiveGuard> {
   @override
   void initState() {
     super.initState();
+    // 1. Hide the Status Bar and Navigation Buttons (Home/Back/Overview)
+    // "immersiveSticky" means if they swipe to reveal them, they disappear again automatically.
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
     _checkTime();
     _timer = Timer.periodic(const Duration(minutes: 1), (_) => _checkTime());
   }
 
   @override
   void dispose() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _timer?.cancel();
     _passwordController.dispose();
     super.dispose();
@@ -89,21 +95,24 @@ class _KioskActiveGuardState extends State<KioskActiveGuard> {
         final user = await authService.getCachedUser();
         if (user != null) {
           // Verify password without creating new session
-          final isValid = await authService.verifyPassword(user.email, password);
-          
+          final isValid = await authService.verifyPassword(
+            user.email,
+            password,
+          );
+
           if (isValid) {
             if (mounted) {
               Navigator.of(context).pop(); // Exit Kiosk Page
             }
           } else {
-             if (mounted) {
+            if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Invalid password.')),
               );
             }
           }
         } else {
-           if (mounted) {
+          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Could not verify user identity.')),
             );
@@ -126,55 +135,70 @@ class _KioskActiveGuardState extends State<KioskActiveGuard> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        widget.child,
-        if (_isLocked)
-          AbsorbPointer(
-            absorbing: true,
-            child: Container(
-              color: Colors.black.withOpacity(0.95),
-              width: double.infinity,
-              height: double.infinity,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.nightlight_round, color: Colors.blueGrey, size: 80),
-                    const SizedBox(height: 24),
-                    const Text(
-                      "Shift Ended",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
+    return PopScope(
+      canPop: false,
+      // onPopInvoked: (didPop) {
+      // },
+      child: Stack(
+        children: [
+          widget.child,
+          if (_isLocked)
+            AbsorbPointer(
+              absorbing: true,
+              child: Container(
+                color: Colors.black.withOpacity(0.95),
+                width: double.infinity,
+                height: double.infinity,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.nightlight_round,
+                        color: Colors.blueGrey,
+                        size: 80,
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      "Station is locked until ${widget.startHour}:00",
-                      style: const TextStyle(color: Colors.grey, fontSize: 18),
-                    ),
-                    const SizedBox(height: 48),
-                    if (_isAuthenticating)
-                      const CircularProgressIndicator()
-                    else
-                      ElevatedButton.icon(
-                        onPressed: _handleUnlock,
-                        icon: const Icon(Icons.lock_open),
-                        label: const Text("Unlock Station"),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                          textStyle: const TextStyle(fontSize: 18),
+                      const SizedBox(height: 24),
+                      const Text(
+                        "Shift Ended",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2,
                         ),
                       ),
-                  ],
+                      const SizedBox(height: 16),
+                      Text(
+                        "Station is locked until ${widget.startHour}:00",
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 48),
+                      if (_isAuthenticating)
+                        const CircularProgressIndicator()
+                      else
+                        ElevatedButton.icon(
+                          onPressed: _handleUnlock,
+                          icon: const Icon(Icons.lock_open),
+                          label: const Text("Unlock Station"),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
+                            textStyle: const TextStyle(fontSize: 18),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
