@@ -28,6 +28,10 @@ const qrWorker = new Worker<QRJobData>(
             ? await OfficeConfig.findAll({ where: { id: job.data.officeId } })
             : await OfficeConfig.findAll();
 
+         if (offices.length === 0) {
+            logger.warn("[QR Worker] No offices found to update QR codes for.");
+         }
+
          for (const office of offices) {
             const officeId = (office as OfficeConfig).id;
             const num = crypto.randomInt(0, 10000);

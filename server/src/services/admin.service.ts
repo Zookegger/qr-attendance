@@ -16,7 +16,18 @@ export default class AdminService {
 		const num = crypto.randomInt(0, 10000);
 		const code = num.toString().padStart(4, "0");
 
-		const office = officeId ? await OfficeConfig.findByPk(officeId) : await OfficeConfig.findOne();
+		let office = officeId ? await OfficeConfig.findByPk(officeId) : await OfficeConfig.findOne();
+		
+		// Lazy init: Create default office if none exists
+		if (!office && !officeId) {
+			office = await OfficeConfig.create({
+				name: "Default Office",
+				latitude: 0,
+				longitude: 0,
+				radius: 100,
+			});
+		}
+
 		const idToUse = office ? (office as any).id : officeId;
 		const ttlSeconds = 45;
 		const key = `checkin:office:${idToUse}:code:${code}`;

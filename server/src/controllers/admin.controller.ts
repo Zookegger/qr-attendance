@@ -43,17 +43,16 @@ const updateOfficeConfig = async (req: Request, res: Response, next: NextFunctio
 		return res.status(403).json({ status: 403, message: "Unauthorized" });
 	}
 	try {
-		// const { latitude, longitude, radius, wifi_ssid } =
-		// 	req.body;
+		const { id, name, latitude, longitude, radius, wifiSsid } = req.body;
 
-		// const config = await AdminService.updateOfficeConfig({
-		// 	latitude,
-		// 	longitude,
-		// 	radius,
-		// 	wifi_ssid,
-		// });
-		// return res.json({ message: "Configuration updated", config });
-		throw new Error("Not Implemented");
+		const config = await AdminService.updateOfficeConfig({
+			name,
+			latitude,
+			longitude,
+			radius,
+			wifiSsid,
+		}, id);
+		return res.json({ message: "Configuration updated", config });
 	} catch (error) {
 		return next(error);
 	}

@@ -13,6 +13,7 @@ import 'package:qr_attendance_frontend/src/screens/admin/workshift/workshift_lis
 import 'package:qr_attendance_frontend/src/screens/admin/workshift/workshift.form_page.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/kiosk/kiosk_page.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/schedule/roster_page.dart';
+import 'package:qr_attendance_frontend/src/screens/admin/office/office_config_page.dart';
 
 // Screens
 import 'package:qr_attendance_frontend/src/screens/shared/splash/splash_screen.dart';
@@ -127,6 +128,7 @@ class _AppState extends State<App> {
 
         '/admin/kiosk': (_) => const KioskPage(),
         '/admin/roster': (_) => const RosterPage(),
+        '/admin/office': (_) => const OfficeConfigPage(),
       },
 
       onGenerateRoute: (settings) {

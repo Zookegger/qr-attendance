@@ -70,7 +70,10 @@ class KioskService {
       debugPrint("Kiosk Socket Connected");
       _connectionController.add(true);
       if (_officeId != null) {
+        debugPrint("Joining office room: $_officeId");
         _socket?.emit('join:office', _officeId);
+      } else {
+        debugPrint("Cannot join office room: officeId is null");
       }
     });
 
