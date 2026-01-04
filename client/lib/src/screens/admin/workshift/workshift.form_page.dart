@@ -164,18 +164,21 @@ class _WorkshiftFormPageState extends State<WorkshiftFormPage> {
                   border: OutlineInputBorder(),
                 ),
                 value: _selectedOfficeId,
-                items: [
-                  const DropdownMenuItem<int>(
-                    value: null,
-                    child: Text('None (Default)'),
-                  ),
-                  ..._offices.map((o) => DropdownMenuItem<int>(
-                        value: o.id,
-                        child: Text(o.name),
-                      )),
-                ],
+                items: _offices.map((o) => DropdownMenuItem<int>(
+                      value: o.id,
+                      child: Text(o.name),
+                    )).toList(),
                 onChanged: (v) => setState(() => _selectedOfficeId = v),
+                validator: (v) => v == null ? 'Required' : null,
               ),
+              if (_offices.isEmpty && !_isLoading)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    'No offices found. Please create an office configuration first.',
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                ),
               const SizedBox(height: 16),
 
               // Times Row 1

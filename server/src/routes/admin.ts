@@ -2,7 +2,7 @@ import { Router } from "express";
 import { AdminController } from "../controllers/admin.controller";
 import { authenticate, authorize } from "@middlewares/auth.middleware";
 import { errorHandler } from "@middlewares/error.middleware";
-import { updateOfficeConfigValidator, addUserValidator, updateUserValidator, deleteUserValidator, listUserSessionValidator, revokeAllUserSessionsValidator, unbindDeviceValidator } from "@middlewares/validators/admin.validator";
+import { addUserValidator, updateUserValidator, deleteUserValidator, listUserSessionValidator, revokeAllUserSessionsValidator, unbindDeviceValidator } from "@middlewares/validators/admin.validator";
 import { UserRole } from "@models/user";
 
 const adminRouter = Router();
@@ -13,21 +13,6 @@ adminRouter.get(
 	authenticate,
 	authorize([UserRole.ADMIN, UserRole.MANAGER]),
 	AdminController.generateQR,
-	errorHandler
-);
-adminRouter.get(
-	"/admin/config",
-	authenticate,
-	authorize([UserRole.ADMIN, UserRole.MANAGER]),
-	AdminController.getOfficeConfig,
-	errorHandler
-);
-adminRouter.put(
-	"/admin/config",
-	authenticate,
-	authorize([UserRole.ADMIN, UserRole.MANAGER]),
-	updateOfficeConfigValidator,
-	AdminController.updateOfficeConfig,
 	errorHandler
 );
 adminRouter.get(

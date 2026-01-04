@@ -7,6 +7,7 @@ import requestRouter from "./request";
 import workshiftRouter from "./workshift";
 import scheduleRouter from "./schedule";
 import testRouter from "./test.route";
+import officeRouter from "./office";
 const router = Router();
 const healthController = new HealthController();
 
@@ -29,6 +30,9 @@ router.use(workshiftRouter);
 
 // --- Admin Routes ---
 router.use(adminRouter);
+
+// --- Office Routes ---
+router.use(officeRouter);
 
 router.use(testRouter);
 

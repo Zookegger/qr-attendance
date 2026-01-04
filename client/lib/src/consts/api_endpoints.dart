@@ -22,7 +22,8 @@ class ApiEndpoints {
 
   // Admin Routes
   static const String adminQr = '/admin/qr';
-  static const String adminConfig = '/admin/config';
+  static const String offices = '/offices';
+  static String officeById(int id) => '/offices/$id';
   static const String adminReport = '/admin/report';
   static const String adminUsers = '/admin/users';
   static const String unbindDevice = '/admin/unbind-device';

@@ -49,7 +49,7 @@ OfficeConfig.init(
 			allowNull: false,
 		},
 		radius: {
-			type: DataTypes.INTEGER,
+			type: DataTypes.FLOAT,
 			allowNull: false,
 			defaultValue: 100,
 		},
