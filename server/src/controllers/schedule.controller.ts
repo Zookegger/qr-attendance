@@ -36,6 +36,17 @@ const getSchedule = async (req: Request, res: Response, next: NextFunction) => {
   } catch (err) {
     return next(err);
   }
+
+};
+const getSchedulebyUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    const item = await ScheduleService.getScheduleById(id);
+    if (!item) return res.status(404).json({ message: 'Schedule not found' });
+    return res.json(item);
+  } catch (err) {
+    return next(err);
+  }
 };
 
 const updateSchedule = async (req: Request, res: Response, next: NextFunction) => {
@@ -80,6 +91,7 @@ export const ScheduleController = {
   createSchedule,
   listSchedules,
   getSchedule,
+  getSchedulebyUser,
   updateSchedule,
   deleteSchedule,
   searchSchedules,

@@ -29,6 +29,14 @@ export default class ScheduleService {
          include: ["Shift", "User"],
       });
    }
+   
+   static async getSchedulebyUser(userId: number) {
+      return Schedule.findAll({ 
+         where: { userId },
+         order: [["createdAt", "DESC"]],
+         include: ["Shift", "User"],
+      });
+   }
 
    static async updateSchedule(id: number, payload: UpdateScheduleDTO) {
       const item = await Schedule.findByPk(id);
