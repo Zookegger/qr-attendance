@@ -29,6 +29,11 @@ class _OfficeFormPageState extends State<OfficeFormPage> {
 
   LatLng? _selectedLocation;
   final MapController _mapController = MapController();
+
+  // Polygon State
+  final List<LatLng> _polygonPoints = [];
+  bool _isDrawingPolygon = false;
+
   bool _isLoadingLocation = false;
   bool _isSaving = false;
   final Map<String, String?> _fieldErrors = {};
@@ -49,6 +54,15 @@ class _OfficeFormPageState extends State<OfficeFormPage> {
         widget.office!.latitude,
         widget.office!.longitude,
       );
+
+      // Hydrate polygon points if they exist
+      if (widget.office!.polygon != null) {
+        _polygonPoints.addAll(
+          widget.office!.polygon!.map(
+            (p) => LatLng(p['latitude']!, p['longitude']!),
+          ),
+        );
+      }
     } else {
       _getCurrentLocation();
     }
@@ -144,6 +158,9 @@ class _OfficeFormPageState extends State<OfficeFormPage> {
         'wifiSsid': _wifiController.text.trim().isEmpty
             ? null
             : _wifiController.text.trim(),
+        'polygon': _polygonPoints
+            .map((p) => {'latitude': p.latitude, 'longitude': p.longitude})
+            .toList(),
       };
 
       if (widget.office != null && widget.office!.id != 0) {
@@ -335,7 +352,7 @@ class _OfficeFormPageState extends State<OfficeFormPage> {
         // --- Loading Overlay ---
         if (_isSaving)
           Container(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             child: const Center(child: CircularProgressIndicator()),
           ),
       ],
@@ -377,7 +394,7 @@ class _OfficeFormPageState extends State<OfficeFormPage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -394,9 +411,13 @@ class _OfficeFormPageState extends State<OfficeFormPage> {
                   initialZoom: 16,
                   onTap: (_, point) {
                     setState(() {
-                      _selectedLocation = point;
-                      _fieldErrors.remove('latitude');
-                      _fieldErrors.remove('longitude');
+                      if (_isDrawingPolygon) {
+                        _polygonPoints.add(point);
+                      } else {
+                        _selectedLocation = point;
+                        _fieldErrors.remove('latitude');
+                        _fieldErrors.remove('longitude');
+                      }
                     });
                   },
                 ),
@@ -406,13 +427,55 @@ class _OfficeFormPageState extends State<OfficeFormPage> {
                         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.example.qr_attendance_frontend',
                   ),
+
+                  // Polygon Layer
+                  if (_polygonPoints.isNotEmpty)
+                    PolygonLayer(
+                      polygons: [
+                        Polygon(
+                          points: _polygonPoints,
+                          color: _isDrawingPolygon
+                              ? Colors.orange.withValues(alpha: 0.3)
+                              : Colors.green.withValues(alpha: 0.2),
+                          borderColor: _isDrawingPolygon
+                              ? Colors.orange
+                              : Colors.green,
+                          borderStrokeWidth: 2,
+                        ),
+                      ],
+                    ),
+
+                  // Polygon Vertices (Visible only when drawing)
+                  if (_isDrawingPolygon)
+                    MarkerLayer(
+                      markers: _polygonPoints
+                          .map(
+                            (point) => Marker(
+                              point: point,
+                              width: 12,
+                              height: 12,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.orange,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+
                   if (_selectedLocation != null) ...[
                     // Draw Radius Circle
                     CircleLayer(
                       circles: [
                         CircleMarker(
                           point: _selectedLocation!,
-                          color: Colors.blue.withOpacity(0.2),
+                          color: Colors.blue.withValues(alpha: 0.2),
                           borderStrokeWidth: 2,
                           borderColor: Colors.blue,
                           useRadiusInMeter: true,
@@ -467,7 +530,7 @@ class _OfficeFormPageState extends State<OfficeFormPage> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
+                      color: Colors.black.withValues(alpha: 0.6),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text(
@@ -476,6 +539,68 @@ class _OfficeFormPageState extends State<OfficeFormPage> {
                     ),
                   ),
                 ),
+
+              // Drawing Controls
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Column(
+                  children: [
+                    // Mode Toggle
+                    FloatingActionButton.small(
+                      heroTag: 'toggleMode',
+                      tooltip: _isDrawingPolygon
+                          ? 'Finish Drawing'
+                          : 'Draw Polygon',
+                      backgroundColor: _isDrawingPolygon
+                          ? Colors.orange
+                          : Colors.white,
+                      foregroundColor: _isDrawingPolygon
+                          ? Colors.white
+                          : Colors.black87,
+                      onPressed: () {
+                        setState(() => _isDrawingPolygon = !_isDrawingPolygon);
+                      },
+                      child: Icon(
+                        _isDrawingPolygon ? Icons.check : Icons.polyline,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Undo Point
+                    if (_isDrawingPolygon && _polygonPoints.isNotEmpty) ...[
+                      FloatingActionButton.small(
+                        heroTag: 'undoPoint',
+                        tooltip: 'Undo Last Point',
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black87,
+                        onPressed: () {
+                          setState(() {
+                            _polygonPoints.removeLast();
+                          });
+                        },
+                        child: const Icon(Icons.undo),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+
+                    // Clear Polygon
+                    if (_polygonPoints.isNotEmpty)
+                      FloatingActionButton.small(
+                        heroTag: 'clearPolygon',
+                        tooltip: 'Clear Polygon',
+                        backgroundColor: Colors.red.shade100,
+                        foregroundColor: Colors.red,
+                        onPressed: () {
+                          setState(() {
+                            _polygonPoints.clear();
+                          });
+                        },
+                        child: const Icon(Icons.delete),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
