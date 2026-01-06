@@ -40,8 +40,8 @@ const getSchedule = async (req: Request, res: Response, next: NextFunction) => {
 };
 const getSchedulebyUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = req.params.id;
-    const item = await ScheduleService.getScheduleById(id);
+    const id = String(req.params.id);
+    const item = await ScheduleService.getSchedulebyUser(id);
     if (!item) return res.status(404).json({ message: 'Schedule not found' });
     return res.json(item);
   } catch (err) {

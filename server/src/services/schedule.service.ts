@@ -30,7 +30,7 @@ export default class ScheduleService {
       });
    }
    
-   static async getSchedulebyUser(userId: number) {
+   static async getSchedulebyUser(userId: string) {
       return Schedule.findAll({ 
          where: { userId },
          order: [["createdAt", "DESC"]],
