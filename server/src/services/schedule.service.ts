@@ -15,6 +15,7 @@ export default class ScheduleService {
 
       const items = await Schedule.findAll({
          order: [["createdAt", "DESC"]],
+         include: ["Shift", "User"],
          limit: pageSize,
          offset,
       });
@@ -23,7 +24,10 @@ export default class ScheduleService {
    }
 
    static async getScheduleById(id: number) {
-      return Schedule.findByPk(id);
+      return Schedule.findByPk(id, {
+         order: [["createdAt", "DESC"]],
+         include: ["Shift", "User"],
+      });
    }
 
    static async updateSchedule(id: number, payload: UpdateScheduleDTO) {
@@ -61,8 +65,8 @@ export default class ScheduleService {
          ];
       }
 
-      return Schedule.findAll({ 
-         where, 
+      return Schedule.findAll({
+         where,
          order: [["startDate", "DESC"]],
          include: ["Shift", "User"] // Include relations for the roster
       });
