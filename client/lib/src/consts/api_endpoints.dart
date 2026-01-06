@@ -18,7 +18,7 @@ class ApiEndpoints {
   static const String checkIn = '/attendance/check-in';
   static const String checkOut = '/attendance/check-out';
   static const String history = '/attendance/history';
-  static const String createRequest = '/requests';
+  static const String request = '/requests';
 
   // Admin Routes
   static const String adminQr = '/admin/qr';

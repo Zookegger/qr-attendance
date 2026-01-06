@@ -5,6 +5,7 @@ import '../../../models/request.dart';
 import '../../../models/user.dart';
 import '../../../services/admin.service.dart';
 import '../../../services/request.service.dart';
+import 'admin_request_detail_page.dart';  
 
 class AdminRequestListPage extends StatefulWidget {
   const AdminRequestListPage({super.key});
@@ -97,20 +98,20 @@ class _AdminRequestListPageState extends State<AdminRequestListPage>
     });
   }
 
-  void _showReviewSheet(Request request) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _ReviewRequestSheet(
-        request: request,
-        user: _userMap[request.userId],
-        onReviewComplete: () {
-          Navigator.pop(context);
-          _loadData(); // Refresh list after action
-        },
+  void _showRequestDetail(Request request) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AdminRequestDetailPage(
+          request: request,
+          user: _userMap[request.userId],
+        ),
       ),
     );
+
+    if (result == true) {
+      _loadData();
+    }
   }
 
   @override
@@ -141,13 +142,13 @@ class _AdminRequestListPageState extends State<AdminRequestListPage>
               : ListView.separated(
                   padding: const EdgeInsets.all(12),
                   itemCount: _filteredRequests.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final req = _filteredRequests[index];
                     return _AdminRequestTile(
                       request: req,
                       user: _userMap[req.userId],
-                      onTap: () => _showReviewSheet(req),
+                      onTap: () => _showRequestDetail(req),
                     );
                   },
                 ),
@@ -192,7 +193,7 @@ class _AdminRequestTile extends StatelessWidget {
       color: theme.colorScheme.surfaceContainer,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: theme.colorScheme.outline.withOpacity(0.1)),
+        side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: InkWell(
         onTap: onTap,
@@ -273,7 +274,7 @@ class _AdminRequestTile extends StatelessWidget {
     
     return CircleAvatar(
       radius: 20,
-      backgroundColor: theme.primaryColor.withOpacity(0.1),
+      backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
       child: Text(
         initials,
         style: TextStyle(
@@ -304,9 +305,9 @@ class _AdminRequestTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Text(
         text,
@@ -322,211 +323,5 @@ class _AdminRequestTile extends StatelessWidget {
       return f.format(r.fromDate!);
     }
     return '${f.format(r.fromDate!)} - ${f.format(r.toDate!)}';
-  }
-}
-
-class _ReviewRequestSheet extends StatefulWidget {
-  final Request request;
-  final User? user;
-  final VoidCallback onReviewComplete;
-
-  const _ReviewRequestSheet({
-    required this.request,
-    required this.user,
-    required this.onReviewComplete,
-  });
-
-  @override
-  State<_ReviewRequestSheet> createState() => _ReviewRequestSheetState();
-}
-
-class _ReviewRequestSheetState extends State<_ReviewRequestSheet> {
-  final TextEditingController _noteController = TextEditingController();
-  bool _isProcessing = false;
-
-  Future<void> _submitReview(RequestStatus status) async {
-    if (_isProcessing) return;
-    setState(() => _isProcessing = true);
-
-    try {
-      await RequestService().reviewRequest(
-        widget.request.id!,
-        status.name,
-        reviewNote: _noteController.text.trim(),
-      );
-      if (mounted) {
-        widget.onReviewComplete();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-        setState(() => _isProcessing = false);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final req = widget.request;
-    final isPending = req.status == RequestStatus.PENDING;
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          Text(
-            'Review Request',
-            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          _buildInfoRow('Employee', widget.user?.name ?? 'Unknown (${req.userId})'),
-          _buildInfoRow('Type', req.type.toTextString()),
-          _buildInfoRow(
-              'Date', 
-              '${DateFormat('dd/MM/yyyy').format(req.fromDate ?? DateTime.now())}' 
-              '${req.toDate != null ? ' - ${DateFormat('dd/MM/yyyy').format(req.toDate!)}' : ''}'
-          ),
-          const SizedBox(height: 12),
-          const Text('Reason:', style: TextStyle(color: Colors.grey)),
-          const SizedBox(height: 4),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(req.reason ?? 'No reason provided'),
-          ),
-          
-          if (req.attachments != null && req.attachments!.isNotEmpty) ...[
-            const SizedBox(height: 16),
-             const Text('Attachments:', style: TextStyle(color: Colors.grey)),
-             const SizedBox(height: 4),
-             Wrap(
-               spacing: 8,
-               children: req.attachments!.map((f) => Chip(
-                 label: Text(f.split('/').last),
-                 avatar: const Icon(Icons.attach_file, size: 16),
-               )).toList(),
-             ),
-          ],
-
-          const Divider(height: 32),
-          
-          if (isPending) ...[
-            TextField(
-              controller: _noteController,
-              decoration: InputDecoration(
-                labelText: 'Review Note (Optional)',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              maxLines: 2,
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _isProcessing ? null : () => _submitReview(RequestStatus.REJECTED),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text('Reject'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isProcessing ? null : () => _submitReview(RequestStatus.APPROVED),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      elevation: 0,
-                    ),
-                    child: _isProcessing 
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('Approve'),
-                  ),
-                ),
-              ],
-            ),
-          ] else ...[
-             Container(
-               padding: const EdgeInsets.all(12),
-               decoration: BoxDecoration(
-                 color: req.status == RequestStatus.APPROVED 
-                    ? Colors.green.withOpacity(0.1) 
-                    : Colors.red.withOpacity(0.1),
-                 borderRadius: BorderRadius.circular(8),
-               ),
-               child: Row(
-                 children: [
-                   Icon(
-                     req.status == RequestStatus.APPROVED ? Icons.check_circle : Icons.cancel,
-                     color: req.status == RequestStatus.APPROVED ? Colors.green : Colors.red,
-                   ),
-                   const SizedBox(width: 12),
-                   Column(
-                     crossAxisAlignment: CrossAxisAlignment.start,
-                     children: [
-                       Text(
-                         'Request ${req.status.name}',
-                         style: const TextStyle(fontWeight: FontWeight.bold),
-                       ),
-                       if (req.reviewNote != null)
-                        Text(
-                          'Note: ${req.reviewNote}',
-                           style: const TextStyle(fontSize: 12),
-                        ),
-                     ],
-                   )
-                 ],
-               ),
-             )
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 80, 
-            child: Text(label, style: const TextStyle(color: Colors.grey))
-          ),
-          Expanded(
-            child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500))
-          ),
-        ],
-      ),
-    );
   }
 }

@@ -118,17 +118,17 @@ class Request {
 
   Map<String, dynamic> toJson() {
     return {
-      'user_id': userId,
+      'userId': userId,
       'type': type.name,
-      'from_date': fromDate?.toIso8601String(),
-      'to_date': toDate?.toIso8601String(),
+      'fromDate': fromDate?.toIso8601String(),
+      'toDate': toDate?.toIso8601String(),
       'reason': reason,
       'attachments': attachments != null ? jsonEncode(attachments) : null,
-      'reviewed_by': reviewedBy,
-      'review_note': reviewNote,
+      'reviewedBy': reviewedBy,
+      'reviewNote': reviewNote,
       'status': status.name,
-      'created_at': createdAt?.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 }

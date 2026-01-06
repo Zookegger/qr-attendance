@@ -6,6 +6,10 @@
 	<string>Camera required to scan QR codes for attendance</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Location required to verify attendance location</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo Library access required to upload attachments for requests</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Photo Library write access required to save attachments</string>
 	<key>FlutterDeepLinkingEnabled</key>
 	<true/>
 	<key>CFBundleURLTypes</key>
@@ -37,6 +41,11 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+		<string>http</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

@@ -2,26 +2,15 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/request.dart';
 import '../utils/api_client.dart';
 import '../consts/api_endpoints.dart';
 
 class RequestService {
   final Dio _dio = ApiClient().client;
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
-
-  Future<String?> _getAccessToken() async {
-    return _storage.read(key: 'auth_access_token');
-  }
 
   /// CREATE REQUEST (SAFE) with detailed debug
   Future<void> createRequest(Request request, List<File> files) async {
-    final token = await _getAccessToken();
-    if (token == null || token.isEmpty) {
-      throw Exception('User not authenticated');
-    }
-
     try {
       dynamic dataToSend;
 
@@ -32,7 +21,7 @@ class RequestService {
         // Bắt buộc các field là string
         formData.fields.add(MapEntry('type', request.type.name));
         formData.fields.add(MapEntry('reason', (request.reason ?? '').trim()));
-        formData.fields.add(MapEntry('user_id', request.userId));
+        formData.fields.add(MapEntry('userId', request.userId));
 
         if (request.fromDate != null)
           formData.fields.add(
@@ -64,11 +53,10 @@ class RequestService {
       }
 
       final response = await _dio.post(
-        ApiEndpoints.createRequest,
+        ApiEndpoints.request,
         data: dataToSend,
         options: Options(
           headers: {
-            'Authorization': 'Bearer $token',
             // Nếu gửi FormData, Dio tự set Content-Type
             if (files.isEmpty) 'Content-Type': 'application/json',
           },
@@ -78,8 +66,8 @@ class RequestService {
       debugPrint('--- Create Request Response ---');
       debugPrint(response.data.toString());
     } on DioException catch (e) {
-      debugPrint('DioException: ${e.response?.data}');
-      throw Exception(e.response?.data.toString() ?? e.message);
+      debugPrint('DioException: ${e.message}');
+      throw Exception(e.message.toString());
     }
   }
 
@@ -97,7 +85,7 @@ class RequestService {
       if (userId != null) query['user_id'] = userId;
 
       final resp = await _dio.get(
-        ApiEndpoints.createRequest,
+        ApiEndpoints.request,
         queryParameters: query,
       );
 
@@ -128,7 +116,7 @@ class RequestService {
 
   Future<Map<String, dynamic>> getRequest(String id) async {
     try {
-      final resp = await _dio.get('${ApiEndpoints.createRequest}/$id');
+      final resp = await _dio.get('${ApiEndpoints.request}/$id');
 
       if (resp.statusCode == null ||
           resp.statusCode! < 200 ||
@@ -159,7 +147,7 @@ class RequestService {
       if (reviewNote != null) payload['review_note'] = reviewNote;
 
       final resp = await _dio.post(
-        '${ApiEndpoints.createRequest}/$id/review',
+        '${ApiEndpoints.request}/$id/review',
         data: payload,
       );
       if (resp.statusCode == null ||
@@ -182,7 +170,16 @@ class RequestService {
       final formData = FormData();
       request.toJson().forEach((key, value) {
         if (value != null) {
-          formData.fields.add(MapEntry(key, value.toString()));
+          // Adjust keys to snake_case for backend
+          if (key == 'fromDate') {
+            formData.fields.add(MapEntry('from_date', value.toString()));
+          } else if (key == 'toDate') {
+            formData.fields.add(MapEntry('to_date', value.toString()));
+          } else if (key == 'userId') {
+            formData.fields.add(MapEntry('user_id', value.toString()));
+          } else {
+            formData.fields.add(MapEntry(key, value.toString()));
+          }
         }
       });
 
@@ -197,7 +194,7 @@ class RequestService {
       }
 
       final resp = await _dio.put(
-        '${ApiEndpoints.createRequest}/${request.id}',
+        '${ApiEndpoints.request}/${request.id}',
         data: formData,
       );
       if (resp.statusCode == null ||
@@ -214,7 +211,7 @@ class RequestService {
 
   Future<void> cancelRequest(String id) async {
     try {
-      final resp = await _dio.delete('${ApiEndpoints.createRequest}/$id');
+      final resp = await _dio.delete('${ApiEndpoints.request}/$id');
       if (resp.statusCode == null ||
           resp.statusCode! < 200 ||
           resp.statusCode! >= 300) {

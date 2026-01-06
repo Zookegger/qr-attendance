@@ -24,17 +24,22 @@ class _HomePageState extends State<HomePage> {
   List<Request> _recentRequests = [];
   final RequestService _requestService = RequestService();
 
-  // Shift Data (Mock)
-  final String checkInTime = "08:02 AM";
-  final String checkOutTime = "--:--";
-  final String totalTime = "1h 39m";
-  final bool isCheckedIn = true;
+  // Shift Data (Defaults)
+  String checkInTime = "--:--";
+  String checkOutTime = "--:--";
+  String totalTime = "--:--";
+  bool isCheckedIn = false;
 
-  // Stats Data (Mock)
-  final int daysWorked = 22;
-  final int daysOff = 1;
-  final String overtimeHours = "4.5h";
-  final int lateArrivals = 0;
+  // Stats Data (Defaults)
+  int daysWorked = 0;
+  int daysOff = 0;
+  String overtimeHours = "0h";
+  int lateArrivals = 0;
+
+  // Team Data (Defaults)
+  int teamPresent = 0;
+  int teamLate = 0;
+  int teamAbsent = 0;
 
   StreamSubscription<RemoteMessage>? _onMessageSub;
 
@@ -235,10 +240,16 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildShiftCard(),
+                  const SizedBox(height: 24),
                   _buildManagerOverviewCard(),
                   const SizedBox(height: 24),
-                  _buildSectionTitle("Management"),
+                  _buildSectionTitle("Actions"),
                   _buildManagerQuickActions(),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle("My Stats"),
+                  _buildStatsGrid(),
+                  const SizedBox(height: 24),
                   _buildSectionTitle("Recent Requests"),
                   _buildRecentRequests(),
                 ],
@@ -280,9 +291,9 @@ class _HomePageState extends State<HomePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildTeamStat("Present", "18", Colors.green),
-                _buildTeamStat("Late", "3", Colors.orange),
-                _buildTeamStat("Absent", "2", Colors.red),
+                _buildTeamStat("Present", "$teamPresent", Colors.green),
+                _buildTeamStat("Late", "$teamLate", Colors.orange),
+                _buildTeamStat("Absent", "$teamAbsent", Colors.red),
               ],
             ),
             const SizedBox(height: 20),
@@ -334,49 +345,72 @@ class _HomePageState extends State<HomePage> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 3,
-      childAspectRatio: 1.25,
+      childAspectRatio: 1.1,
       children: [
+        // Admin Features (Renamed for brevity)
         _buildQuickActionButton(
-          "Review Requests",
+          "Requests",
           Icons.check_circle_outline,
-          36,
+          48,
           Colors.blue,
           () => Navigator.pushNamed(context, '/admin/requests'),
         ),
         _buildQuickActionButton(
-          "Employees",
+          "Staff",
           Icons.people_outline,
-          36,
+          48,
           Colors.purple,
           () => Navigator.pushNamed(context, '/employees'),
         ),
         _buildQuickActionButton(
           "Schedules",
           Icons.calendar_month,
-          36,
+          48,
           Colors.teal,
           () => Navigator.pushNamed(context, '/admin/roster'),
         ),
         _buildQuickActionButton(
-          "Workshifts",
+          "Shifts",
           Icons.access_time_filled,
-          36,
+          48,
           Colors.teal,
           () => Navigator.pushNamed(context, '/admin/workshifts'),
         ),
         _buildQuickActionButton(
           "Offices",
           Icons.business,
-          36,
+          48,
           Colors.indigo,
           () => Navigator.pushNamed(context, '/admin/office'),
         ),
         _buildQuickActionButton(
-          "Attendance",
+          "Kiosk",
           Icons.qr_code_2,
-          36,
+          48,
           Colors.orange,
           () => Navigator.pushNamed(context, '/admin/kiosk'),
+        ),
+        // User Features (Merged & Renamed)
+        _buildQuickActionButton(
+          "My History",
+          Icons.history,
+          48,
+          Colors.blueGrey,
+          () => Navigator.pushNamed(context, '/history'),
+        ),
+        _buildQuickActionButton(
+          "My Schedules",
+          Icons.calendar_today,
+          48,
+          Colors.deepPurple,
+          () => Navigator.pushNamed(context, '/schedule'),
+        ),
+        _buildQuickActionButton(
+          "My Forms",
+          Icons.description,
+          48,
+          Colors.green,
+          () => Navigator.pushNamed(context, '/user/requests'),
         ),
       ],
     );
@@ -809,6 +843,8 @@ class _HomePageState extends State<HomePage> {
     VoidCallback onTap,
   ) {
     return SizedBox(
+      height: 100,
+      width: 100,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: <Widget>[
@@ -832,8 +868,8 @@ class _HomePageState extends State<HomePage> {
             textAlign: TextAlign.center,
             softWrap: true,
             style: const TextStyle(
-              fontSize: 12,
-              height: 1.1, // Tighter line height helps fit more text
+              fontSize: 14,
+              height: 1.75, // Tighter line height helps fit more text
             ),
           ),
         ],
