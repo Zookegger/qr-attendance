@@ -46,7 +46,7 @@ class Workshift {
       'breakEnd': breakEnd,
       'gracePeriod': gracePeriod,
       'workDays': workDays,
-      'office_config_id': officeConfigId,
+      'officeConfigId': officeConfigId,
     };
   }
 

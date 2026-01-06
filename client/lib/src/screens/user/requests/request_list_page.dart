@@ -4,6 +4,7 @@ import 'package:qr_attendance_frontend/src/models/request.dart';
 import 'package:qr_attendance_frontend/src/models/user.dart';
 import 'package:qr_attendance_frontend/src/services/request.service.dart';
 import 'package:qr_attendance_frontend/src/services/auth.service.dart';
+import 'package:qr_attendance_frontend/src/screens/user/requests/request_detail_page.dart';
 
 class RequestListPage extends StatefulWidget {
   const RequestListPage({super.key});
@@ -48,7 +49,7 @@ class _RequestListPageState extends State<RequestListPage>
     try {
       final User user = await _auth.getCachedUser() ?? await _auth.me();
       final data = await RequestService().listRequests(userId: user.id);
-      for (var r in data) {}
+      
       if (mounted) {
         setState(() {
           _allRequests = data;
@@ -172,8 +173,10 @@ class _RequestListPageState extends State<RequestListPage>
       width: 65,
       height: 65,
       child: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/user/requests/form');
+        onPressed: () async {
+          final result = await Navigator.pushNamed(context, '/user/requests/form');
+          if (result == true)
+            await _loadRequests();
         },
         elevation: 1,
         clipBehavior: Clip.hardEdge,
@@ -216,8 +219,17 @@ class _RequestListPageState extends State<RequestListPage>
   // ================= ITEM =================
   Widget _buildRequestItem(Request request) {
     return InkWell(
-      onTap: () {
-        // TODO: Open detail
+      onTap: () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RequestDetailPage(request: request),
+          ),
+        );
+        // Reload list if changes occurred
+        if (result == true) {
+          _loadRequests();
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(14),

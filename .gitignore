@@ -49,6 +49,9 @@ coverage/
 tmp/
 temp/
 
+# Uploads
+uploads/
+
 # Logs
 logs
 *.log

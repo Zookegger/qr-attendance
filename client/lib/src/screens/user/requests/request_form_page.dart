@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:device_info_plus/device_info_plus.dart'; 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -105,8 +105,12 @@ class _RequestFormPageState extends State<RequestFormPage> {
     final hasPermission = await _requestPermission();
 
     if (!hasPermission && mounted) {
-      // Show dialog to open settings if permanently denied
-      _showPermissionDialog();
+      if (await Permission.storage.isPermanentlyDenied ||
+          await Permission.photos.isPermanentlyDenied) {
+        _showPermissionDialog();
+      } else {
+        _getStoragePermission();
+      }
       return;
     }
 
@@ -132,6 +136,13 @@ class _RequestFormPageState extends State<RequestFormPage> {
     setState(() {
       _selectedFiles.removeWhere((f) => f == file);
     });
+  }
+
+  void _getStoragePermission() async {
+    PermissionStatus status = await Permission.storage.status;
+    if (status.isDenied) {
+      await Permission.storage.request();
+    }
   }
 
   void _showPermissionDialog() {
@@ -274,7 +285,10 @@ class _RequestFormPageState extends State<RequestFormPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error: `${e.toString()}`'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {

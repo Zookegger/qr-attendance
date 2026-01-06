@@ -29,16 +29,18 @@ const createRequest = async (
 			reason: req.body.reason,
 		};
 
-		// Handle file uploads
 		// Handle file uploads (support array('attachments') and fields/object formats)
 		let uploadedFiles: Express.Multer.File[] = [];
+
 		if (Array.isArray(req.files)) {
 			uploadedFiles = req.files as Express.Multer.File[];
 		} else if (req.files && 'attachments' in req.files) {
-			uploadedFiles = (req.files as any)['attachments'] as Express.Multer.File[] || [];
+			uploadedFiles = req.files['attachments'] as Express.Multer.File[] || [];
 		} else if (req.files && 'files' in req.files) {
-			uploadedFiles = (req.files as any)['files'] as Express.Multer.File[] || [];
+			uploadedFiles = req.files['files'] as Express.Multer.File[] || [];
 		}
+		
+		logger.debug(uploadedFiles);
 
 		if (uploadedFiles.length > 0) {
 			// Safety: enforce reasonable max (multer should already enforce)
@@ -162,6 +164,9 @@ const updateRequest = async (req: Request, res: Response, next: NextFunction) =>
 
 		// If there are uploaded files for update, handle them and delete old ones safely
 		let uploadedForUpdate: Express.Multer.File[] = [];
+
+		
+
 		if (Array.isArray(req.files)) {
 			uploadedForUpdate = req.files as Express.Multer.File[];
 		} else if (req.files && 'attachments' in req.files) {
@@ -169,6 +174,8 @@ const updateRequest = async (req: Request, res: Response, next: NextFunction) =>
 		} else if (req.files && 'files' in req.files) {
 			uploadedForUpdate = (req.files as any)['files'] as Express.Multer.File[] || [];
 		}
+
+		logger.debug(uploadedForUpdate);
 
 		if (uploadedForUpdate.length > 0) {
 			if (uploadedForUpdate.length > 10) {
