@@ -1,19 +1,32 @@
+import 'dart:convert';
+
+class GeoPoint {
+  final double lat;
+  final double lon;
+
+  GeoPoint({required this.lat, required this.lon});
+
+  factory GeoPoint.fromJson(Map<String, dynamic> json) {
+    return GeoPoint(
+      lat: (json['latitude'] as num).toDouble(),
+      lon: (json['longitude'] as num).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {'latitude': lat, 'longitude': lon};
+}
+
 class GeofenceConfig {
-  final List<List<Map<String, double>>> included;
-  final List<List<Map<String, double>>> excluded;
+  final List<List<GeoPoint>> included;
+  final List<List<GeoPoint>> excluded;
 
   GeofenceConfig({this.included = const [], this.excluded = const []});
 
   factory GeofenceConfig.fromJson(Map<String, dynamic> json) {
-    List<List<Map<String, double>>> parsePolygons(dynamic list) {
+    List<List<GeoPoint>> parsePolygons(dynamic list) {
       if (list == null) return [];
       return (list as List).map((poly) {
-        return (poly as List).map((point) {
-          return {
-            'latitude': (point['latitude'] as num).toDouble(),
-            'longitude': (point['longitude'] as num).toDouble(),
-          };
-        }).toList();
+        return (poly as List).map((point) => GeoPoint.fromJson(point)).toList();
       }).toList();
     }
 
@@ -24,10 +37,7 @@ class GeofenceConfig {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'included': included,
-      'excluded': excluded,
-    };
+    return {'included': included, 'excluded': excluded};
   }
 }
 
@@ -59,7 +69,7 @@ class OfficeConfig {
       radius: (json['radius'] as num).toDouble(),
       wifiSsid: json['wifiSsid'],
       geofence: json['geofence'] != null
-          ? GeofenceConfig.fromJson(json['geofence'])
+          ? GeofenceConfig.fromJson(jsonDecode(json['geofence']))
           : null,
     );
   }

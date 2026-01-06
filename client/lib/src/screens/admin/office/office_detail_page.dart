@@ -49,7 +49,7 @@ class _OfficeDetailPageState extends State<OfficeDetailPage> {
           Polygon(
             points:
                 poly
-                    .map((p) => LatLng(p['latitude']!, p['longitude']!))
+                    .map((p) => LatLng(p.lat, p.lon))
                     .toList(),
             color: const Color(0x6600FF00),
             borderColor: Colors.green,
@@ -62,7 +62,7 @@ class _OfficeDetailPageState extends State<OfficeDetailPage> {
           Polygon(
             points:
                 poly
-                    .map((p) => LatLng(p['latitude']!, p['longitude']!))
+                    .map((p) => LatLng(p.lat, p.lon))
                     .toList(),
             color: const Color(0x66FF0000),
             borderColor: Colors.red,

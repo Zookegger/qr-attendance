@@ -50,15 +50,15 @@ OfficeConfig.init(
 			allowNull: false,
 		},
 		latitude: {
-			type: DataTypes.FLOAT,
+			type: DataTypes.DOUBLE,
 			allowNull: false,
 		},
 		longitude: {
-			type: DataTypes.FLOAT,
+			type: DataTypes.DOUBLE,
 			allowNull: false,
 		},
 		radius: {
-			type: DataTypes.FLOAT,
+			type: DataTypes.DOUBLE,
 			allowNull: false,
 		},
 		wifiSsid: {

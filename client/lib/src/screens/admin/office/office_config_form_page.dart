@@ -98,7 +98,7 @@ class _OfficeFormPageState extends State<OfficeFormPage> {
         // Parse included
         for (var poly in widget.office!.geofence!.included) {
           final points = poly
-              .map((m) => LatLng(m['latitude']!, m['longitude']!))
+              .map((m) => LatLng(m.lat, m.lon))
               .toList();
           _layers.add(
             DrawLayer(
@@ -112,7 +112,7 @@ class _OfficeFormPageState extends State<OfficeFormPage> {
         // Parse excluded
         for (var poly in widget.office!.geofence!.excluded) {
           final points = poly
-              .map((m) => LatLng(m['latitude']!, m['longitude']!))
+              .map((m) => LatLng(m.lat, m.lon))
               .toList();
           _layers.add(
             DrawLayer(

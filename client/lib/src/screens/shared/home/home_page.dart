@@ -1,6 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:qr_attendance_frontend/src/models/Notification.dart';
+import 'package:qr_attendance_frontend/src/models/notification.dart';
 import 'package:qr_attendance_frontend/src/models/request.dart';
 import 'package:qr_attendance_frontend/src/screens/shared/NotificationScreen.dart';
 import 'dart:async';
