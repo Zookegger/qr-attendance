@@ -1,6 +1,7 @@
 import { Model, DataTypes, Optional } from "sequelize";
 import { sequelize } from "@config/database";
 
+export type Point = { latitude: number, longitude: number };
 interface OfficeConfigAttributes {
 	id: number;
 	name: string;
@@ -8,11 +9,12 @@ interface OfficeConfigAttributes {
 	longitude: number;
 	radius: number; // in meters
 	wifiSsid?: string | null;
+	polygon?: Point[] | null;
 }
 
 interface OfficeConfigCreationAttributes extends Optional<
 	OfficeConfigAttributes,
-	"id" | "wifiSsid"
+	"id" | "wifiSsid" | "polygon"
 > { }
 
 export default class OfficeConfig
@@ -24,6 +26,7 @@ export default class OfficeConfig
 	declare public longitude: number;
 	declare public radius: number;
 	declare public wifiSsid: string | null;
+	declare public polygon: Point[] | null;
 
 	declare public readonly createdAt: Date;
 	declare public readonly updatedAt: Date;
@@ -55,6 +58,10 @@ OfficeConfig.init(
 		},
 		wifiSsid: {
 			type: DataTypes.STRING,
+			allowNull: true,
+		},
+		polygon: {
+			type: DataTypes.JSON,
 			allowNull: true,
 		},
 	},

@@ -1,12 +1,13 @@
 import { Attendance, OfficeConfig, Schedule, Workshift, RequestModel, User } from "@models";
 import { RequestType } from "@models/request";
-import { calculateDistance } from "@utils/geo";
+import { calculateDistance, isPointInPolygon } from "@utils/geo";
 import { Op } from "sequelize";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { AttendanceMethod, AttendanceStatus } from "@models/attendance";
 import { CheckInOutDTO } from '@my-types/attendance';
 import redis from '@config/redis';
 import { getIo } from "@utils/socket";
+import { Point } from "@models/officeConfig";
 
 export default class AttendanceService {
 		static async checkIn(dto: CheckInOutDTO) {
@@ -78,14 +79,20 @@ export default class AttendanceService {
 		// on success, clear strikes
 		await redis.del(strikesKey);
 
-		const distance = calculateDistance(
-			latitude,
-			longitude,
-			officeConfig.latitude,
-			officeConfig.longitude
-		);
+		// Geofence Validation
+		const userLocation: Point = { latitude, longitude };
+		const officeLocation: Point = { latitude: officeConfig.latitude, longitude: officeConfig.longitude };
+
+		const distance = calculateDistance(userLocation, officeLocation);
 		if (distance > officeConfig.radius) {
-			throw new Error(`You are outside the office range. Distance: ${distance}`);
+			throw new Error(`You are outside the office radius. Distance: ${Math.round(distance)}m`);
+		}
+
+		if (officeConfig.polygon && Array.isArray(officeConfig.polygon) && officeConfig.polygon.length >= 3) {
+			const insidePolygon = isPointInPolygon(userLocation, officeConfig.polygon);
+			if (!insidePolygon) {
+				throw new Error("You are outside the office polygon perimeter.");
+			}
 		}
 
 		// 3. Check if already checked in today
@@ -215,14 +222,19 @@ export default class AttendanceService {
 		await redis.del(redisKey);
 		await redis.del(strikesKey);
 
-		const distance = calculateDistance(
-			latitude,
-			longitude,
-			officeConfig.latitude,
-			officeConfig.longitude
-		);
+		const userLocation: Point = { latitude, longitude };
+		const officeLocation: Point = { latitude: officeConfig.latitude, longitude: officeConfig.longitude };
+
+		const distance = calculateDistance(userLocation, officeLocation);
 		if (distance > officeConfig.radius) {
-			throw new Error(`You are outside the office range. Distance: ${distance}`);
+			throw new Error(`You are outside the office radius. Distance: ${Math.round(distance)}m`);
+		}
+
+		if (officeConfig.polygon && Array.isArray(officeConfig.polygon) && officeConfig.polygon.length >= 3) {
+			const insidePolygon = isPointInPolygon(userLocation, officeConfig.polygon);
+			if (!insidePolygon) {
+				throw new Error("You are outside the office polygon perimeter.");
+			}
 		}
 
 		// 3. Find Attendance Record
