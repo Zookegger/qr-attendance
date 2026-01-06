@@ -23,6 +23,15 @@ class ScheduleService {
     );
     return (res.data as List).map((e) => Schedule.fromJson(e)).toList();
   }
+  
+  Future<List<Schedule>> getUserSchedules({
+    required String userId,
+  }) async {
+    final res = await _dio.get(
+      ApiEndpoints.scheduleByUser(userId),
+    );
+    return (res.data as List).map((e) => Schedule.fromJson(e)).toList();
+  }
 
   Future<void> assignSchedule(Map<String, dynamic> data) async {
     await _dio.post(ApiEndpoints.schedules, data: data);

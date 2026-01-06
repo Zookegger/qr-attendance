@@ -94,19 +94,19 @@ class Request {
     }
     return Request(
       id: json['id'],
-      userId: json['user_id'],
-      type: RequestType.fromString(json['type'] ?? json['requestType']),
-      fromDate: json['from_date'] != null
-          ? DateTime.parse(json['from_date'])
+      userId: json['userId'],
+      type: RequestType.fromString(json['type']),
+      fromDate: json['fromDate'] != null
+          ? DateTime.parse(json['fromDate'])
           : null,
-      toDate: json['to_date'] != null ? DateTime.parse(json['to_date']) : null,
+      toDate: json['toDate'] != null ? DateTime.parse(json['toDate']) : null,
       reason: json['reason'],
-      attachments: parseAttachments(json['attachments'] ?? json['attachments']),
-      status: RequestStatus.fromString(json['status'] ?? json['status']),
-      reviewedBy: json['reviewed_by'] ?? json['reviewedBy'],
-      reviewNote: json['review_note'] ?? json['reviewNote'],
-      createdAt: parseDate(json['created_at'] ?? json['createdAt']),
-      updatedAt: parseDate(json['updated_at'] ?? json['updatedAt']),
+      attachments: parseAttachments(json['attachments']),
+      status: RequestStatus.fromString(json['status']),
+      reviewedBy: json['reviewedBy'],
+      reviewNote: json['reviewNote'],
+      createdAt: parseDate(json['createdAt']),
+      updatedAt: parseDate(json['updatedAt']),
       userName: json['user'] != null ? json['user']['name'] : null,
     );
   }

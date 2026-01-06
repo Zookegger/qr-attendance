@@ -1,5 +1,5 @@
 import 'workshift.dart';
-import 'user.dart'; 
+import 'user.dart';
 
 class Schedule {
   final int id;
@@ -23,12 +23,10 @@ class Schedule {
   factory Schedule.fromJson(Map<String, dynamic> json) {
     return Schedule(
       id: json['id'],
-      userId: json['user_id'],
-      shiftId: json['shift_id'],
-      startDate: DateTime.parse(json['start_date']),
-      endDate: json['end_date'] != null
-          ? DateTime.parse(json['end_date'])
-          : null,
+      userId: json['userId'],
+      shiftId: json['shiftId'],
+      startDate: DateTime.parse(json['startDate']),
+      endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
       shift: json['Shift'] != null ? Workshift.fromJson(json['Shift']) : null,
       user: json['User'] != null ? User.fromJson(json['User']) : null,
     );
