@@ -135,15 +135,18 @@ class _KioskPageState extends State<KioskPage> with TickerProviderStateMixin {
         backgroundColor: const Color(0xFF121212),
         body: Stack(
           children: [
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: OrientationBuilder(
-                  builder: (context, orientation) {
-                    return orientation == Orientation.portrait
-                        ? _buildPortraitLayout()
-                        : _buildLandscapeLayout();
-                  },
+            AbsorbPointer(
+              absorbing: true,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: OrientationBuilder(
+                    builder: (context, orientation) {
+                      return orientation == Orientation.portrait
+                          ? _buildPortraitLayout()
+                          : _buildLandscapeLayout();
+                    },
+                  ),
                 ),
               ),
             ),
@@ -155,16 +158,19 @@ class _KioskPageState extends State<KioskPage> with TickerProviderStateMixin {
               right: 0,
               child: SafeArea(
                 bottom: false,
-                child: AnimatedBuilder(
-                  animation: _progressController,
-                  builder: (context, child) {
-                    return LinearProgressIndicator(
-                      value: 1.0 - _progressController.value,
-                      backgroundColor: Colors.transparent,
-                      color: Colors.greenAccent,
-                      minHeight: 4,
-                    );
-                  },
+                child: AbsorbPointer(
+                  absorbing: true,
+                  child: AnimatedBuilder(
+                    animation: _progressController,
+                    builder: (context, child) {
+                      return LinearProgressIndicator(
+                        value: 1.0 - _progressController.value,
+                        backgroundColor: Colors.transparent,
+                        color: Colors.greenAccent,
+                        minHeight: 4,
+                      );
+                    },
+                  ),
                 ),
               ),
             ),

@@ -47,18 +47,16 @@ class AttendanceRecord {
           ? DateTime.parse(rawDate as String)
           : DateTime.now(),
       status: (json['status'] as String?) ?? 'Unknown',
-      checkInTime: parseDate(json['check_in_time'] ?? json['checkInTime']),
-      checkOutTime: parseDate(json['check_out_time'] ?? json['checkOutTime']),
-      checkInMethod: json['check_in_method'] as String?,
-      checkOutMethod: json['check_out_method'] as String?,
-      scheduleId: json['schedule_id'] is int
-          ? json['schedule_id'] as int
-          : (json['scheduleId'] is int ? json['scheduleId'] as int : null),
-      requestId: json['request_id'] ?? json['requestId'],
-      checkInLocation: json['check_in_location'] as Map<String, dynamic>?,
-      checkOutLocation: json['check_out_location'] as Map<String, dynamic>?,
-      createdAt: parseDate(json['created_at'] ?? json['createdAt']),
-      updatedAt: parseDate(json['updated_at'] ?? json['updatedAt']),
+      checkInTime: parseDate(json['checkInTime']),
+      checkOutTime: parseDate(json['checkOutTime']),
+      checkInMethod: json['checkInMethod'] as String?,
+      checkOutMethod: json['checkOutMethod'] as String?,
+      scheduleId: json['scheduleId'] is int ? json['scheduleId'] as int : null,
+      requestId: json['requestId'],
+      checkInLocation: json['checkInLocation'] as Map<String, dynamic>?,
+      checkOutLocation: json['checkOutLocation'] as Map<String, dynamic>?,
+      createdAt: parseDate(json['createdAt']),
+      updatedAt: parseDate(json['updatedAt']),
     );
   }
 

@@ -22,7 +22,8 @@ class ApiEndpoints {
 
   // Admin Routes
   static const String adminQr = '/admin/qr';
-  static const String adminConfig = '/admin/config';
+  static const String offices = '/offices';
+  static String officeById(int id) => '/offices/$id';
   static const String adminReport = '/admin/report';
   static const String adminUsers = '/admin/users';
   static const String unbindDevice = '/admin/unbind-device';
@@ -36,6 +37,7 @@ class ApiEndpoints {
   // Schedule routes
   static const String schedules = '/schedules';
   static const String schedulesSearch = '/schedules/search';
+  static String scheduleByUser(String userId) => '/schedules/user/$userId';
   static String scheduleById(int id) => '/schedules/$id';
 
   // Workshift routes

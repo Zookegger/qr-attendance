@@ -1,14 +1,6 @@
 import { Gender, UserRole, UserStatus } from "@models/user";
 import { body, param } from "express-validator";
 
-export const updateOfficeConfigValidator = [
-	body("name").optional().isString().withMessage("Name must be a string"),
-	body("latitude").optional().isFloat({ min: -90, max: 90 }).withMessage("Invalid latitude"),
-	body("longitude").optional().isFloat({ min: -180, max: 180 }).withMessage("Invalid longitude"),
-	body("radius").optional().isFloat({ min: 0 }).withMessage("Radius must be positive"),
-	body("wifiSsid").optional().isString().withMessage("WiFi SSID must be a string"),
-];
-
 export const addUserValidator = [
 	body("name").isString().notEmpty().withMessage("Name is required"),
 	body("email").isEmail().withMessage("Invalid email"),

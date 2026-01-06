@@ -8,7 +8,7 @@ class OfficeConfigService {
 
   Future<List<OfficeConfig>> getOfficeConfigs() async {
     try {
-      final response = await _dio.get(ApiEndpoints.adminConfig);
+      final response = await _dio.get(ApiEndpoints.offices);
       if (response.statusCode == 200) {
         final data = response.data;
         if (data is List) {
@@ -22,9 +22,17 @@ class OfficeConfigService {
     }
   }
 
-  Future<void> updateOfficeConfig(Map<String, dynamic> data) async {
+  Future<void> createOffice(Map<String, dynamic> data) async {
     try {
-      await _dio.put(ApiEndpoints.adminConfig, data: data);
+      await _dio.post(ApiEndpoints.offices, data: data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> updateOffice(int id, Map<String, dynamic> data) async {
+    try {
+      await _dio.put(ApiEndpoints.officeById(id), data: data);
     } catch (e) {
       rethrow;
     }

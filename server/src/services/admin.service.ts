@@ -7,7 +7,7 @@ import { Op } from "sequelize";
 import { startOfMonth, endOfMonth, format } from "date-fns";
 import bcrypt from "bcrypt";
 import { Gender, UserRole } from "@models/user";
-import { AddUserDTO, UpdateUserDTO, AddOfficeConfigDTO, UpdateOfficeConfigDTO } from "@my-types/admin";
+import { AddUserDTO, UpdateUserDTO } from "@my-types/admin";
 import RefreshTokenService from "./refreshToken.service";
 
 export default class AdminService {
@@ -18,17 +18,11 @@ export default class AdminService {
 
 		let office = officeId ? await OfficeConfig.findByPk(officeId) : await OfficeConfig.findOne();
 		
-		// Lazy init: Create default office if none exists
-		if (!office && !officeId) {
-			office = await OfficeConfig.create({
-				name: "Default Office",
-				latitude: 0,
-				longitude: 0,
-				radius: 100,
-			});
+		if (!office) {
+			throw new Error("No office configuration found. Please create one first.");
 		}
 
-		const idToUse = office ? (office as any).id : officeId;
+		const idToUse = office.id;
 		const ttlSeconds = 45;
 		const key = `checkin:office:${idToUse}:code:${code}`;
 
@@ -44,40 +38,7 @@ export default class AdminService {
 		return { code, refreshAt: 30, officeId: idToUse };
 	}
 
-	static async listOfficeConfig() {
-		return await OfficeConfig.findAll();
-	}
 
-	static async updateOfficeConfig(dto: AddOfficeConfigDTO | UpdateOfficeConfigDTO, id?: string) {
-		let config = null;
-
-		if (id) {
-			config = await OfficeConfig.findByPk(id);
-		} else {
-			config = await OfficeConfig.findOne({ where: { name: (dto as any).name } });
-		}
-
-		if (config) {
-			const { name, latitude, longitude, radius, wifiSsid } = dto as UpdateOfficeConfigDTO;
-			if (name !== undefined) config.name = name;
-			if (latitude !== undefined) config.latitude = latitude;
-			if (longitude !== undefined) config.longitude = longitude;
-			if (radius !== undefined) config.radius = radius;
-			if (wifiSsid !== undefined) config.wifiSsid = wifiSsid;
-			await config.save();
-		} else {
-			const { name, latitude, longitude, radius, wifiSsid } = dto as AddOfficeConfigDTO;
-			config = await OfficeConfig.create({
-				name: name || 'Default Config',
-				latitude: latitude || 0,
-				longitude: longitude || 0,
-				radius: radius || 100,
-				wifiSsid: wifiSsid || null,
-			});
-		}
-
-		return config;
-	}
 
 	static async unbindDevice(userId: string) {
 		const user = await User.findByPk(userId);

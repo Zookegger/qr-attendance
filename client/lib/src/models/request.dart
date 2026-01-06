@@ -57,6 +57,7 @@ class Request {
   final String? reviewNote;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? userName;
 
   Request({
     this.id,
@@ -71,6 +72,7 @@ class Request {
     this.reviewNote,
     this.createdAt,
     this.updatedAt,
+    this.userName,
   });
 
   factory Request.fromJson(Map<String, dynamic> json) {
@@ -96,22 +98,21 @@ class Request {
     }
 
     return Request(
-      id: json['id']?.toString(),
-      userId: json['user_id']?.toString() ?? '',
-      type: RequestType.fromString(
-        json['type']?.toString() ?? json['requestType']?.toString(),
-      ),
-      fromDate: parseDate(json['from_date'] ?? json['fromDate']),
-      toDate: parseDate(json['to_date'] ?? json['toDate']),
-      reason: json['reason']?.toString(),
+      id: json['id'],
+      userId: json['userId'],
+      type: RequestType.fromString(json['type']),
+      fromDate: json['fromDate'] != null
+          ? DateTime.parse(json['fromDate'])
+          : null,
+      toDate: json['toDate'] != null ? DateTime.parse(json['toDate']) : null,
+      reason: json['reason'],
       attachments: parseAttachments(json['attachments']),
-      status: RequestStatus.fromString(json['status']?.toString()),
-      reviewedBy:
-          json['reviewed_by']?.toString() ?? json['reviewedBy']?.toString(),
-      reviewNote:
-          json['review_note']?.toString() ?? json['reviewNote']?.toString(),
-      createdAt: parseDate(json['created_at'] ?? json['createdAt']),
-      updatedAt: parseDate(json['updated_at'] ?? json['updatedAt']),
+      status: RequestStatus.fromString(json['status']),
+      reviewedBy: json['reviewedBy'],
+      reviewNote: json['reviewNote'],
+      createdAt: parseDate(json['createdAt']),
+      updatedAt: parseDate(json['updatedAt']),
+      userName: json['user'] != null ? json['user']['name'] : null,
     );
   }
 

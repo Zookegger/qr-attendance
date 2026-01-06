@@ -19,45 +19,6 @@ const generateQR = async (req: Request, res: Response, next: NextFunction) => {
 	}
 };
 
-const getOfficeConfig = async (req: Request, res: Response, next: NextFunction) => {
-	const user = req.user;
-	if (!user) {
-		return res.status(403).json({ status: 403, message: "Unauthorized" });
-	}
-	try {
-		const config = await AdminService.listOfficeConfig();
-		return res.json(config);
-	} catch (error) {
-		return next(error);
-	}
-};
-
-const updateOfficeConfig = async (req: Request, res: Response, next: NextFunction) => {
-	const errors = validationResult(req);
-	if (!errors.isEmpty()) {
-		return res.status(400).json({ errors: errors.array() });
-	}
-
-	const user = req.user;
-	if (!user) {
-		return res.status(403).json({ status: 403, message: "Unauthorized" });
-	}
-	try {
-		const { id, name, latitude, longitude, radius, wifiSsid } = req.body;
-
-		const config = await AdminService.updateOfficeConfig({
-			name,
-			latitude,
-			longitude,
-			radius,
-			wifiSsid,
-		}, id);
-		return res.json({ message: "Configuration updated", config });
-	} catch (error) {
-		return next(error);
-	}
-};
-
 const exportReport = async (req: Request, res: Response, next: NextFunction) => {
 	const user = req.user;
 	if (!user) {
@@ -305,8 +266,6 @@ const unbindDevice = async (req: Request, res: Response, next: NextFunction) => 
 
 export const AdminController = {
 	generateQR,
-	getOfficeConfig,
-	updateOfficeConfig,
 	exportReport,
 	addUser,
 	findUserByID,
