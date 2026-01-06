@@ -37,6 +37,7 @@ class ApiEndpoints {
   // Schedule routes
   static const String schedules = '/schedules';
   static const String schedulesSearch = '/schedules/search';
+  static String scheduleByUser(String userId) => '/schedules/user/$userId';
   static String scheduleById(int id) => '/schedules/$id';
 
   // Workshift routes

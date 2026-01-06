@@ -3,6 +3,10 @@ import RequestModel, { RequestStatus } from "@models/request";
 import { UserRole } from "@models/user";
 import { CreateRequestDTO, ReviewRequestDTO, RequestResponse } from "@my-types/request";
 import { Op } from "sequelize";
+import NotificationService from "./notification.service";
+
+	
+
 
 interface RequestFilters {
 	status?: string;
@@ -23,6 +27,11 @@ export default class RequestService {
 			attachments: dto.attachments ?? null,
 			status: RequestStatus.PENDING
 		});
+		User.findByPk(dto.userId).then(user => {
+            if (user) {
+                NotificationService.notifyAdminNewRequest(user.name, dto.type);
+            }
+        });
 
 		return request.toJSON() as RequestResponse;
 	}
@@ -137,6 +146,8 @@ export default class RequestService {
 			reviewNote: dto.reviewNote ?? null,
 			reviewedBy: reviewerId,
 		});
+		// 3. Thông báo cho chủ đơn hàng về kết quả (Async)
+        NotificationService.notifyUserRequestUpdate(request.userId, request.type, dto.status);
 
 		return result;
 	}

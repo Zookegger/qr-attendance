@@ -144,7 +144,7 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
                       ? DateFormat('dd/MM/yyyy').format(_user.dateOfBirth!)
                       : 'N/A',
                 ),
-                
+
                 _buildSectionTitle('Schedule Management'),
                 ListTile(
                   leading: const Icon(
@@ -153,14 +153,16 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
                   ),
                   title: const Text('Manage Schedule'),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ManageEmployeeSchedulePage(user: _user),
-                    ),
-                  ),
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ManageEmployeeSchedulePage(user: _user),
+                      ),
+                    );
+                  },
                 ),
-                
+
                 const Divider(height: 32),
                 _buildDeviceSection(),
                 const SizedBox(height: 40),
@@ -173,8 +175,6 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
                   icon: const Icon(Icons.delete_forever),
                   label: const Text('Delete User'),
                 ),
-
-                
               ],
             ),
     );

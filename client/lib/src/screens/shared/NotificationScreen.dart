@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:qr_attendance_frontend/src/models/Notification.dart';
+import 'package:qr_attendance_frontend/src/models/notification.dart';
 
 class NotificationScreen extends StatelessWidget {
   final List<AppNotification> notifications;

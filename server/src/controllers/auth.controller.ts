@@ -1,13 +1,24 @@
 import { NextFunction, Request, Response } from "express";
 import AuthService from "@services/auth.service";
 import { validationResult } from "express-validator";
-import { ChangePasswordRequestDTO, LoginRequestDTO, LogoutRequestDTO, RefreshRequestDTO, ForgotPasswordRequestDTO, ResetPasswordRequestDTO, VerifyPasswordRequestDTO } from "@my-types/auth";
+import { ChangePasswordRequestDTO, LogoutRequestDTO, RefreshRequestDTO, ForgotPasswordRequestDTO, ResetPasswordRequestDTO, VerifyPasswordRequestDTO } from "@my-types/auth";
 import { RefreshToken, User } from "@models";
 
 const login = async (req: Request, res: Response, next: NextFunction) => {
 	try {
-		const dto: LoginRequestDTO = req.body;
-		const result = await AuthService.login(dto.email, dto.password, dto.deviceUuid, dto.deviceName, dto.deviceModel, dto.deviceOsVersion);
+		console.log(req.body);
+		const { email, password, deviceUuid, fcm_token, device_name, device_model, os_version } = req.body;
+
+		const result = await AuthService.login(
+			email,
+			password,
+			deviceUuid,
+			device_name,    // map đúng
+			device_model,   // map đúng
+			os_version,     // map đúng
+			fcm_token       // map đúng
+		);
+
 		return res.status(200).json(result);
 	} catch (error) {
 		return next(error);
@@ -61,7 +72,7 @@ const me = async (req: Request, res: Response, next: NextFunction) => {
 		}
 
 		const now = new Date();
-		const token = await RefreshToken.findOne({ where: { userId: user.id }, order: [['createdAt', 'DESC']] });
+		const token = await RefreshToken.findOne({ where: { userId: user.id }, order: [['created_at', 'DESC']] });
 
 		if (!token) {
 			return res.status(401).json({ message: "No active session" });

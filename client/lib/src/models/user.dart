@@ -101,34 +101,34 @@ class User {
       email: json['email'],
       status: UserStatus.fromString((json['status'] ?? 'UNKNOWN').toString()),
       role: UserRole.fromString((json['role'] ?? 'USER').toString()),
-      deviceUuid: json['device_uuid'],
-      deviceName: json['device_name'],
-      deviceModel: json['device_model'],
-      deviceOsVersion: json['device_os_version'],
+      deviceUuid: json['deviceUuid'],
+      deviceName: json['deviceName'],
+      deviceModel: json['deviceModel'],
+      deviceOsVersion: json['deviceOsVersion'],
       devices: (json['devices'] is List)
           ? (json['devices'] as List)
                 .map((e) => UserDevice.fromJson(e as Map<String, dynamic>))
                 .toList()
-          : (json['user_devices'] is List)
-          ? (json['user_devices'] as List)
+          : (json['userDevices'] is List)
+          ? (json['userDevices'] as List)
                 .map((e) => UserDevice.fromJson(e as Map<String, dynamic>))
                 .toList()
-          : (json['device_uuid'] != null)
+          : (json['deviceUuid'] != null)
           ? [
               UserDevice(
-                deviceUuid: json['device_uuid'],
-                deviceName: json['device_name'],
-                deviceModel: json['device_model'],
-                deviceOsVersion: json['device_os_version'],
-                fcmToken: json['fcm_token'],
+                deviceUuid: json['deviceUuid'],
+                deviceName: json['deviceName'],
+                deviceModel: json['deviceModel'],
+                deviceOsVersion: json['deviceOsVersion'],
+                fcmToken: json['fcmToken'],
               ),
             ]
           : null,
       position: json['position'],
       department: json['department'],
-      fcmToken: json['fcm_token'],
-      dateOfBirth: json['date_of_birth'] != null
-          ? (DateTime.tryParse(json['date_of_birth'].toString())?.toLocal())
+      fcmToken: json['fcmToken'],
+      dateOfBirth: json['dateOfBirth'] != null
+          ? (DateTime.tryParse(json['dateOfBirth'].toString())?.toLocal())
           : null,
       createdAt: json['createdAt'] != null
           ? (DateTime.tryParse(json['createdAt'].toString())?.toLocal())
@@ -136,7 +136,7 @@ class User {
       updatedAt: json['updatedAt'] != null
           ? (DateTime.tryParse(json['updatedAt'].toString())?.toLocal())
           : null,
-      phoneNumber: json['phone_number'],
+      phoneNumber: json['phoneNumber'],
       address: json['address'],
       gender: json['gender'] != null
           ? Gender.fromString(json['gender'].toString())

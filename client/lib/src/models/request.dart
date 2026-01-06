@@ -15,7 +15,7 @@ enum RequestType {
   OTHER;
 
   static RequestType fromString(String? value) {
-    if (value == null) return RequestType.OTHER;
+    if (value == null || value.isEmpty) return RequestType.OTHER;
     final v = value.toUpperCase();
     return RequestType.values.firstWhere(
       (e) => e.name == v,
@@ -25,13 +25,17 @@ enum RequestType {
 
   String toTextString() {
     final s = name.replaceAll('_', ' ').toLowerCase();
-    return s[0].toUpperCase() + s.substring(1);
+    return s.isNotEmpty ? '${s[0].toUpperCase()}${s.substring(1)}' : '';
   }
 }
 
-enum RequestStatus { PENDING, APPROVED, REJECTED;
+enum RequestStatus {
+  PENDING,
+  APPROVED,
+  REJECTED;
+
   static RequestStatus fromString(String? value) {
-    if (value == null) return RequestStatus.PENDING;
+    if (value == null || value.isEmpty) return RequestStatus.PENDING;
     final v = value.toUpperCase();
     return RequestStatus.values.firstWhere(
       (e) => e.name == v,
@@ -75,7 +79,7 @@ class Request {
     DateTime? parseDate(dynamic v) {
       if (v == null) return null;
       try {
-        return DateTime.parse(v as String);
+        return DateTime.parse(v.toString());
       } catch (_) {
         return null;
       }
@@ -92,21 +96,22 @@ class Request {
       }
       return null;
     }
+
     return Request(
       id: json['id'],
-      userId: json['user_id'],
-      type: RequestType.fromString(json['type'] ?? json['requestType']),
-      fromDate: json['from_date'] != null
-          ? DateTime.parse(json['from_date'])
+      userId: json['userId'],
+      type: RequestType.fromString(json['type']),
+      fromDate: json['fromDate'] != null
+          ? DateTime.parse(json['fromDate'])
           : null,
-      toDate: json['to_date'] != null ? DateTime.parse(json['to_date']) : null,
+      toDate: json['toDate'] != null ? DateTime.parse(json['toDate']) : null,
       reason: json['reason'],
-      attachments: parseAttachments(json['attachments'] ?? json['attachments']),
-      status: RequestStatus.fromString(json['status'] ?? json['status']),
-      reviewedBy: json['reviewed_by'] ?? json['reviewedBy'],
-      reviewNote: json['review_note'] ?? json['reviewNote'],
-      createdAt: parseDate(json['created_at'] ?? json['createdAt']),
-      updatedAt: parseDate(json['updated_at'] ?? json['updatedAt']),
+      attachments: parseAttachments(json['attachments']),
+      status: RequestStatus.fromString(json['status']),
+      reviewedBy: json['reviewedBy'],
+      reviewNote: json['reviewNote'],
+      createdAt: parseDate(json['createdAt']),
+      updatedAt: parseDate(json['updatedAt']),
       userName: json['user'] != null ? json['user']['name'] : null,
     );
   }

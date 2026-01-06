@@ -33,7 +33,7 @@ class _ManageEmployeeSchedulePageState extends State<ManageEmployeeSchedulePage>
     setState(() => _isLoading = true);
     try {
       final results = await Future.wait([
-        _scheduleService.searchSchedules(userId: widget.user.id),
+        _scheduleService.getUserSchedules(userId: widget.user.id),
         _shiftService.listWorkshifts(),
       ]);
 

@@ -27,13 +27,13 @@ class Workshift {
     return Workshift(
       id: json['id'],
       name: json['name'],
-      startTime: json['startTime'] ?? json['start_time'],
-      endTime: json['endTime'] ?? json['end_time'],
-      breakStart: json['breakStart'] ?? json['break_start'],
-      breakEnd: json['breakEnd'] ?? json['break_end'],
-      gracePeriod: json['gracePeriod'] ?? json['grace_period'] ?? 15,
-      workDays: _parseWorkDays(json['workDays'] ?? json['work_days']),
-      officeConfigId: json['office_config_id'],
+      startTime: json['startTime'],
+      endTime: json['endTime'],
+      breakStart: json['breakStart'],
+      breakEnd: json['breakEnd'],
+      gracePeriod: json['gracePeriod'] ?? 15,
+      workDays: _parseWorkDays(json['workDays']),
+      officeConfigId: json['officeConfigId'],
     );
   }
 

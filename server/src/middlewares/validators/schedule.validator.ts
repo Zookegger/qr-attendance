@@ -16,6 +16,7 @@ export const updateScheduleValidator = [
 ];
 
 export const getScheduleValidator = [param("id").isInt().withMessage("Schedule id must be an integer")];
+export const getScheduleByUserValidator = [param("userId").isUUID().withMessage("Invalid user ID")];
 
 export const deleteScheduleValidator = [param("id").isInt().withMessage("Schedule id must be an integer")];
 

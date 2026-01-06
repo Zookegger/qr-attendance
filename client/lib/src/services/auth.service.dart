@@ -301,13 +301,16 @@ class AuthenticationService {
     required BuildContext context,
   }) async {
     final deviceUuid = await getOrCreateDeviceUuid(context);
-
     final deviceDetails = await _getDeviceDetails();
-
     // Lấy FCM token
     final fcmToken = await FirebaseMessaging.instance.getToken();
-
+    debugPrint('FCM Token fetched: $fcmToken');
+    debugPrint('Device details: $deviceDetails');
+    debugPrint('Sending login request with FCM token: $fcmToken');
     try {
+      debugPrint("Logging in with deviceUuid: '$deviceUuid'");
+      debugPrint("Device details: $deviceDetails");
+      debugPrint("FCM token: $fcmToken");
       final res = await _dio.post(
         ApiEndpoints.login,
         data: {

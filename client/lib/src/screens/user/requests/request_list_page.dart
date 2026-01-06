@@ -48,7 +48,7 @@ class _RequestListPageState extends State<RequestListPage>
     try {
       final User user = await _auth.getCachedUser() ?? await _auth.me();
       final data = await RequestService().listRequests(userId: user.id);
-
+      for (var r in data) {}
       if (mounted) {
         setState(() {
           _allRequests = data;
@@ -56,12 +56,13 @@ class _RequestListPageState extends State<RequestListPage>
         });
         _applyFilters();
       }
-    } catch (e) {
+    } catch (e, s) {
       debugPrint('Load history error: $e');
+      debugPrint('Stacktrace: $s');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load requests: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to load requests: $e')));
         setState(() => _isLoading = false);
       }
     }
@@ -70,7 +71,7 @@ class _RequestListPageState extends State<RequestListPage>
   // ================= FILTER LOGIC =================
   void _applyFilters() {
     if (!mounted) return; // Safety check
-    
+
     List<Request> list = [..._allRequests];
 
     // Filter by TAB
@@ -108,8 +109,8 @@ class _RequestListPageState extends State<RequestListPage>
         actions: [
           PopupMenuButton<String>(
             icon: Icon(
-              Icons.filter_list, 
-              color: _filterType == 'All' ? Colors.black : Colors.green
+              Icons.filter_list,
+              color: _filterType == 'All' ? Colors.black : Colors.green,
             ),
             tooltip: 'Filter by type',
             onSelected: (String value) {
@@ -130,7 +131,9 @@ class _RequestListPageState extends State<RequestListPage>
                         choice,
                         style: TextStyle(
                           color: isSelected ? Colors.green : Colors.black87,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.normal,
                         ),
                       ),
                       if (isSelected)
@@ -189,8 +192,8 @@ class _RequestListPageState extends State<RequestListPage>
             const Icon(Icons.inbox_outlined, size: 48, color: Colors.black26),
             const SizedBox(height: 12),
             Text(
-              _filterType == 'All' 
-                  ? 'No requests found' 
+              _filterType == 'All'
+                  ? 'No requests found'
                   : 'No ${_filterType.toLowerCase()}s found',
               style: const TextStyle(color: Colors.black54),
             ),
