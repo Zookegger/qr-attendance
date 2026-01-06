@@ -1,3 +1,36 @@
+class GeofenceConfig {
+  final List<List<Map<String, double>>> included;
+  final List<List<Map<String, double>>> excluded;
+
+  GeofenceConfig({this.included = const [], this.excluded = const []});
+
+  factory GeofenceConfig.fromJson(Map<String, dynamic> json) {
+    List<List<Map<String, double>>> parsePolygons(dynamic list) {
+      if (list == null) return [];
+      return (list as List).map((poly) {
+        return (poly as List).map((point) {
+          return {
+            'latitude': (point['latitude'] as num).toDouble(),
+            'longitude': (point['longitude'] as num).toDouble(),
+          };
+        }).toList();
+      }).toList();
+    }
+
+    return GeofenceConfig(
+      included: parsePolygons(json['included']),
+      excluded: parsePolygons(json['excluded']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'included': included,
+      'excluded': excluded,
+    };
+  }
+}
+
 class OfficeConfig {
   final int? id;
   final String name;
@@ -5,7 +38,7 @@ class OfficeConfig {
   final double longitude;
   final double radius;
   final String? wifiSsid;
-  final List<Map<String, double>>? polygon;
+  final GeofenceConfig? geofence;
 
   OfficeConfig({
     this.id,
@@ -14,7 +47,7 @@ class OfficeConfig {
     required this.longitude,
     required this.radius,
     this.wifiSsid,
-    this.polygon,
+    this.geofence,
   });
 
   factory OfficeConfig.fromJson(Map<String, dynamic> json) {
@@ -25,13 +58,8 @@ class OfficeConfig {
       longitude: (json['longitude'] as num).toDouble(),
       radius: (json['radius'] as num).toDouble(),
       wifiSsid: json['wifiSsid'],
-      polygon: json['polygon'] != null
-          ? (json['polygon'] as List).map((e) {
-              return {
-                'latitude': (e['latitude'] as num).toDouble(),
-                'longitude': (e['longitude'] as num).toDouble(),
-              };
-            }).toList()
+      geofence: json['geofence'] != null
+          ? GeofenceConfig.fromJson(json['geofence'])
           : null,
     );
   }
@@ -44,7 +72,7 @@ class OfficeConfig {
       'longitude': longitude,
       'radius': radius,
       'wifiSsid': wifiSsid,
-      'polygon': polygon,
+      'geofence': geofence?.toJson(),
     };
   }
 }

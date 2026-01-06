@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:qr_attendance_frontend/src/models/office_config.dart';
 import 'package:qr_attendance_frontend/src/services/office_config.service.dart';
-import 'package:qr_attendance_frontend/src/screens/admin/office/office_form_page.dart';
+import 'package:qr_attendance_frontend/src/screens/admin/office/office_config_form_page.dart';
+import 'package:qr_attendance_frontend/src/screens/admin/office/office_detail_page.dart';
 
 class OfficeConfigPage extends StatefulWidget {
   const OfficeConfigPage({super.key});
@@ -58,27 +59,36 @@ class _OfficeConfigPageState extends State<OfficeConfigPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _offices.isEmpty
-              ? const Center(
-                  child: Text(
-                    "No configuration yet, create a new configuration",
+          ? const Center(
+              child: Text("No configuration yet, create a new configuration"),
+            )
+          : ListView.builder(
+              itemCount: _offices.length,
+              itemBuilder: (context, index) {
+                final office = _offices[index];
+                return ListTile(
+                  title: Text(office.name),
+                  subtitle: Text(
+                    'Lat: ${office.latitude}, Long: ${office.longitude}\nRadius: ${office.radius}m, WiFi: ${office.wifiSsid ?? "N/A"}',
                   ),
-                )
-              : ListView.builder(
-                  itemCount: _offices.length,
-                  itemBuilder: (context, index) {
-                    final office = _offices[index];
-                    return ListTile(
-                      title: Text(office.name),
-                      subtitle: Text(
-                        'Lat: ${office.latitude}, Long: ${office.longitude}\nRadius: ${office.radius}m, WiFi: ${office.wifiSsid ?? "N/A"}',
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () => _navigateToOfficeForm(office),
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OfficeDetailPage(office: office),
                       ),
                     );
+                    if (result == true) {
+                      _loadOffices();
+                    }
                   },
-                ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () => _navigateToOfficeForm(office),
+                  ),
+                );
+              },
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToOfficeForm(),
         child: const Icon(Icons.add),

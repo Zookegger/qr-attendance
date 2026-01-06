@@ -3,7 +3,7 @@ import { CreateWorkshiftDTO, UpdateWorkshiftDTO } from '@my-types/workshift';
 
 export default class WorkshiftService {
   static async createWorkshift(data: CreateWorkshiftDTO) {
-    const created = await Workshift.create(data as any);
+   const created = await Workshift.create(data);
     return created;
   }
 
@@ -18,7 +18,7 @@ export default class WorkshiftService {
    static async updateWorkshift(id: number, payload: UpdateWorkshiftDTO) {
       const item = await Workshift.findByPk(id);
       if (!item) return null;
-      await item.update(payload as any);
+      await item.update(payload);
       return item;
    }
 
