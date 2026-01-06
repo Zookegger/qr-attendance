@@ -7,17 +7,22 @@ import { Op } from "sequelize";
 import { startOfMonth, endOfMonth, format } from "date-fns";
 import bcrypt from "bcrypt";
 import { Gender, UserRole } from "@models/user";
-import { AddUserDTO, UpdateUserDTO, AddOfficeConfigDTO, UpdateOfficeConfigDTO } from "@my-types/admin";
+import { AddUserDTO, UpdateUserDTO } from "@my-types/admin";
 import RefreshTokenService from "./refreshToken.service";
 
 export default class AdminService {
-	static async generateQR(officeId?: number): Promise<{ code: string; refreshAt: number }> {
+	static async generateQR(officeId?: number): Promise<{ code: string; refreshAt: number; officeId: number }> {
 		// generate 4-digit code, store in redis, emit to socket room
 		const num = crypto.randomInt(0, 10000);
 		const code = num.toString().padStart(4, "0");
 
-		const office = officeId ? await OfficeConfig.findByPk(officeId) : await OfficeConfig.findOne();
-		const idToUse = office ? (office as any).id : officeId;
+		let office = officeId ? await OfficeConfig.findByPk(officeId) : await OfficeConfig.findOne();
+		
+		if (!office) {
+			throw new Error("No office configuration found. Please create one first.");
+		}
+
+		const idToUse = office.id;
 		const ttlSeconds = 45;
 		const key = `checkin:office:${idToUse}:code:${code}`;
 
@@ -25,48 +30,15 @@ export default class AdminService {
 
 		try {
 			const io = getIo();
-			io.to(`office_${idToUse}`).emit("qr:update", { code, refreshAt: 30 });
+			io.to(`office_${idToUse}`).emit("qr:update", { code, refreshAt: 30, officeId: idToUse });
 		} catch (err) {
 			// ignore if socket not initialized
 		}
 
-		return { code, refreshAt: 30 };
+		return { code, refreshAt: 30, officeId: idToUse };
 	}
 
-	static async listOfficeConfig() {
-		return await OfficeConfig.findAll();
-	}
 
-	static async updateOfficeConfig(dto: AddOfficeConfigDTO | UpdateOfficeConfigDTO, id?: string) {
-		let config = null;
-
-		if (id) {
-			config = await OfficeConfig.findByPk(id);
-		} else {
-			config = await OfficeConfig.findOne({ where: { name: (dto as any).name } });
-		}
-
-		if (config) {
-			const { name, latitude, longitude, radius, wifi_ssid } = dto as UpdateOfficeConfigDTO;
-			if (name !== undefined) config.name = name;
-			if (latitude !== undefined) config.latitude = latitude;
-			if (longitude !== undefined) config.longitude = longitude;
-			if (radius !== undefined) config.radius = radius;
-			if (wifi_ssid !== undefined) config.wifi_ssid = wifi_ssid;
-			await config.save();
-		} else {
-			const { name, latitude, longitude, radius, wifi_ssid } = dto as AddOfficeConfigDTO;
-			config = await OfficeConfig.create({
-				name: name || 'Default Config',
-				latitude: latitude || 0,
-				longitude: longitude || 0,
-				radius: radius || 100,
-				wifi_ssid: wifi_ssid || null,
-			});
-		}
-
-		return config;
-	}
 
 	static async unbindDevice(userId: string) {
 		const user = await User.findByPk(userId);
@@ -75,12 +47,12 @@ export default class AdminService {
 		}
 
 		// Remove all device bindings for this user
-		await UserDevice.destroy({ where: { user_id: userId } });
+		await UserDevice.destroy({ where: { userId: userId } });
 
 		// Revoke all sessions for this user
 		await RefreshToken.destroy({
 			where: {
-				user_id: userId,
+				userId: userId,
 			},
 		});
 
@@ -135,11 +107,11 @@ export default class AdminService {
 				name: user?.name || "Unknown",
 				email: user?.email || "Unknown",
 				department: user?.department || "N/A",
-				check_in: record.check_in_time
-					? new Date(record.check_in_time).toLocaleTimeString()
+				check_in: record.checkInTime
+					? new Date(record.checkInTime).toLocaleTimeString()
 					: "-",
-				check_out: record.check_out_time
-					? new Date(record.check_out_time).toLocaleTimeString()
+				check_out: record.checkOutTime
+					? new Date(record.checkOutTime).toLocaleTimeString()
 					: "-",
 				status: record.status,
 			});
@@ -156,8 +128,8 @@ export default class AdminService {
 			role,
 			position,
 			department,
-			date_of_birth,
-			phone_number,
+			dateOfBirth,
+			phoneNumber,
 			address,
 			gender,
 		} = dto;
@@ -168,17 +140,17 @@ export default class AdminService {
 		}
 
 		const salt = await bcrypt.genSalt(10);
-		const password_hash = await bcrypt.hash(password, salt);
+		const passwordHash = await bcrypt.hash(password, salt);
 
 		const user = await User.create({
 			name,
 			email,
-			password_hash,
+			passwordHash,
 			role: (role as UserRole) || UserRole.USER,
 			position: position || null,
 			department: department || null,
-			date_of_birth: (typeof date_of_birth === 'string') ? new Date(date_of_birth) : date_of_birth || null,
-			phone_number: phone_number || null,
+			dateOfBirth: (typeof dateOfBirth === 'string') ? new Date(dateOfBirth) : dateOfBirth || null,
+			phoneNumber: phoneNumber || null,
 			address: address || null,
 			gender: gender ? (gender as Gender) : null,
 		});
@@ -191,15 +163,15 @@ export default class AdminService {
 			role: user.role,
 			position: user.position,
 			department: user.department,
-			date_of_birth: user.date_of_birth,
-			phone_number: user.phone_number,
+			dateOfBirth: user.dateOfBirth,
+			phoneNumber: user.phoneNumber,
 			address: user.address,
 			gender: user.gender,
 		};
 	}
 
 	static async getUserById(id: string) {
-		return await User.findByPk(id, { attributes: ["id", "name", "status", "email", "role", "device_name", "gender", "position", "date_of_birth", "phone_number", "address", "createdAt", "updatedAt"] });
+		return await User.findByPk(id, { attributes: ["id", "name", "status", "email", "role", "gender", "position", "dateOfBirth", "phoneNumber", "address", "createdAt", "updatedAt"] });
 	}
 
 	static async updateUser(id: string, dto: UpdateUserDTO) {
@@ -216,8 +188,8 @@ export default class AdminService {
 			position,
 			department,
 			status,
-			date_of_birth,
-			phone_number,
+			dateOfBirth,
+			phoneNumber,
 			address,
 			gender,
 		} = dto;
@@ -237,14 +209,14 @@ export default class AdminService {
 		if (status && Object.values(UserStatus).includes(status as UserStatus)) {
 			user.status = status as UserStatus;
 		}
-		if (date_of_birth) user.date_of_birth = (typeof date_of_birth === 'string') ? new Date(date_of_birth) : date_of_birth;
-		if (phone_number) user.phone_number = phone_number;
+		if (dateOfBirth) user.dateOfBirth = (typeof dateOfBirth === 'string') ? new Date(dateOfBirth) : dateOfBirth;
+		if (phoneNumber) user.phoneNumber = phoneNumber;
 		if (address) user.address = address;
 		if (gender) user.gender = gender as Gender;
 
 		if (password) {
 			const salt = await bcrypt.genSalt(10);
-			user.password_hash = await bcrypt.hash(password, salt);
+			user.passwordHash = await bcrypt.hash(password, salt);
 		}
 
 		await user.save();
@@ -257,8 +229,8 @@ export default class AdminService {
 			role: user.role,
 			position: user.position,
 			department: user.department,
-			date_of_birth: user.date_of_birth,
-			phone_number: user.phone_number,
+			dateOfBirth: user.dateOfBirth,
+			phoneNumber: user.phoneNumber,
 			address: user.address,
 			gender: user.gender,
 		};
@@ -266,7 +238,7 @@ export default class AdminService {
 
 	static async listUsers() {
 		const users = await User.findAll({
-			attributes: { exclude: ["password_hash"] },
+			attributes: { exclude: ["passwordHash"] },
 			order: [["createdAt", "DESC"]],
 		});
 		return users;

@@ -53,6 +53,7 @@ class Request {
   final String? reviewNote;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? userName;
 
   Request({
     this.id,
@@ -67,6 +68,7 @@ class Request {
     this.reviewNote,
     this.createdAt,
     this.updatedAt,
+    this.userName,
   });
 
   factory Request.fromJson(Map<String, dynamic> json) {
@@ -105,6 +107,7 @@ class Request {
       reviewNote: json['review_note'] ?? json['reviewNote'],
       createdAt: parseDate(json['created_at'] ?? json['createdAt']),
       updatedAt: parseDate(json['updated_at'] ?? json['updatedAt']),
+      userName: json['user'] != null ? json['user']['name'] : null,
     );
   }
 

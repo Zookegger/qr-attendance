@@ -22,8 +22,11 @@ const createRequest = async (
 		if (!user) return res.status(403).json({ message: "Unauthorized" });
 
 		const dto: CreateRequestDTO = {
-			user_id: user.id,
-			...req.body,
+			userId: user.id,
+			type: req.body.type,
+			fromDate: req.body.from_date,
+			toDate: req.body.to_date,
+			reason: req.body.reason,
 		};
 
 		// Handle file uploads
@@ -62,7 +65,12 @@ const listRequests = async (req: Request, res: Response, next: NextFunction) => 
 		const user = req.user;
 		if (!user) return res.status(401).json({ message: "Unauthorized" });
 
-		const filters = req.query as any;
+		const filters = {
+			status: req.query.status as string,
+			type: req.query.type as string,
+			fromDate: req.query.from_date as string,
+			userId: req.query.user_id as string,
+		};
 		const results = await RequestService.listRequests(user, filters);
 
 		return res.status(200).json({ requests: results });
@@ -99,7 +107,11 @@ const reviewRequest = async (req: Request, res: Response, next: NextFunction) =>
 		const { id } = req.params;
 		if (!id) return res.status(400).json({ message: "Request id is required" });
 
-		const dto: ReviewRequestDTO = req.body;
+		const dto: ReviewRequestDTO = {
+			status: req.body.status,
+			reviewNote: req.body.review_note,
+			reviewedBy: reviewer.id,
+		};
 
 		const updated = await RequestService.reviewRequest(id, dto, reviewer.id);
 		return res.status(200).json({ message: "Request reviewed", request: updated });
@@ -143,8 +155,8 @@ const updateRequest = async (req: Request, res: Response, next: NextFunction) =>
 
 		const dto: Partial<CreateRequestDTO> = {};
 		if (req.body.type) dto.type = req.body.type;
-		if (req.body.from_date) dto.from_date = req.body.from_date;
-		if (req.body.to_date) dto.to_date = req.body.to_date;
+		if (req.body.from_date) dto.fromDate = req.body.from_date;
+		if (req.body.to_date) dto.toDate = req.body.to_date;
 		if (req.body.reason) dto.reason = req.body.reason;
 
 		// If there are uploaded files for update, handle them and delete old ones safely

@@ -6,7 +6,7 @@ export interface CreateWorkshiftDTO {
   breakEnd: string;
   gracePeriod?: number;
   workDays?: number[];
-  office_config_id?: number | null;
+  officeConfigId?: number | null;
 }
 
 export interface UpdateWorkshiftDTO {
@@ -17,5 +17,5 @@ export interface UpdateWorkshiftDTO {
   breakEnd?: string;
   gracePeriod?: number;
   workDays?: number[];
-  office_config_id?: number | null;
+  officeConfigId?: number | null;
 }

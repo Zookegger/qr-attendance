@@ -4,7 +4,12 @@ import { CreateScheduleDTO, UpdateScheduleDTO, ScheduleQuery } from '@my-types/s
 
 const createSchedule = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const payload: CreateScheduleDTO = req.body;
+    const payload: CreateScheduleDTO = {
+      userId: req.body.user_id,
+      shiftId: req.body.shift_id,
+      startDate: req.body.start_date,
+      endDate: req.body.end_date,
+    };
     const created = await ScheduleService.createSchedule(payload);
     return res.status(201).json({ message: 'Schedule created', schedule: created });
   } catch (err) {
@@ -36,7 +41,12 @@ const getSchedule = async (req: Request, res: Response, next: NextFunction) => {
 const updateSchedule = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
-    const payload: UpdateScheduleDTO = req.body;
+    const payload: UpdateScheduleDTO = {
+      userId: req.body.user_id,
+      shiftId: req.body.shift_id,
+      startDate: req.body.start_date,
+      endDate: req.body.end_date,
+    };
     const updated = await ScheduleService.updateSchedule(id, payload);
     if (!updated) return res.status(404).json({ message: 'Schedule not found' });
     return res.json({ message: 'Schedule updated', schedule: updated });

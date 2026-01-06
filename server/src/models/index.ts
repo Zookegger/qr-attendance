@@ -8,39 +8,39 @@ import Workshift from './workshift';
 import Schedule from './schedule';
 
 // Define Associations
-User.hasMany(Attendance, { foreignKey: 'user_id', as: 'attendances' });
-Attendance.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+User.hasMany(Attendance, { foreignKey: 'userId', as: 'attendances' });
+Attendance.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
-User.hasMany(RequestModel, { foreignKey: 'user_id', as: 'requests' });
-RequestModel.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+User.hasMany(RequestModel, { foreignKey: 'userId', as: 'requests' });
+RequestModel.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 // Reviewer association: a request may be reviewed by a user (reviewer)
-User.hasMany(RequestModel, { foreignKey: 'reviewed_by', as: 'reviewedRequests' });
-RequestModel.belongsTo(User, { foreignKey: 'reviewed_by', as: 'reviewer' });
+User.hasMany(RequestModel, { foreignKey: 'reviewedBy', as: 'reviewedRequests' });
+RequestModel.belongsTo(User, { foreignKey: 'reviewedBy', as: 'reviewer' });
 
-User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens' });
-RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+User.hasMany(RefreshToken, { foreignKey: 'userId', as: 'refreshTokens' });
+RefreshToken.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 // User <-> UserDevice
-User.hasMany(UserDevice, { foreignKey: 'user_id', as: 'devices' });
-UserDevice.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+User.hasMany(UserDevice, { foreignKey: 'userId', as: 'devices' });
+UserDevice.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 // Workshift <-> OfficeConfig
-OfficeConfig.hasMany(Workshift, { foreignKey: 'office_config_id', as: 'workshifts' });
-Workshift.belongsTo(OfficeConfig, { foreignKey: 'office_config_id', as: 'officeConfig' });
+OfficeConfig.hasMany(Workshift, { foreignKey: 'officeConfigId', as: 'workshifts' });
+Workshift.belongsTo(OfficeConfig, { foreignKey: 'officeConfigId', as: 'officeConfig' });
 
 // Workshift <-> Schedule
-Workshift.hasMany(Schedule, { foreignKey: 'shift_id', as: 'schedules' });
-Schedule.belongsTo(Workshift, { foreignKey: 'shift_id', as: 'Shift' });
+Workshift.hasMany(Schedule, { foreignKey: 'shiftId', as: 'schedules' });
+Schedule.belongsTo(Workshift, { foreignKey: 'shiftId', as: 'Shift' });
 
 // Attendance <-> Schedule
-Schedule.hasMany(Attendance, { foreignKey: 'schedule_id', as: 'attendances' });
-Attendance.belongsTo(Schedule, { foreignKey: 'schedule_id', as: 'Schedule' });
+Schedule.hasMany(Attendance, { foreignKey: 'scheduleId', as: 'attendances' });
+Attendance.belongsTo(Schedule, { foreignKey: 'scheduleId', as: 'Schedule' });
 
 // Attendance <-> Workshift
 // Attendance <-> Request
-RequestModel.hasMany(Attendance, { foreignKey: 'request_id', as: 'attendances' });
-Attendance.belongsTo(RequestModel, { foreignKey: 'request_id', as: 'request' });
+RequestModel.hasMany(Attendance, { foreignKey: 'requestId', as: 'attendances' });
+Attendance.belongsTo(RequestModel, { foreignKey: 'requestId', as: 'request' });
 
 export {
   User,

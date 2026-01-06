@@ -19,46 +19,6 @@ const generateQR = async (req: Request, res: Response, next: NextFunction) => {
 	}
 };
 
-const getOfficeConfig = async (req: Request, res: Response, next: NextFunction) => {
-	const user = req.user;
-	if (!user) {
-		return res.status(403).json({ status: 403, message: "Unauthorized" });
-	}
-	try {
-		const config = await AdminService.listOfficeConfig();
-		return res.json(config);
-	} catch (error) {
-		return next(error);
-	}
-};
-
-const updateOfficeConfig = async (req: Request, res: Response, next: NextFunction) => {
-	const errors = validationResult(req);
-	if (!errors.isEmpty()) {
-		return res.status(400).json({ errors: errors.array() });
-	}
-
-	const user = req.user;
-	if (!user) {
-		return res.status(403).json({ status: 403, message: "Unauthorized" });
-	}
-	try {
-		// const { latitude, longitude, radius, wifi_ssid } =
-		// 	req.body;
-
-		// const config = await AdminService.updateOfficeConfig({
-		// 	latitude,
-		// 	longitude,
-		// 	radius,
-		// 	wifi_ssid,
-		// });
-		// return res.json({ message: "Configuration updated", config });
-		throw new Error("Not Implemented");
-	} catch (error) {
-		return next(error);
-	}
-};
-
 const exportReport = async (req: Request, res: Response, next: NextFunction) => {
 	const user = req.user;
 	if (!user) {
@@ -117,8 +77,8 @@ const addUser = async (req: Request, res: Response, next: NextFunction) => {
 			role,
 			position,
 			department,
-			date_of_birth,
-			phone_number,
+			dateOfBirth: date_of_birth,
+			phoneNumber: phone_number,
 			address,
 			gender,
 		});
@@ -198,8 +158,8 @@ const updateUser = async (req: Request, res: Response, next: NextFunction) => {
 			position,
 			department,
 			status,
-			date_of_birth,
-			phone_number,
+			dateOfBirth: date_of_birth,
+			phoneNumber: phone_number,
 			address,
 			gender,
 		});
@@ -306,8 +266,6 @@ const unbindDevice = async (req: Request, res: Response, next: NextFunction) => 
 
 export const AdminController = {
 	generateQR,
-	getOfficeConfig,
-	updateOfficeConfig,
 	exportReport,
 	addUser,
 	findUserByID,

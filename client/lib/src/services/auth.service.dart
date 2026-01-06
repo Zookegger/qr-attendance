@@ -283,6 +283,18 @@ class AuthenticationService {
     return created;
   }
 
+  Future<bool> verifyPassword(String email, String password) async {
+    try {
+      final res = await _dio.post(
+        ApiEndpoints.verifyPassword,
+        data: {'email': email, 'password': password},
+      );
+      return res.statusCode == 200 && res.data['success'] == true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<AuthSession> login({
     required String email,
     required String password,
@@ -301,8 +313,8 @@ class AuthenticationService {
         data: {
           'email': email,
           'password': password,
-          'device_uuid': deviceUuid,
-          'fcm_token': fcmToken, // thêm đây
+          'deviceUuid': deviceUuid,
+          'fcmToken': fcmToken,
           ...deviceDetails,
         },
       );
@@ -332,6 +344,7 @@ class AuthenticationService {
 
   Future<AuthSession> refresh() async {
     final refreshToken = await getRefreshToken();
+    final deviceUuid = await _storage.read(key: _deviceUuidKey);
     if (refreshToken == null || refreshToken.trim().isEmpty) {
       throw AuthException('Missing refresh token. Please login again.');
     }
@@ -339,7 +352,7 @@ class AuthenticationService {
     try {
       final res = await _dio.post(
         ApiEndpoints.refresh,
-        data: {'refreshToken': refreshToken},
+        data: {'refreshToken': refreshToken, 'deviceUuid': deviceUuid},
       );
 
       return _persistAndReturnSession(
@@ -347,7 +360,6 @@ class AuthenticationService {
         invalidMessage: 'Refresh succeeded but response was invalid.',
       );
     } on DioException catch (e) {
-      await logout();
       throw AuthException(
         _extractMessage(e.response?.data) ?? 'Token refresh failed',
         e.response?.statusCode,
@@ -539,9 +551,9 @@ class AuthenticationService {
     }
 
     return {
-      'device_name': deviceName,
-      'device_model': deviceModel,
-      'os_version': osVersion,
+      'deviceName': deviceName,
+      'deviceModel': deviceModel,
+      'deviceOsVersion': osVersion,
     };
   }
 

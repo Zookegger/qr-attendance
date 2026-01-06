@@ -10,41 +10,60 @@ import RefreshTokenService from "./refreshToken.service";
 import { database } from "@config/index";
 
 export default class AuthService {
-	static async login(email: string, password: string, device_uuid: string, device_name: string, device_model: string, device_os_version: string): Promise<AuthResponse> {
+	// server/src/services/auth.service.ts
+
+	static async login(
+		email: string,
+		password: string,
+		deviceUuid: string,
+		deviceName: string,
+		deviceModel: string,
+		deviceOsVersion: string,
+		fcmToken?: string
+	): Promise<AuthResponse> {
 		const user = await User.findOne({ where: { email } });
-		if (!user) {
-			throw new Error("Invalid credentials");
-		}
+		if (!user) throw new Error("Invalid credentials");
 
-		const isMatch = await bcrypt.compare(password, user.password_hash);
-		if (!isMatch) {
-			throw new Error("Invalid credentials");
-		}
+		const isMatch = await bcrypt.compare(password, user.passwordHash);
+		if (!isMatch) throw new Error("Invalid credentials");
 
-		if (!device_uuid) {
-			throw new Error("Device UUID is required for login");
-		}
+		if (!deviceUuid) throw new Error("Device UUID is required for login");
 
-		let device = await UserDevice.findOne({ where: { user_id: user.id, device_uuid } });
+		let device = await UserDevice.findOne({ where: { userId: user.id, deviceUuid } });
 
 		if (device) {
-			await device.update({ device_name, device_model, device_os_version, last_login: new Date() });
+			//  Update existing device (including FCM)
+			await device.update({
+				deviceName,
+				deviceModel,
+				deviceOsVersion,
+				lastLogin: new Date(),
+				fcmToken: fcmToken ?? device.fcmToken // <--- Update here
+			});
 		} else {
+			// Check Binding Constraints
 			if (user.role === UserRole.USER) {
-				const deviceCount = await UserDevice.count({ where: { user_id: user.id } });
+				const deviceCount = await UserDevice.count({ where: { userId: user.id } });
 				if (deviceCount >= 1) {
+					// This logic ALREADY protects you. The controller check was redundant.
 					throw new Error("This account is already bound to another device. Contact admin to reset.");
 				}
 			}
 
-			device = await UserDevice.create({ user_id: user.id, device_uuid, device_name, device_model, device_os_version });
+			// Create new device (including FCM)
+			device = await UserDevice.create({
+				userId: user.id,
+				deviceUuid,
+				deviceName,
+				deviceModel,
+				deviceOsVersion,
+				fcmToken: fcmToken || null // <--- Insert here
+			});
 		}
 
-		// Use RefreshTokenService to generate tokens (include device UUID when available)
 		const { accessToken, refreshToken } = await RefreshTokenService.generateRefreshToken(
 			user,
-			{ id: user.id, role: user.role, deviceUuid: device.device_uuid },
-
+			{ id: user.id, role: user.role, deviceUuid: device.deviceUuid },
 		);
 
 		return {
@@ -64,6 +83,14 @@ export default class AuthService {
 		await RefreshTokenService.revokeRefreshToken(refreshToken);
 	}
 
+	static async verifyPassword(email: string, password: string): Promise<boolean> {
+		const user = await User.findOne({ where: { email } });
+		if (!user) return false;
+
+		const isMatch = await bcrypt.compare(password, user.passwordHash);
+		return isMatch;
+	}
+
 	static async forgotPassword(email: string): Promise<void> {
 		if (!email) {
 			throw { status: 400, message: "" };
@@ -80,8 +107,8 @@ export default class AuthService {
 		const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
 
 		await user.update({
-			password_reset_token: token,
-			password_reset_expires: expiresAt
+			passwordResetToken: token,
+			passwordResetExpires: expiresAt
 		});
 
 		const resetLink = `${process.env.API_URL}/auth/reset-password?token=${token}&email=${encodeURIComponent(
@@ -115,8 +142,8 @@ export default class AuthService {
 		const user = await User.findOne({
 			where: {
 				email,
-				password_reset_token: token,
-				password_reset_expires: { [Op.gt]: new Date() },
+				passwordResetToken: token,
+				passwordResetExpires: { [Op.gt]: new Date() },
 			},
 		});
 
@@ -126,19 +153,20 @@ export default class AuthService {
 
 		const salt = await bcrypt.genSalt(10);
 		await user.update({
-			password_hash: await bcrypt.hash(newPassword, salt),
-			password_reset_token: null,
-			password_reset_expires: null
+			passwordHash: await bcrypt.hash(newPassword, salt),
+			passwordResetToken: null,
+			passwordResetExpires: null
 		});
 
 		// Revoke all sessions
 		await this.revokeAllUserSessions(user.id);
 	}
 
-	static async refresh(tokenString: string): Promise<AuthResponse> {
+	static async refresh(tokenString: string, deviceUuid: string): Promise<AuthResponse> {
 		// Use RefreshTokenService to rotate tokens
 		const { accessToken, refreshToken, user } = await RefreshTokenService.rotateRefreshToken(
-			tokenString
+			tokenString,
+			deviceUuid,
 		);
 
 		return {
@@ -176,13 +204,13 @@ export default class AuthService {
 		}
 
 		// Verify current password
-		const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
+		const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
 		if (!isCurrentPasswordValid) {
 			throw new Error("Current password is incorrect");
 		}
 
 		// Check if new password is different from current
-		const isSameAsCurrent = await bcrypt.compare(newPassword, user.password_hash);
+		const isSameAsCurrent = await bcrypt.compare(newPassword, user.passwordHash);
 		if (isSameAsCurrent) {
 			throw new Error("New password must be different from current password");
 		}
@@ -192,7 +220,7 @@ export default class AuthService {
 		const hashedNewPassword = await bcrypt.hash(newPassword, salt);
 
 		// Update the user's password
-		await user.update({ password_hash: hashedNewPassword });
+		await user.update({ passwordHash: hashedNewPassword });
 
 		// Revoke all sessions
 		await this.revokeAllUserSessions(user.id);
@@ -207,11 +235,11 @@ export default class AuthService {
 			}
 
 			// Remove device bindings for this user
-			await UserDevice.destroy({ where: { user_id: userId }, transaction });
+			await UserDevice.destroy({ where: { userId: userId }, transaction });
 
 			await RefreshToken.update(
 				{ revoked: true },
-				{ where: { user_id: userId }, transaction }
+				{ where: { userId: userId }, transaction }
 			);
 
 			await transaction.commit();

@@ -52,21 +52,21 @@ export const RequestStatusLabels: Record<RequestStatus, string> = {
 
 interface RequestAttributes {
 	id: string;
-	user_id: string;
+	userId: string;
 	type: RequestType;
-	from_date?: Date | null;
-	to_date?: Date | null;
+	fromDate?: Date | null;
+	toDate?: Date | null;
 	reason: string;
 	attachments?: string | null; // JSON array of file paths
 	status: RequestStatus;
-	reviewed_by?: string | null;
-	review_note?: string | null;
+	reviewedBy?: string | null;
+	reviewNote?: string | null;
 }
 
 interface RequestCreationAttributes
 	extends Optional<
 		RequestAttributes,
-		"id" | "status" | "attachments" | "reviewed_by" | "review_note" | "from_date" | "to_date"
+		"id" | "status" | "attachments" | "reviewedBy" | "reviewNote" | "fromDate" | "toDate"
 	> {}
 
 export default class RequestModel
@@ -74,15 +74,15 @@ export default class RequestModel
 	implements RequestAttributes
 {
 	public declare id: string;
-	public declare user_id: string;
+	public declare userId: string;
 	public declare type: RequestType;
-	public declare from_date: Date | null;
-	public declare to_date: Date | null;
+	public declare fromDate: Date | null;
+	public declare toDate: Date | null;
 	public declare reason: string;
 	public declare attachments: string | null;
 	public declare status: RequestStatus;
-	public declare reviewed_by: string | null;
-	public declare review_note: string | null;
+	public declare reviewedBy: string | null;
+	public declare reviewNote: string | null;
 
 	public declare readonly createdAt: Date;
 	public declare readonly updatedAt: Date;
@@ -95,7 +95,7 @@ RequestModel.init(
 			defaultValue: DataTypes.UUIDV4,
 			primaryKey: true,
 		},
-		user_id: {
+		userId: {
 			type: DataTypes.UUID,
 			allowNull: false,
 		},
@@ -104,11 +104,11 @@ RequestModel.init(
 			allowNull: false,
 			defaultValue: RequestType.OTHER,
 		},
-		from_date: {
+		fromDate: {
 			type: DataTypes.DATE,
 			allowNull: true,
 		},
-		to_date: {
+		toDate: {
 			type: DataTypes.DATE,
 			allowNull: true,
 		},
@@ -125,11 +125,11 @@ RequestModel.init(
 			allowNull: false,
 			defaultValue: RequestStatus.PENDING,
 		},
-		reviewed_by: {
+		reviewedBy: {
 			type: DataTypes.UUID,
 			allowNull: true,
 		},
-		review_note: {
+		reviewNote: {
 			type: DataTypes.TEXT,
 			allowNull: true,
 		},
@@ -137,6 +137,7 @@ RequestModel.init(
 	{
 		sequelize,
 		tableName: "requests",
+		underscored: true,
 		timestamps: true,
 	}
 );

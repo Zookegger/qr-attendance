@@ -3,19 +3,19 @@ import sequelize from "@config/database";
 
 interface RefreshTokenAttributes {
 	id: string;
-	user_id: string;
-	token_hash: string;
-	device_uuid?: string | null;
+	userId: string;
+	tokenHash: string;
+	deviceUuid?: string | null;
 	revoked: boolean;
-	expires_at: Date;
-	created_at: Date;
-	updated_at: Date;
+	expiresAt: Date;
+	createdAt: Date;
+	updatedAt: Date;
 }
 
 interface RefreshTokenCreationAttributes
 	extends Optional<
 		RefreshTokenAttributes,
-		"id" | "device_uuid" | "created_at" | "updated_at"
+		"id" | "deviceUuid" | "createdAt" | "updatedAt"
 	> {}
 
 export default class RefreshToken
@@ -23,14 +23,14 @@ export default class RefreshToken
 	implements RefreshTokenAttributes
 {
 	public declare id: string;
-	public declare user_id: string;
-	public declare token_hash: string;
-	public declare device_uuid?: string | null;
+	public declare userId: string;
+	public declare tokenHash: string;
+	public declare deviceUuid?: string | null;
 	public declare revoked: boolean;
-	public declare expires_at: Date;
+	public declare expiresAt: Date;
 
-	public declare readonly created_at: Date;
-	public declare readonly updated_at: Date;
+	public declare readonly createdAt: Date;
+	public declare readonly updatedAt: Date;
 }
 
 RefreshToken.init(
@@ -40,7 +40,7 @@ RefreshToken.init(
 			defaultValue: DataTypes.UUIDV4,
 			primaryKey: true,
 		},
-		user_id: {
+		userId: {
 			type: DataTypes.UUID,
 			allowNull: false,
 			references: {
@@ -48,11 +48,11 @@ RefreshToken.init(
 				key: "id",
 			},
 		},
-		token_hash: {
+		tokenHash: {
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
-		device_uuid: {
+		deviceUuid: {
 			type: DataTypes.STRING,
 			allowNull: true,
 		},
@@ -60,7 +60,7 @@ RefreshToken.init(
 			type: DataTypes.BOOLEAN,
 			defaultValue: false,
 		},
-		expires_at: {
+		expiresAt: {
 			type: DataTypes.DATE,
 			allowNull: false,
 		},

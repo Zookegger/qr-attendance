@@ -5,27 +5,27 @@ import Workshift from './workshift';
 
 interface ScheduleAttributes {
    id: number;
-   user_id: string;
-   shift_id: number;
-   start_date: string;
-   end_date?: string | null;
+   userId: string;
+   shiftId: number;
+   startDate: string;
+   endDate?: string | null;
 }
 
 interface ScheduleCreationAttributes extends Optional<ScheduleAttributes, 'id'> { }
 
 class Schedule extends Model<ScheduleAttributes, ScheduleCreationAttributes> implements ScheduleAttributes {
    public declare id: number;
-   public declare user_id: string;
-   public declare shift_id: number;
-   public declare start_date: string;
-   public declare end_date?: string | null;
+   public declare userId: string;
+   public declare shiftId: number;
+   public declare startDate: string;
+   public declare endDate?: string | null;
 
    // Association mixins
    public declare Shift?: Workshift;
    public declare User?: User;
 
-   public readonly created_at!: Date;
-   public readonly updated_at!: Date;
+   public readonly createdAt!: Date;
+   public readonly updatedAt!: Date;
 }
 
 Schedule.init({
@@ -34,10 +34,10 @@ Schedule.init({
       autoIncrement: true,
       primaryKey: true,
    },
-   user_id: { type: DataTypes.UUID, allowNull: false },
-   shift_id: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
-   start_date: { type: DataTypes.DATEONLY, allowNull: false },
-   end_date: { type: DataTypes.DATEONLY, allowNull: true },
+   userId: { type: DataTypes.UUID, allowNull: false },
+   shiftId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
+   startDate: { type: DataTypes.DATEONLY, allowNull: false },
+   endDate: { type: DataTypes.DATEONLY, allowNull: true },
 }, {
    sequelize,
    tableName: 'schedules',
@@ -46,6 +46,6 @@ Schedule.init({
 });
 
 // Setup Associations (defined centrally in models/index.ts)
-Schedule.belongsTo(User, { foreignKey: 'user_id', as: 'User' });
+Schedule.belongsTo(User, { foreignKey: 'userId', as: 'User' });
 
 export default Schedule;

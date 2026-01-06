@@ -1,11 +1,12 @@
 import { Schedule } from "@models";
 import { CreateScheduleDTO, UpdateScheduleDTO, ScheduleQuery } from '@my-types/schedule';
+import { Op } from "sequelize";
 
 export default class ScheduleService {
-  static async createSchedule(data: CreateScheduleDTO) {
-    const created = await Schedule.create(data as any);
-    return created;
-  }
+   static async createSchedule(data: CreateScheduleDTO) {
+      const created = await Schedule.create(data as any);
+      return created;
+   }
 
    static async listSchedules(page = 1, limit = 50) {
       const pageNum = Math.max(1, Number(page) || 1);
@@ -13,7 +14,7 @@ export default class ScheduleService {
       const offset = (pageNum - 1) * pageSize;
 
       const items = await Schedule.findAll({
-         order: [["created_at", "DESC"]],
+         order: [["createdAt", "DESC"]],
          limit: pageSize,
          offset,
       });
@@ -41,11 +42,29 @@ export default class ScheduleService {
 
    static async searchSchedules(query: ScheduleQuery) {
       const where: any = {};
-      if (query.user_id) where.user_id = query.user_id;
-      if (query.shift_id) where.shift_id = Number(query.shift_id);
-      if (query.start_date) where.start_date = query.start_date;
-      if (query.end_date) where.end_date = query.end_date;
+      if (query.userId) where.userId = query.userId;
+      if (query.shiftId) where.shiftId = Number(query.shiftId);
+      if (query.startDate) where.startDate = query.startDate;
+      if (query.endDate) where.endDate = query.endDate;
 
-      return Schedule.findAll({ where, order: [["start_date", "DESC"]] });
+      // Range Overlap Logic:
+      // Schedule starts before the end of the range AND (ends after the start of the range OR is indefinite)
+      if (query.from && query.to) {
+         where[Op.and] = [
+            { startDate: { [Op.lte]: query.to } },
+            {
+               [Op.or]: [
+                  { endDate: { [Op.gte]: query.from } },
+                  { endDate: null }
+               ]
+            }
+         ];
+      }
+
+      return Schedule.findAll({ 
+         where, 
+         order: [["startDate", "DESC"]],
+         include: ["Shift", "User"] // Include relations for the roster
+      });
    }
 }

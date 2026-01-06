@@ -18,7 +18,7 @@ const refreshTokenWorker = new Worker(
 		// 1) delete expired tokens
 		const now = new Date();
 		const expiredDeleted = await RefreshToken.destroy({
-			where: { expires_at: { [Op.lt]: now } },
+			where: { expiresAt: { [Op.lt]: now } },
 		});
 
 		// 2) optionally cleanup revoked tokens older than 7 days
@@ -26,7 +26,7 @@ const refreshTokenWorker = new Worker(
 		const revokedDeleted = await RefreshToken.destroy({
 			where: {
 				revoked: true,
-				updated_at: { [Op.lt]: cutoff },
+				updatedAt: { [Op.lt]: cutoff },
 			},
 		});
 

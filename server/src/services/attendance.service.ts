@@ -1,4 +1,4 @@
-import { Attendance, OfficeConfig, Schedule, Workshift, RequestModel } from "@models";
+import { Attendance, OfficeConfig, Schedule, Workshift, RequestModel, User } from "@models";
 import { RequestType } from "@models/request";
 import { calculateDistance } from "@utils/geo";
 import { Op } from "sequelize";
@@ -6,10 +6,11 @@ import { format, startOfMonth, endOfMonth } from "date-fns";
 import { AttendanceMethod, AttendanceStatus } from "@models/attendance";
 import { CheckInOutDTO } from '@my-types/attendance';
 import redis from '@config/redis';
+import { getIo } from "@utils/socket";
 
 export default class AttendanceService {
 		static async checkIn(dto: CheckInOutDTO) {
-			const { user_id: userId, code, latitude, longitude, office_id } = dto;
+			const { userId, code, latitude, longitude, officeId } = dto;
 
 		// 0. Rate limiting by strikes
 		const strikesKey = `checkin:strikes:${userId}`;
@@ -26,11 +27,11 @@ export default class AttendanceService {
 		const todayStr = format(new Date(), "yyyy-MM-dd");
 		const schedule = await Schedule.findOne({
 			where: {
-				user_id: userId,
-				start_date: { [Op.lte]: todayStr },
+				userId: userId,
+				startDate: { [Op.lte]: todayStr },
 				[Op.or]: [
-					{ end_date: null },
-					{ end_date: { [Op.gte]: todayStr } },
+					{ endDate: null },
+					{ endDate: { [Op.gte]: todayStr } },
 				],
 			},
 			include: [
@@ -42,19 +43,25 @@ export default class AttendanceService {
 			],
 		});
 
+		if (!schedule) {
+			const err: any = new Error("No scheduled shift found for today");
+			err.status = 400;
+			throw err;
+		}
+
 		let officeConfig = null as any;
-		if (schedule && (schedule as any).Shift && (schedule as any).Shift.office_config_id) {
-			officeConfig = await OfficeConfig.findByPk((schedule as any).Shift.office_config_id);
-		} else {
-			officeConfig = await OfficeConfig.findOne();
+		if (schedule && (schedule as any).Shift && (schedule as any).Shift.officeConfigId) {
+			officeConfig = await OfficeConfig.findByPk((schedule as any).Shift.officeConfigId);
 		}
 
 		if (!officeConfig) {
-			throw new Error("Office configuration not found");
+			const err: any = new Error("Scheduled shift has no assigned office configuration");
+			err.status = 400;
+			throw err;
 		}
 
 		// 1. Verify code exists in Redis for this office
-		const officeIdToUse = office_id || (officeConfig as any).id;
+		const officeIdToUse = officeId || (officeConfig as any).id;
 		const redisKey = `checkin:office:${officeIdToUse}:code:${code}`;
 		const ok = await redis.get(redisKey);
 		if (!ok) {
@@ -85,12 +92,12 @@ export default class AttendanceService {
 		const today = format(new Date(), "yyyy-MM-dd");
 		const existingAttendance = await Attendance.findOne({
 			where: {
-				user_id: userId,
+				userId: userId,
 				date: today,
 			},
 		});
 
-		if (existingAttendance && existingAttendance.check_in_time) {
+		if (existingAttendance && existingAttendance.checkInTime) {
 			throw new Error("Already checked in today");
 		}
 
@@ -117,19 +124,34 @@ export default class AttendanceService {
 		}
 
 		const attendance = await Attendance.create({
-			user_id: userId,
+			userId: userId,
 			date: today as any, // Sequelize expects string or Date, but TS might complain if strict
-			schedule_id: schedule ? (schedule as any).id : null,
-			check_in_time: new Date(),
-			check_in_location: { latitude, longitude },
-			check_in_method: AttendanceMethod.QR,
+			scheduleId: schedule ? (schedule as any).id : null,
+			checkInTime: new Date(),
+			checkInLocation: { latitude, longitude },
+			checkInMethod: AttendanceMethod.QR,
 			status: status,
 		});
+
+		// Emit socket event for kiosk feedback
+		try {
+			const user = await User.findByPk(userId);
+			const userName = user ? user.name : "Unknown User";
+			const io = getIo();
+			io.to(`office_${officeIdToUse}`).emit("attendance:log", {
+				userName,
+				action: "Check In",
+				time: new Date(),
+			});
+		} catch (err) {
+			console.error("Socket emit error:", err);
+		}
+
 		return attendance;
 	}
 
 	static async checkOut(dto: CheckInOutDTO) {
-		const { user_id: userId, code, latitude, longitude, office_id } = dto;
+		const { userId, code, latitude, longitude, officeId } = dto;
 
 		// Rate limiting
 		const strikesKey = `checkin:strikes:${userId}`;
@@ -145,11 +167,11 @@ export default class AttendanceService {
 		const todayStr = format(new Date(), "yyyy-MM-dd");
 		const schedule = await Schedule.findOne({
 			where: {
-				user_id: userId,
-				start_date: { [Op.lte]: todayStr },
+				userId: userId,
+				startDate: { [Op.lte]: todayStr },
 				[Op.or]: [
-					{ end_date: null },
-					{ end_date: { [Op.gte]: todayStr } },
+					{ endDate: null },
+					{ endDate: { [Op.gte]: todayStr } },
 				],
 			},
 			include: [
@@ -161,19 +183,25 @@ export default class AttendanceService {
 			],
 		});
 
+		if (!schedule) {
+			const err: any = new Error("No scheduled shift found for today");
+			err.status = 400;
+			throw err;
+		}
+
 		let officeConfig = null as any;
-		if (schedule && (schedule as any).Shift && (schedule as any).Shift.office_config_id) {
-			officeConfig = await OfficeConfig.findByPk((schedule as any).Shift.office_config_id);
-		} else {
-			officeConfig = await OfficeConfig.findOne();
+		if (schedule && (schedule as any).Shift && (schedule as any).Shift.officeConfigId) {
+			officeConfig = await OfficeConfig.findByPk((schedule as any).Shift.officeConfigId);
 		}
 
 		if (!officeConfig) {
-			throw new Error("Office configuration not found");
+			const err: any = new Error("Scheduled shift has no assigned office configuration");
+			err.status = 400;
+			throw err;
 		}
 
 		// Verify code exists in Redis for this office
-		const officeIdToUse = office_id || (officeConfig as any).id;
+		const officeIdToUse = officeId || (officeConfig as any).id;
 		const redisKey = `checkin:office:${officeIdToUse}:code:${code}`;
 		const ok = await redis.get(redisKey);
 		if (!ok) {
@@ -201,27 +229,27 @@ export default class AttendanceService {
 		const today = format(new Date(), "yyyy-MM-dd");
 		const attendance = await Attendance.findOne({
 			where: {
-				user_id: userId,
+				userId: userId,
 				date: today,
 			},
 		});
 
-		if (!attendance || !attendance.check_in_time) {
+		if (!attendance || !attendance.checkInTime) {
 			throw new Error("You have not checked in yet");
 		}
 
-		if (attendance.check_out_time) {
+		if (attendance.checkOutTime) {
 			throw new Error("Already checked out today");
 		}
 
 		// 4. Update Attendance & detect early leave
 		const nowDate = new Date();
-		attendance.check_out_time = nowDate;
-		attendance.check_out_location = { latitude, longitude };
-		attendance.check_out_method = AttendanceMethod.QR;
+		attendance.checkOutTime = nowDate;
+		attendance.checkOutLocation = { latitude, longitude };
+		attendance.checkOutMethod = AttendanceMethod.QR;
 
 		// Attach schedule_id if we resolved one earlier (useful for reports)
-		if (schedule) attendance.schedule_id = (schedule as any).id;
+		if (schedule) attendance.scheduleId = (schedule as any).id;
 
 		// Early-leave detection: if shift exists and current time is before allowed end
 		if (schedule && (schedule as any).Shift) {
@@ -236,12 +264,12 @@ export default class AttendanceService {
 				// create a request record for early leave
 				const reason = `Auto-generated early-leave detected at ${nowDate.toISOString()}`;
 				const req = await RequestModel.create({
-					user_id: userId,
+					userId: userId,
 					type: RequestType.LATE_EARLY,
-					from_date: nowDate,
+					fromDate: nowDate,
 					reason,
 				});
-				attendance.request_id = req.id;
+				attendance.requestId = req.id;
 			}
 		}
 
@@ -250,7 +278,7 @@ export default class AttendanceService {
 	}
 
 	static async getHistory(userId: string, month?: string, year?: string) {
-		const whereClause: any = { user_id: userId };
+		const whereClause: any = { userId: userId };
 
 		if (month && year) {
 			const reportDate = new Date(Number(year), Number(month) - 1);

@@ -1,11 +1,13 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_attendance_frontend/src/models/Notification.dart';
+import 'package:qr_attendance_frontend/src/models/request.dart';
 import 'package:qr_attendance_frontend/src/screens/shared/NotificationScreen.dart';
 import 'dart:async';
 
-import '../../../models/user.dart';
-import '../../../services/auth.service.dart';
+import 'package:qr_attendance_frontend/src/models/user.dart';
+import 'package:qr_attendance_frontend/src/services/auth.service.dart';
+import 'package:qr_attendance_frontend/src/services/request.service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,14 +21,16 @@ class _HomePageState extends State<HomePage> {
 
   User? _user;
   int notificationCount = 0;
+  List<Request> _recentRequests = [];
+  final RequestService _requestService = RequestService();
 
-  // Shift Data
+  // Shift Data (Mock)
   final String checkInTime = "08:02 AM";
   final String checkOutTime = "--:--";
   final String totalTime = "1h 39m";
-  final bool isCheckedIn = true; // Simulated status
+  final bool isCheckedIn = true;
 
-  // Stats Data
+  // Stats Data (Mock)
   final int daysWorked = 22;
   final int daysOff = 1;
   final String overtimeHours = "4.5h";
@@ -75,11 +79,9 @@ class _HomePageState extends State<HomePage> {
                     context: context,
                     builder: (BuildContext dctx) {
                       return AlertDialog(
-                        // Modern shape
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        // Icon for quick visual context
                         icon: const Icon(
                           Icons.logout,
                           color: Colors.redAccent,
@@ -90,10 +92,8 @@ class _HomePageState extends State<HomePage> {
                           'Are you sure you want to end your session?',
                           textAlign: TextAlign.center,
                         ),
-                        actionsAlignment: MainAxisAlignment
-                            .spaceEvenly, // Spreads buttons out
+                        actionsAlignment: MainAxisAlignment.spaceEvenly,
                         actions: [
-                          // Neutral Cancel Button
                           TextButton(
                             onPressed: () => Navigator.pop(dctx),
                             child: const Text(
@@ -101,14 +101,13 @@ class _HomePageState extends State<HomePage> {
                               style: TextStyle(color: Colors.grey),
                             ),
                           ),
-                          // Destructive Action Button (Red)
                           TextButton(
                             onPressed: () {
                               Navigator.pop(dctx);
                               _handleLogout();
                             },
                             style: TextButton.styleFrom(
-                              foregroundColor: Colors.red, // The important part
+                              foregroundColor: Colors.red,
                             ),
                             child: const Text(
                               'Logout',
@@ -132,6 +131,22 @@ class _HomePageState extends State<HomePage> {
     final cached = await AuthenticationService().getCachedUser();
     if (mounted) {
       setState(() => _user = cached);
+      if (_user?.role == UserRole.ADMIN || _user?.role == UserRole.MANAGER) {
+        _loadRecentRequests();
+      }
+    }
+  }
+
+  Future<void> _loadRecentRequests() async {
+    try {
+      final requests = await _requestService.listRequests();
+      if (mounted) {
+        setState(() {
+          _recentRequests = requests.take(5).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading requests: $e');
     }
   }
 
@@ -168,8 +183,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint(_user?.role.name);
-
     // Using a slightly off-white background for better contrast
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -225,11 +238,8 @@ class _HomePageState extends State<HomePage> {
                   _buildManagerOverviewCard(),
                   const SizedBox(height: 24),
                   _buildSectionTitle("Management"),
-                  const SizedBox(height: 24),
                   _buildManagerQuickActions(),
-                  const SizedBox(height: 24),
                   _buildSectionTitle("Recent Requests"),
-                  const SizedBox(height: 16),
                   _buildRecentRequests(),
                 ],
               ),
@@ -278,13 +288,16 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 20),
             const Divider(height: 1, color: Color(0xFFEEEEEE)),
             const SizedBox(height: 16),
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  // Navigate to detailed attendance report
-                },
-                child: const Text("View Full Report"),
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    // Navigate to detailed attendance report
+                  },
+                  child: const Text("View Full Report"),
+                ),
+              ],
             ),
           ],
         ),
@@ -317,8 +330,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildManagerQuickActions() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 3,
+      childAspectRatio: 1.25,
       children: [
         _buildQuickActionButton(
           "Review Requests",
@@ -335,120 +351,175 @@ class _HomePageState extends State<HomePage> {
           () => Navigator.pushNamed(context, '/employees'),
         ),
         _buildQuickActionButton(
-          "Reports",
-          Icons.bar_chart,
+          "Schedules",
+          Icons.calendar_month,
+          36,
+          Colors.teal,
+          () => Navigator.pushNamed(context, '/admin/roster'),
+        ),
+        _buildQuickActionButton(
+          "Workshifts",
+          Icons.access_time_filled,
+          36,
+          Colors.teal,
+          () => Navigator.pushNamed(context, '/admin/workshifts'),
+        ),
+        _buildQuickActionButton(
+          "Offices",
+          Icons.business,
+          36,
+          Colors.indigo,
+          () => Navigator.pushNamed(context, '/admin/office'),
+        ),
+        _buildQuickActionButton(
+          "Attendance",
+          Icons.qr_code_2,
           36,
           Colors.orange,
-          () => Navigator.pushNamed(context, '/reports'),
+          () => Navigator.pushNamed(context, '/admin/kiosk'),
         ),
       ],
     );
   }
 
-  Widget _buildRecentRequests() {
-    // Mock data for requests
-    final requests = [
-      {
-        "name": "Sarah Connor",
-        "type": "Leave Request",
-        "date": "Today, 10:30 AM",
-        "status": "Pending",
-      },
-      {
-        "name": "John Smith",
-        "type": "Overtime",
-        "date": "Yesterday",
-        "status": "Pending",
-      },
-    ];
+  String _timeAgo(DateTime? date) {
+    if (date == null) return '';
+    final diff = DateTime.now().difference(date);
+    if (diff.inDays > 365) {
+      return '${(diff.inDays / 365).floor()} years ago';
+    } else if (diff.inDays > 30) {
+      return '${(diff.inDays / 30).floor()} months ago';
+    } else if (diff.inDays > 0) {
+      return '${diff.inDays} days ago';
+    } else if (diff.inHours > 0) {
+      return '${diff.inHours} hours ago';
+    } else if (diff.inMinutes > 0) {
+      return '${diff.inMinutes} minutes ago';
+    } else {
+      return 'Just now';
+    }
+  }
 
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: requests.length,
-      separatorBuilder: (ctx, index) => const SizedBox(height: 12),
-      itemBuilder: (ctx, index) {
-        final req = requests[index];
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withValues(alpha: 0.05),
-                spreadRadius: 1,
-                blurRadius: 5,
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: Colors.blue.shade50,
-                child: Text(
-                  (req["name"] as String)[0],
-                  style: TextStyle(
-                    color: Colors.blue.shade700,
-                    fontWeight: FontWeight.bold,
+  Widget _buildRecentRequests() {
+    if (_recentRequests.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [Text("No recent requests")],
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 400,
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: _recentRequests.length,
+
+        separatorBuilder: (ctx, index) => const SizedBox(height: 12),
+        itemBuilder: (ctx, index) {
+          final req = _recentRequests[index];
+          final name = req.userName ?? 'Unknown';
+
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withValues(alpha: 0.05),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.blue.shade50,
+                  child: Text(
+                    name.isNotEmpty ? name[0].toUpperCase() : '?',
+                    style: TextStyle(
+                      color: Colors.blue.shade700,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        req.type.toTextString(),
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      req["name"] as String,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                      _timeAgo(req.createdAt),
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 10,
                       ),
                     ),
-                    Text(
-                      req["type"] as String,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 12,
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(
+                          req.status,
+                        ).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        req.status.name,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: _getStatusColor(req.status),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    req["date"] as String,
-                    style: TextStyle(color: Colors.grey.shade400, fontSize: 10),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      req["status"] as String,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Colors.orange,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
+              ],
+            ),
+          );
+        },
+      ),
     );
+  }
+
+  Color _getStatusColor(RequestStatus status) {
+    switch (status) {
+      case RequestStatus.APPROVED:
+        return Colors.green;
+      case RequestStatus.REJECTED:
+        return Colors.red;
+      case RequestStatus.PENDING:
+        return Colors.orange;
+    }
   }
 
   Widget _buildHeader() {
@@ -696,6 +767,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildQuickActions() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
       children: [
         _buildQuickActionButton(
           "History",
@@ -737,8 +809,6 @@ class _HomePageState extends State<HomePage> {
     VoidCallback onTap,
   ) {
     return SizedBox(
-      width: 85, // Static width to force text wrapping
-      height: 80, // Increased height slightly to accommodate more lines
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: <Widget>[
@@ -756,17 +826,14 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          const SizedBox(height: 4),
-          Flexible(
-            // Flexible lets the text wrap and fill remaining height
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              softWrap: true,
-              style: const TextStyle(
-                fontSize: 12,
-                height: 1.1, // Tighter line height helps fit more text
-              ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            softWrap: true,
+            style: const TextStyle(
+              fontSize: 12,
+              height: 1.1, // Tighter line height helps fit more text
             ),
           ),
         ],

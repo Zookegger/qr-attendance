@@ -1,9 +1,9 @@
 export interface CheckInOutDTO {
-  user_id: string;
+  userId: string;
   code: string;
   latitude: number;
   longitude: number;
-  office_id?: number;
+  officeId?: number;
 }
 
 export interface CodeGenerationResponseDTO {

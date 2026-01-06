@@ -5,6 +5,7 @@ class ApiEndpoints {
 
   // Auth Routes
   static const String login = '/auth/login';
+  static const String verifyPassword = '/auth/verify-password';
   static const String logout = '/auth/logout';
   static const String me = '/auth/me';
   static const String refresh = '/auth/refresh';
@@ -21,7 +22,8 @@ class ApiEndpoints {
 
   // Admin Routes
   static const String adminQr = '/admin/qr';
-  static const String adminConfig = '/admin/config';
+  static const String offices = '/offices';
+  static String officeById(int id) => '/offices/$id';
   static const String adminReport = '/admin/report';
   static const String adminUsers = '/admin/users';
   static const String unbindDevice = '/admin/unbind-device';

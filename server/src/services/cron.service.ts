@@ -32,7 +32,7 @@ export const initCronJobs = () => {
 				// Check if attendance exists for today
 				const attendance = await Attendance.findOne({
 					where: {
-						user_id: user.id,
+						userId: user.id,
 						date: today,
 					},
 				});
@@ -40,11 +40,11 @@ export const initCronJobs = () => {
 				if (!attendance) {
 					// Mark as Absent
 					await Attendance.create({
-						user_id: user.id,
+						userId: user.id,
 						date: today,
 						status: AttendanceStatus.ABSENT,
-						check_in_method: AttendanceMethod.NONE,
-						check_out_method: AttendanceMethod.NONE,
+						checkInMethod: AttendanceMethod.NONE,
+						checkOutMethod: AttendanceMethod.NONE,
 					});
 					logger.info(
 						`Marked user ${user.id} as Absent for ${today}`
@@ -63,7 +63,7 @@ export const initCronJobs = () => {
 		try {
 			const result = await RefreshToken.destroy({
 				where: {
-					expires_at: {
+					expiresAt: {
 						[Op.lt]: new Date(),
 					},
 				},
@@ -76,9 +76,8 @@ export const initCronJobs = () => {
 
 	// Schedule QR heartbeat via BullMQ repeatable job (every 30s)
 
-	// Morning: start QR heartbeat every day at 06:00
-	scheduleTask("0 6 * * *", async () => {
-		logger.info("Starting QR heartbeat (06:00)");
+	const startQrHeartbeat = async () => {
+		logger.info("Starting QR heartbeat");
 		try {
 			await qrCodeQueue.add(
 				"heartbeat",
@@ -93,17 +92,35 @@ export const initCronJobs = () => {
 		} catch (err) {
 			logger.error("Failed to schedule QR heartbeat job:", err);
 		}
-	});
+	};
 
-	// Night: stop QR heartbeat every day at 22:00
-	scheduleTask("0 22 * * *", async () => {
-		logger.info("Stopping QR heartbeat (22:00)");
+	const stopQrHeartbeat = async () => {
+		logger.info("Stopping QR heartbeat");
 		try {
 			await qrCodeQueue.removeRepeatable("heartbeat", { every: 30000, jobId: "qr:heartbeat" } as any);
 			logger.info("QR heartbeat job removed");
 		} catch (err) {
 			logger.error("Failed to remove QR heartbeat job:", err);
 		}
+	};
+
+	// Check on startup if we should be running
+	const now = new Date();
+	const hour = now.getHours();
+	if (hour >= 6 && hour < 22) {
+		startQrHeartbeat();
+	}
+
+	// Morning: start QR heartbeat every day at 06:00
+	scheduleTask("0 6 * * *", async () => {
+		logger.info("Starting QR heartbeat (06:00)");
+		await startQrHeartbeat();
+	});
+
+	// Night: stop QR heartbeat every day at 22:00
+	scheduleTask("0 22 * * *", async () => {
+		logger.info("Stopping QR heartbeat (22:00)");
+		await stopQrHeartbeat();
 	});
 };
 

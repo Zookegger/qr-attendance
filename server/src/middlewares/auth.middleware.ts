@@ -38,7 +38,7 @@ export const authenticate = async (
 
 			// Ensure there is an active refresh token session for this user
 			const now = new Date();
-			const tokenRecord = await RefreshToken.findOne({ where: { user_id: user.id }, order: [['created_at', 'DESC']] });
+			const tokenRecord = await RefreshToken.findOne({ where: { userId: user.id }, order: [['createdAt', 'DESC']] });
 
 			if (!tokenRecord) {
 				return res.status(401).json({ message: "No active session" });
@@ -48,7 +48,7 @@ export const authenticate = async (
 				return res.status(401).json({ message: "Session revoked. Please sign in again." });
 			}
 
-			if (tokenRecord.expires_at && now >= tokenRecord.expires_at) {
+			if (tokenRecord.expiresAt && now >= tokenRecord.expiresAt) {
 				await tokenRecord.update({ revoked: true });
 				return res.status(401).json({ message: "Session expired. Please sign in again." });
 			}

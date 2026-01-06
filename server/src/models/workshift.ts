@@ -10,7 +10,7 @@ interface WorkshiftAttributes {
    breakStart: Date;
    breakEnd: Date;
    workDays: number[];
-   office_config_id?: number | null;
+   officeConfigId?: number | null;
 }
 
 interface WorkshifCreationAttributes extends Optional<WorkshiftAttributes, 'id'> { }
@@ -24,7 +24,7 @@ export default class Workshift extends Model<WorkshiftAttributes, WorkshifCreati
    declare public breakStart: Date;
    declare public breakEnd: Date;
    declare public workDays: number[];
-   declare public office_config_id?: number | null;
+   declare public officeConfigId?: number | null;
 
    declare public readonly createdAt: Date;
    declare public readonly updatedAt: Date;
@@ -64,7 +64,7 @@ Workshift.init({
       type: DataTypes.JSON,
       defaultValue: [],
    },
-   office_config_id: {
+   officeConfigId: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: true,
       references: {
@@ -75,5 +75,6 @@ Workshift.init({
 }, {
    sequelize,
    tableName: 'shifts',
+   underscored: true,
    timestamps: true
 });

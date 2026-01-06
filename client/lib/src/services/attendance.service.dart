@@ -38,4 +38,56 @@ class AttendanceService {
 
     throw AuthException('Invalid history data received.');
   }
+
+  Future<void> checkIn({
+    required String code,
+    required double latitude,
+    required double longitude,
+  }) async {
+    final token = await _auth.getAccessToken();
+    if (token == null) throw AuthException('Not authenticated');
+
+    try {
+      await _dio.post(
+        ApiEndpoints.checkIn,
+        data: {
+          'code': code,
+          'latitude': latitude,
+          'longitude': longitude,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    } on DioException catch (e) {
+      if (e.response?.data != null && e.response?.data['message'] != null) {
+        throw Exception(e.response?.data['message']);
+      }
+      throw Exception('Check-in failed: ${e.message}');
+    }
+  }
+
+  Future<void> checkOut({
+    required String code,
+    required double latitude,
+    required double longitude,
+  }) async {
+    final token = await _auth.getAccessToken();
+    if (token == null) throw AuthException('Not authenticated');
+
+    try {
+      await _dio.post(
+        ApiEndpoints.checkOut,
+        data: {
+          'code': code,
+          'latitude': latitude,
+          'longitude': longitude,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    } on DioException catch (e) {
+      if (e.response?.data != null && e.response?.data['message'] != null) {
+        throw Exception(e.response?.data['message']);
+      }
+      throw Exception('Check-out failed: ${e.message}');
+    }
+  }
 }
