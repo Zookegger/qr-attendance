@@ -43,4 +43,7 @@ class ApiEndpoints {
   // Workshift routes
   static const String workshifts = '/workshifts';
   static String workshiftById(int id) => '/workshifts/$id';
+
+  // Statistics routes
+  static const String statistics = '/statistics';
 }

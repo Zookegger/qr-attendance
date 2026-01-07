@@ -162,6 +162,13 @@ export default class AttendanceService {
 				action: "Check In",
 				time: new Date(),
 			});
+			
+			// Emit stats update event for real-time dashboard
+			io.emit("stats:update", {
+				userId,
+				action: "check-in",
+				timestamp: new Date(),
+			});
 		} catch (err) {
 			console.error("Socket emit error:", err);
 		}
@@ -303,6 +310,19 @@ export default class AttendanceService {
 		}
 
 		await attendance.save();
+		
+		// Emit socket event for stats update
+		try {
+			const io = getIo();
+			io.emit("stats:update", {
+				userId,
+				action: "check-out",
+				timestamp: new Date(),
+			});
+		} catch (err) {
+			console.error("Socket emit error:", err);
+		}
+		
 		return attendance;
 	}
 

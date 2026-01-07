@@ -8,6 +8,8 @@ import 'dart:async';
 import 'package:qr_attendance_frontend/src/models/user.dart';
 import 'package:qr_attendance_frontend/src/services/auth.service.dart';
 import 'package:qr_attendance_frontend/src/services/request.service.dart';
+import 'package:qr_attendance_frontend/src/services/statistics.service.dart';
+import 'package:qr_attendance_frontend/src/services/dashboard.service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,6 +25,9 @@ class _HomePageState extends State<HomePage> {
   int notificationCount = 0;
   List<Request> _recentRequests = [];
   final RequestService _requestService = RequestService();
+  final StatisticsService _statisticsService = StatisticsService();
+  final DashboardService _dashboardService = DashboardService();
+  StreamSubscription<Map<String, dynamic>>? _statsUpdateSub;
 
   // Shift Data (Defaults)
   String checkInTime = "--:--";
@@ -49,6 +54,7 @@ class _HomePageState extends State<HomePage> {
 
     _loadUser();
     _setupNotificationListener();
+    _setupStatsListener();
   }
 
   Future<void> _handleLogout() async {
@@ -136,10 +142,100 @@ class _HomePageState extends State<HomePage> {
     final cached = await AuthenticationService().getCachedUser();
     if (mounted) {
       setState(() => _user = cached);
-      if (_user?.role == UserRole.ADMIN || _user?.role == UserRole.MANAGER) {
-        _loadRecentRequests();
+      if (_user != null) {
+        // Load shift and stats data
+        _loadShiftData();
+        _loadStats();
+        
+        if (_user?.role == UserRole.ADMIN || _user?.role == UserRole.MANAGER) {
+          _loadRecentRequests();
+          _loadTeamStats();
+        }
       }
     }
+  }
+
+  Future<void> _loadRecentRequests() async {
+    try {
+      final requests = await _requestService.listRequests();
+      if (mounted) {
+        setState(() {
+          _recentRequests = requests.take(5).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading requests: $e');
+    }
+  }
+
+  Future<void> _loadShiftData() async {
+    if (_user == null) return;
+    
+    try {
+      final shift = await _statisticsService.getTodayShift(_user!.id);
+      if (mounted) {
+        setState(() {
+          checkInTime = shift.checkInTime ?? '--:--';
+          checkOutTime = shift.checkOutTime ?? '--:--';
+          totalTime = shift.totalTime;
+          isCheckedIn = shift.isCheckedIn;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading shift data: $e');
+    }
+  }
+
+  Future<void> _loadStats() async {
+    if (_user == null) return;
+    
+    try {
+      final stats = await _statisticsService.getPersonalStats(_user!.id);
+      if (mounted) {
+        setState(() {
+          daysWorked = stats.daysWorked;
+          daysOff = stats.daysOff;
+          overtimeHours = stats.overtimeHours;
+          lateArrivals = stats.lateArrivals;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading stats: $e');
+    }
+  }
+
+  Future<void> _loadTeamStats() async {
+    try {
+      final stats = await _statisticsService.getTeamStats();
+      if (mounted) {
+        setState(() {
+          teamPresent = stats.teamPresent;
+          teamLate = stats.teamLate;
+          teamAbsent = stats.teamAbsent;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading team stats: $e');
+    }
+  }
+
+  void _setupStatsListener() {
+    _dashboardService.connect();
+    
+    _statsUpdateSub?.cancel();
+    _statsUpdateSub = _dashboardService.statsUpdateStream.listen((data) {
+      debugPrint('Stats update received in home page: $data');
+      
+      // Reload data when stats update
+      if (_user != null) {
+        _loadShiftData();
+        _loadStats();
+        
+        if (_user?.role == UserRole.ADMIN || _user?.role == UserRole.MANAGER) {
+          _loadTeamStats();
+        }
+      }
+    });
   }
 
   Future<void> _loadRecentRequests() async {
@@ -183,6 +279,8 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _onMessageSub?.cancel();
+    _statsUpdateSub?.cancel();
+    _dashboardService.disconnect();
     super.dispose();
   }
 
@@ -304,7 +402,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 TextButton(
                   onPressed: () {
-                    // Navigate to detailed attendance report
+                    Navigator.pushNamed(context, '/admin/analytics');
                   },
                   child: const Text("View Full Report"),
                 ),
