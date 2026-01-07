@@ -284,7 +284,7 @@ class _RosterPageState extends State<RosterPage> {
                             : Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(4),
                         border: schedule == null
-                            ? Border.all(color: Colors.red.withOpacity(0.3))
+                            ? Border.all(color: Colors.red.withValues(alpha: 0.3))
                             : null,
                       ),
                       child: Center(

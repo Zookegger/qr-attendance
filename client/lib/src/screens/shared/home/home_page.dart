@@ -238,19 +238,6 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> _loadRecentRequests() async {
-    try {
-      final requests = await _requestService.listRequests();
-      if (mounted) {
-        setState(() {
-          _recentRequests = requests.take(5).toList();
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading requests: $e');
-    }
-  }
-
   void _setupNotificationListener() {
     _onMessageSub?.cancel();
     _onMessageSub = FirebaseMessaging.onMessage.listen((RemoteMessage message) {

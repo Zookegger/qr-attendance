@@ -191,7 +191,7 @@ class _KioskPageState extends State<KioskPage> with TickerProviderStateMixin {
             // Offline Overlay
             if (!_isConnected)
               Container(
-                color: Colors.black.withOpacity(0.85),
+                color: Colors.black.withValues(alpha: 0.85),
                 child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -294,7 +294,7 @@ class _KioskPageState extends State<KioskPage> with TickerProviderStateMixin {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               blurRadius: 20,
               spreadRadius: 5,
             ),
@@ -352,9 +352,9 @@ class _KioskPageState extends State<KioskPage> with TickerProviderStateMixin {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.15),
+        color: Colors.green.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.green.withOpacity(0.5)),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.5)),
       ),
       child: Text(
         _lastLog!,
