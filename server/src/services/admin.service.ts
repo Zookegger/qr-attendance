@@ -17,7 +17,7 @@ export default class AdminService {
 		const code = num.toString().padStart(4, "0");
 
 		let office = officeId ? await OfficeConfig.findByPk(officeId) : await OfficeConfig.findOne();
-		
+
 		if (!office) {
 			throw new Error("No office configuration found. Please create one first.");
 		}
@@ -174,8 +174,8 @@ export default class AdminService {
 		return await User.findByPk(id, {
 			attributes: ["id", "name", "status", "email", "role", "gender", "position", "dateOfBirth", "phoneNumber", "address", "createdAt", "updatedAt"],
 			include: [{
-				association: "device",
-				attributes: ["uuid", "name", "model", "osVersion", "fcmToken"]
+				association: "devices",
+				attributes: ["deviceUuid", "deviceName", "deviceModel", "deviceOsVersion", "fcmToken"]
 			}]
 		});
 	}
