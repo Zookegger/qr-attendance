@@ -293,31 +293,72 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
   }
 
   Widget _buildDeviceSection() {
-    final hasDevice = _user.deviceUuid != null && _user.deviceUuid!.isNotEmpty;
+    final hasDevices = _user.devices != null && _user.devices!.isNotEmpty;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Device Binding'),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: Icon(
-            hasDevice ? Icons.phonelink_lock : Icons.phonelink_off,
-            color: hasDevice ? Colors.green : Colors.grey,
-          ),
-          title: Text(hasDevice ? 'Device Bound' : 'No Device Bound'),
-          subtitle: hasDevice
-              ? Text(
-                  'Name: ${_user.deviceName ?? "Unknown"}\nModel: ${_user.deviceModel ?? "Unknown"}\nOS: ${_user.deviceOsVersion ?? "Unknown"}\nUUID: ${_user.deviceUuid ?? "Unknown"}${_user.fcmToken != null ? '\nFCM: ${_user.fcmToken}' : ''}',
-                )
-              : const Text('User can login from any new device.'),
-          trailing: hasDevice
-              ? IconButton(
-                  icon: const Icon(Icons.link_off, color: Colors.orange),
-                  onPressed: _onUnbindDevice,
-                  tooltip: 'Unbind Device',
-                )
-              : null,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildSectionTitle('Device Binding'),
+            if (hasDevices)
+              Text(
+                '${_user.devices!.length} device${_user.devices!.length > 1 ? 's' : ''}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+          ],
         ),
+        if (!hasDevices)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(
+              Icons.phonelink_off,
+              color: Colors.grey,
+            ),
+            title: const Text('No Device Bound'),
+            subtitle: const Text('User can login from any new device.'),
+          )
+        else
+          ...(_user.devices!.map((device) => Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  leading: const Icon(
+                    Icons.phonelink_lock,
+                    color: Colors.green,
+                  ),
+                  title: Text(
+                    device.deviceModel ?? device.deviceName ?? 'Unknown Device',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (device.deviceName != null)
+                        Text('Name: ${device.deviceName}'),
+                      if (device.deviceModel != null)
+                        Text('Model: ${device.deviceModel}'),
+                      if (device.deviceOsVersion != null)
+                        Text('OS: ${device.deviceOsVersion}'),
+                      Text('UUID: ${device.deviceUuid}'),
+                      if (device.fcmToken != null)
+                        Text(
+                          'FCM: ${device.fcmToken!.substring(0, device.fcmToken!.length > 20 ? 20 : device.fcmToken!.length)}...',
+                          style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                        ),
+                    ],
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.link_off, color: Colors.orange),
+                    onPressed: _onUnbindDevice,
+                    tooltip: 'Unbind All Devices',
+                  ),
+                ),
+              ))),
       ],
     );
   }

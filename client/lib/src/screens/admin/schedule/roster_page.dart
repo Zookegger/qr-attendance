@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart'; // Import this package
 import 'package:qr_attendance_frontend/src/models/schedule.dart';
 import 'package:qr_attendance_frontend/src/models/user.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/schedule/manage_schedule_page.dart';
@@ -14,7 +15,12 @@ class RosterPage extends StatefulWidget {
 }
 
 class _RosterPageState extends State<RosterPage> {
-  DateTime _currentWeekStart = DateTime.now();
+  // Calendar State
+  CalendarFormat _calendarFormat = CalendarFormat.month;
+  DateTime _focusedDay = DateTime.now();
+  DateTime _selectedDay = DateTime.now();
+
+  // Data State
   bool _isLoading = false;
   List<User> _users = [];
   List<Schedule> _schedules = [];
@@ -22,181 +28,343 @@ class _RosterPageState extends State<RosterPage> {
   // Map<UserId, Map<DateString, Schedule>>
   Map<String, Map<String, Schedule>> _rosterMap = {};
 
+  // Cache to store total shift counts per day for calendar markers
+  Map<String, int> _dailyShiftCounts = {};
+
   @override
   void initState() {
     super.initState();
-    // Align to Monday
-    _currentWeekStart = _currentWeekStart.subtract(
-      Duration(days: _currentWeekStart.weekday - 1),
-    );
-    _fetchData();
+    _fetchDataForMonth(_focusedDay);
   }
 
-  Future<void> _fetchData() async {
+  /// Fetches data for the entire visible month (plus a small buffer)
+  Future<void> _fetchDataForMonth(DateTime date) async {
     setState(() => _isLoading = true);
-    try {
-      final weekEnd = _currentWeekStart.add(const Duration(days: 6));
 
+    // Calculate start (1st of month) and end (last of month)
+    // We add a buffer of 7 days before/after to handle week overlaps
+    final firstDay = DateTime(
+      date.year,
+      date.month,
+      1,
+    ).subtract(const Duration(days: 7));
+    final lastDay = DateTime(
+      date.year,
+      date.month + 1,
+      0,
+    ).add(const Duration(days: 7));
+
+    try {
       final usersFuture = AdminService().getUsers();
       final schedulesFuture = ScheduleService().searchSchedules(
-        from: _currentWeekStart,
-        to: weekEnd,
+        from: firstDay,
+        to: lastDay,
       );
 
       final results = await Future.wait([usersFuture, schedulesFuture]);
       _users = results[0] as List<User>;
       _schedules = results[1] as List<Schedule>;
 
-      _processRoster();
+      _processRoster(firstDay, lastDay);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error loading roster: $e')));
+        ).showSnackBar(SnackBar(content: Text('Error loading schedules: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _processRoster() {
+  /// Processes raw schedules into a lookup map for the UI
+  void _processRoster(DateTime startRange, DateTime endRange) {
     _rosterMap = {};
+    _dailyShiftCounts = {};
+
+    // Initialize map for all users
     for (var user in _users) {
       _rosterMap[user.id] = {};
     }
 
-    for (var schedule in _schedules) {
-      // Expand schedule range to individual days
-      DateTime start = schedule.startDate;
-      DateTime? end = schedule.endDate;
+    // Iterate through all days in the fetched range
+    int daysDiff = endRange.difference(startRange).inDays;
 
-      // We only care about the current week window
+    for (int i = 0; i <= daysDiff; i++) {
+      DateTime currentDay = startRange.add(Duration(days: i));
+      String dayStr = DateFormat('yyyy-MM-dd').format(currentDay);
+      int shiftCount = 0;
 
-      for (int i = 0; i < 7; i++) {
-        DateTime day = _currentWeekStart.add(Duration(days: i));
-        String dayStr = DateFormat('yyyy-MM-dd').format(day);
+      for (var schedule in _schedules) {
+        DateTime start = schedule.startDate;
+        DateTime? end = schedule.endDate;
 
-        // Check if schedule covers this day (Date Range)
+        // 1. Check Date Range
         bool dateCovered =
-            !day.isBefore(start) && (end == null || !day.isAfter(end));
+            !currentDay.isBefore(start) &&
+            (end == null || !currentDay.isAfter(end));
 
-        // Check if Workshift includes this day of the week
-        // workDays: 0=Sun, 1=Mon, ... 6=Sat (Standard)
-        // DateTime.weekday: 1=Mon, ..., 7=Sun
-        // Need to map DateTime.weekday to workDays format
-        int dayIndex = day.weekday % 7; // Convert 7(Sun) -> 0, others same (1->1) if 0=Sun is intent.
-        // Wait, typical JS/Dart standard:
-        // DateTime.weekday: Monday=1, Sunday=7.
-        // User's Workshift model comment: [0=Sun, 1=Mon, ..., 6=Sat] (Standard Cron/JS)
-        // So: Sun(7) % 7 = 0. Mon(1) % 7 = 1. Matches!
+        if (dateCovered) {
+          // 2. Check Day of Week (0=Sun, ... 6=Sat match)
+          // Dart DateTime.weekday is 1=Mon...7=Sun.
+          // We convert 7(Sun) to 0 to match standard cron/JS format if your backend uses 0-6
+          int dayIndex = currentDay.weekday == 7 ? 0 : currentDay.weekday;
 
-        bool dayIncluded =
-            schedule.shift != null &&
-            schedule.shift!.workDays.contains(dayIndex);
+          bool dayIncluded =
+              schedule.shift != null &&
+              schedule.shift!.workDays.contains(dayIndex);
 
-        if (dateCovered && dayIncluded) {
-          if (_rosterMap.containsKey(schedule.userId)) {
-            _rosterMap[schedule.userId]![dayStr] = schedule;
+          if (dayIncluded) {
+            // Add to User Map
+            if (_rosterMap.containsKey(schedule.userId)) {
+              _rosterMap[schedule.userId]![dayStr] = schedule;
+              shiftCount++;
+            }
           }
         }
       }
+      // Store count for calendar markers
+      if (shiftCount > 0) {
+        _dailyShiftCounts[dayStr] = shiftCount;
+      }
     }
-  }
-
-  void _changeWeek(int offset) {
-    setState(() {
-      _currentWeekStart = _currentWeekStart.add(Duration(days: offset * 7));
-    });
-    _fetchData();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA), // Light grey background
       appBar: AppBar(
-        title: const Text('Schedules'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
-            onPressed: () => _changeWeek(-1),
-          ),
-          Center(
-            child: Text(
-              "${DateFormat('MMM d').format(_currentWeekStart)} - ${DateFormat('MMM d').format(_currentWeekStart.add(const Duration(days: 6)))}",
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            onPressed: () => _changeWeek(1),
-          ),
-        ],
+        title: const Text(
+          'Schedule Management',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : OrientationBuilder(
-              builder: (context, orientation) {
-                return orientation == Orientation.portrait
-                    ? _buildPortraitView()
-                    : _buildLandscapeView();
-              },
-            ),
-    );
-  }
-
-  Widget _buildPortraitView() {
-    final days = List.generate(
-      7,
-      (index) => _currentWeekStart.add(Duration(days: index)),
-    );
-
-    return DefaultTabController(
-      length: 7,
-      child: Column(
+      body: Column(
         children: [
-          TabBar(
-            isScrollable: true,
-            tabs: days
-                .map((date) => Tab(text: DateFormat('E d').format(date)))
-                .toList(),
-            labelColor: Colors.blue,
-            unselectedLabelColor: Colors.grey,
-          ),
+          _buildCalendar(),
+          const Divider(height: 1),
           Expanded(
-            child: TabBarView(
-              children: days.map((date) => _buildDayList(date)).toList(),
-            ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _buildEmployeeList(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDayList(DateTime date) {
-    final dayStr = DateFormat('yyyy-MM-dd').format(date);
+  Widget _buildCalendar() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TableCalendar(
+        firstDay: DateTime.utc(2020, 1, 1),
+        lastDay: DateTime.utc(2030, 12, 31),
+        focusedDay: _focusedDay,
+        calendarFormat: _calendarFormat,
 
-    return ListView.builder(
-      itemCount: _users.length,
-      itemBuilder: (context, index) {
-        final user = _users[index];
-        final schedule = _rosterMap[user.id]?[dayStr];
+        // Interaction
+        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+        onDaySelected: (selectedDay, focusedDay) {
+          if (!isSameDay(_selectedDay, selectedDay)) {
+            setState(() {
+              _selectedDay = selectedDay;
+              _focusedDay = focusedDay;
+            });
+          }
+        },
+        onFormatChanged: (format) {
+          if (_calendarFormat != format) {
+            setState(() => _calendarFormat = format);
+          }
+        },
+        onPageChanged: (focusedDay) {
+          _focusedDay = focusedDay;
+          // Fetch new data when swiping months
+          _fetchDataForMonth(focusedDay);
+        },
 
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: ListTile(
-            leading: CircleAvatar(
-              child: Text(user.name.isNotEmpty ? user.name[0] : '?'),
-            ),
-            title: Text(user.name),
-            subtitle: schedule != null
-                ? Text(
-                    "${schedule.shift?.name ?? 'Shift'} (${schedule.shift?.startTime ?? ''} - ${schedule.shift?.endTime ?? ''})",
-                    style: const TextStyle(color: Colors.green),
-                  )
-                : const Text("Off Duty", style: TextStyle(color: Colors.red)),
-            trailing: schedule != null
-                ? const Icon(Icons.check_circle, color: Colors.green)
-                : IconButton(
+        // Markers (Dots)
+        eventLoader: (day) {
+          final dayStr = DateFormat('yyyy-MM-dd').format(day);
+          final count = _dailyShiftCounts[dayStr] ?? 0;
+          // Return a dummy list of length 'count' to generate dots
+          return List.generate(count > 3 ? 3 : count, (index) => 'Shift');
+        },
+
+        // Styling
+        headerStyle: const HeaderStyle(
+          formatButtonVisible: true,
+          titleCentered: true,
+          formatButtonShowsNext: false,
+          titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        calendarStyle: CalendarStyle(
+          selectedDecoration: const BoxDecoration(
+            color: Color(0xFF4A00E0), // Brand color
+            shape: BoxShape.circle,
+          ),
+          todayDecoration: BoxDecoration(
+            color: const Color(0xFF4A00E0).withValues(alpha: 0.3),
+            shape: BoxShape.circle,
+          ),
+          markerDecoration: const BoxDecoration(
+            color: Colors.green, // Dot color
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmployeeList() {
+    final dayStr = DateFormat('yyyy-MM-dd').format(_selectedDay);
+
+    // Sort: People working come first
+    final sortedUsers = List<User>.from(_users);
+    sortedUsers.sort((a, b) {
+      final hasShiftA = _rosterMap[a.id]?[dayStr] != null ? 1 : 0;
+      final hasShiftB = _rosterMap[b.id]?[dayStr] != null ? 1 : 0;
+      return hasShiftB.compareTo(hasShiftA); // Descending (1 before 0)
+    });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(
+            children: [
+              Text(
+                DateFormat('EEEE, d MMMM').format(_selectedDay),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  "${_dailyShiftCounts[dayStr] ?? 0} Shifts",
+                  style: const TextStyle(
+                    color: Colors.blue,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(8),
+            itemCount: sortedUsers.length,
+            itemBuilder: (context, index) {
+              final user = sortedUsers[index];
+              final schedule = _rosterMap[user.id]?[dayStr];
+              final isWorking = schedule != null;
+
+              return Card(
+                elevation: isWorking ? 2 : 0,
+                color: isWorking ? Colors.white : Colors.grey.shade50,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: isWorking
+                      ? BorderSide.none
+                      : BorderSide(color: Colors.grey.shade200),
+                ),
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  leading: CircleAvatar(
+                    backgroundColor: isWorking
+                        ? Colors.blue.shade100
+                        : Colors.grey.shade200,
+                    child: Text(
+                      user.name.isNotEmpty ? user.name[0] : '?',
+                      style: TextStyle(
+                        color: isWorking ? Colors.blue.shade800 : Colors.grey,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    user.name,
+                    style: TextStyle(
+                      fontWeight: isWorking
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: isWorking ? Colors.black87 : Colors.grey,
+                    ),
+                  ),
+                  subtitle: isWorking
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Row(
+                            // Aligns the icon to the top-left of the text block
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.access_time,
+                                size: 14,
+                                color: Colors.green,
+                              ),
+                              const SizedBox(
+                                width: 8,
+                              ), 
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // 1. Top Text (Name)
+                                    Text(
+                                      schedule.shift?.name ?? "",
+                                      style: const TextStyle(
+                                        color: Colors.green,
+                                        fontWeight: FontWeight
+                                            .w600, // Made slightly bolder for hierarchy
+                                        fontSize: 13,
+                                      ),
+                                    ),
+
+                                    const SizedBox(
+                                      height: 2,
+                                    ), 
+                                    Text(
+                                      "(${schedule.shift?.startTime} - ${schedule.shift?.endTime})",
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w400, 
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : const Text(
+                          "No Shift Assigned",
+                          style: TextStyle(fontSize: 12),
+                        ),
+                  trailing: IconButton(
                     onPressed: () async {
                       await Navigator.push(
                         context,
@@ -205,111 +373,20 @@ class _RosterPageState extends State<RosterPage> {
                               ManageEmployeeSchedulePage(user: user),
                         ),
                       );
+                      // Refresh data when coming back
+                      _fetchDataForMonth(_focusedDay);
                     },
-                    icon: const Icon(Icons.schedule_send),
-                  ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildLandscapeView() {
-    final days = List.generate(
-      7,
-      (index) => _currentWeekStart.add(Duration(days: index)),
-    );
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.vertical,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Row
-            Row(
-              children: [
-                const SizedBox(
-                  width: 150,
-                  child: Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text(
-                      "Employee",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    icon: Icon(
+                      Icons.edit_calendar_outlined,
+                      color: isWorking ? Colors.blue : Colors.grey,
                     ),
                   ),
                 ),
-                ...days.map(
-                  (date) => SizedBox(
-                    width: 100,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        DateFormat('E d').format(date),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const Divider(),
-            // User Rows
-            ..._users.map((user) {
-              return Row(
-                children: [
-                  SizedBox(
-                    width: 150,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        user.name,
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                  ),
-                  ...days.map((date) {
-                    final dayStr = DateFormat('yyyy-MM-dd').format(date);
-                    final schedule = _rosterMap[user.id]?[dayStr];
-
-                    return Container(
-                      width: 100,
-                      height: 50,
-                      margin: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: schedule != null
-                            ? Colors.blue.shade100
-                            : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(4),
-                        border: schedule == null
-                            ? Border.all(color: Colors.red.withValues(alpha: 0.3))
-                            : null,
-                      ),
-                      child: Center(
-                        child: schedule != null
-                            ? Text(
-                                schedule.shift?.name ?? 'Shift',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(fontSize: 12),
-                              )
-                            : const Text(
-                                "OFF",
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.red,
-                                ),
-                              ),
-                      ),
-                    );
-                  }),
-                ],
               );
-            }),
-          ],
+            },
+          ),
         ),
-      ),
+      ],
     );
   }
 }

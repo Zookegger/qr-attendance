@@ -85,7 +85,8 @@ class AdminService {
       final response = await _dio.get(ApiEndpoints.adminUser(id));
 
       if (response.statusCode == 200) {
-        return User.fromJson(response.data as Map<String, dynamic>);
+        final userData = response.data['user'] ?? response.data;
+        return User.fromJson(userData as Map<String, dynamic>);
       }
 
       throw Exception('Failed to fetch user: ${response.statusCode}');

@@ -29,10 +29,43 @@ export default class AuthService {
 
 		if (!deviceUuid) throw new Error("Device UUID is required for login");
 
+		// ===== SECURITY CHECKS =====
+		
+		// 1. Check for active sessions (non-revoked refresh tokens)
+		const activeSessions = await RefreshToken.findAll({
+			where: {
+				userId: user.id,
+				revoked: false,
+				expiresAt: { [Op.gt]: new Date() }
+			}
+		});
+
+		if (activeSessions.length > 0) {
+			// 2. Check if any active session matches the current device UUID
+			const matchingSession = activeSessions.find(
+				session => session.deviceUuid === deviceUuid
+			);
+
+			if (!matchingSession) {
+				// Active session exists but UUID doesn't match
+				throw new Error(
+					"This account has an active session on another device. " +
+					"Please contact an administrator to revoke the existing session before logging in from a new device."
+				);
+			}
+
+			// UUID matches - allow login by revoking old token and creating new one
+			await RefreshToken.update(
+				{ revoked: true },
+				{ where: { id: matchingSession.id } }
+			);
+		}
+
+		// 3. Check device binding for regular users
 		let device = await UserDevice.findOne({ where: { userId: user.id, deviceUuid } });
 
 		if (device) {
-			//  Update existing device (including FCM)
+			// Update existing device (including FCM)
 			console.log("Updating device:", {
 				userId: user.id,
 				deviceUuid,
@@ -40,32 +73,31 @@ export default class AuthService {
 				deviceName,
 				deviceModel,
 				deviceOsVersion
-				});
+			});
 			await device.update({
 				deviceName,
 				deviceModel,
 				deviceOsVersion,
 				lastLogin: new Date(),
-				fcmToken: fcmToken ?? device.fcmToken // <--- Update here
+				fcmToken: fcmToken ?? device.fcmToken
 			});
 		} else {
 			// Check Binding Constraints
 			if (user.role === UserRole.USER) {
 				const deviceCount = await UserDevice.count({ where: { userId: user.id } });
 				if (deviceCount >= 1) {
-					// This logic ALREADY protects you. The controller check was redundant.
 					throw new Error("This account is already bound to another device. Contact admin to reset.");
 				}
 			}
 
 			// Create new device (including FCM)
-			console.log("Updating device:", {
-			userId: user.id,
-			deviceUuid,
-			fcmToken,
-			deviceName,
-			deviceModel,
-			deviceOsVersion
+			console.log("Creating device:", {
+				userId: user.id,
+				deviceUuid,
+				fcmToken,
+				deviceName,
+				deviceModel,
+				deviceOsVersion
 			});
 			device = await UserDevice.create({
 				userId: user.id,
@@ -73,7 +105,7 @@ export default class AuthService {
 				deviceName,
 				deviceModel,
 				deviceOsVersion,
-				fcmToken: fcmToken  // <--- Insert here
+				fcmToken: fcmToken
 			});
 		}
 
