@@ -171,7 +171,13 @@ export default class AdminService {
 	}
 
 	static async getUserById(id: string) {
-		return await User.findByPk(id, { attributes: ["id", "name", "status", "email", "role", "gender", "position", "dateOfBirth", "phoneNumber", "address", "createdAt", "updatedAt"] });
+		return await User.findByPk(id, {
+			attributes: ["id", "name", "status", "email", "role", "gender", "position", "dateOfBirth", "phoneNumber", "address", "createdAt", "updatedAt"],
+			include: [{
+				association: "device",
+				attributes: ["uuid", "name", "model", "osVersion", "fcmToken"]
+			}]
+		});
 	}
 
 	static async updateUser(id: string, dto: UpdateUserDTO) {

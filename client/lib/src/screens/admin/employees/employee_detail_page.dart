@@ -16,11 +16,33 @@ class EmployeeDetailsPage extends StatefulWidget {
 class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
   late User _user;
   bool _isLoading = false;
+  final AdminService _adminService = AdminService();
 
   @override
   void initState() {
     super.initState();
     _user = widget.user;
+    _loadUserDetails();
+  }
+
+  Future<void> _loadUserDetails() async {
+    setState(() => _isLoading = true);
+    try {
+      final freshUser = await _adminService.getUserById(_user.id);
+      if (mounted) {
+        setState(() => _user = freshUser);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load user details: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   // --- ACTIONS ---

@@ -146,7 +146,7 @@ class _HomePageState extends State<HomePage> {
         // Load shift and stats data
         _loadShiftData();
         _loadStats();
-        
+
         if (_user?.role == UserRole.ADMIN || _user?.role == UserRole.MANAGER) {
           _loadRecentRequests();
           _loadTeamStats();
@@ -170,7 +170,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadShiftData() async {
     if (_user == null) return;
-    
+
     try {
       final shift = await _statisticsService.getTodayShift(_user!.id);
       if (mounted) {
@@ -188,7 +188,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadStats() async {
     if (_user == null) return;
-    
+
     try {
       final stats = await _statisticsService.getPersonalStats(_user!.id);
       if (mounted) {
@@ -221,16 +221,16 @@ class _HomePageState extends State<HomePage> {
 
   void _setupStatsListener() {
     _dashboardService.connect();
-    
+
     _statsUpdateSub?.cancel();
     _statsUpdateSub = _dashboardService.statsUpdateStream.listen((data) {
       debugPrint('Stats update received in home page: $data');
-      
+
       // Reload data when stats update
       if (_user != null) {
         _loadShiftData();
         _loadStats();
-        
+
         if (_user?.role == UserRole.ADMIN || _user?.role == UserRole.MANAGER) {
           _loadTeamStats();
         }
@@ -294,7 +294,6 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildShiftCard(),
                   const SizedBox(height: 24),
@@ -474,6 +473,14 @@ class _HomePageState extends State<HomePage> {
           48,
           Colors.orange,
           () => Navigator.pushNamed(context, '/admin/kiosk'),
+        ),
+        // Analytics & Reports
+        _buildQuickActionButton(
+          "Analytics",
+          Icons.analytics,
+          48,
+          Colors.red,
+          () => Navigator.pushNamed(context, '/admin/analytics'),
         ),
         // User Features (Merged & Renamed)
         _buildQuickActionButton(
@@ -885,36 +892,46 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildQuickActions() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
+      mainAxisSize: MainAxisSize.min,
       children: [
-        _buildQuickActionButton(
-          "History",
-          Icons.history,
-          42,
-          Colors.blue,
-          () => Navigator.pushNamed(context, '/history'),
+        Expanded(
+          child: _buildQuickActionButton(
+            "History",
+            Icons.history,
+            42,
+            Colors.blue,
+            () => Navigator.pushNamed(context, '/history'),
+          ),
         ),
-        _buildQuickActionButton(
-          "Schedule",
-          Icons.calendar_month_outlined,
-          42,
-          Colors.purple,
-          () => Navigator.pushNamed(context, '/schedule'),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildQuickActionButton(
+            "Schedule",
+            Icons.calendar_month_outlined,
+            42,
+            Colors.purple,
+            () => Navigator.pushNamed(context, '/schedule'),
+          ),
         ),
-        _buildQuickActionButton(
-          "Forms",
-          Icons.description,
-          42,
-          Colors.green,
-          () => Navigator.pushNamed(context, '/user/requests'),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildQuickActionButton(
+            "Forms",
+            Icons.description,
+            42,
+            Colors.green,
+            () => Navigator.pushNamed(context, '/user/requests'),
+          ),
         ),
-        _buildQuickActionButton(
-          "More",
-          Icons.grid_view_rounded,
-          42,
-          Colors.orange,
-          () {},
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildQuickActionButton(
+            "More",
+            Icons.grid_view_rounded,
+            42,
+            Colors.orange,
+            () {},
+          ),
         ),
       ],
     );
@@ -927,38 +944,33 @@ class _HomePageState extends State<HomePage> {
     Color color,
     VoidCallback onTap,
   ) {
-    return SizedBox(
-      height: 100,
-      width: 100,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: <Widget>[
-          IconButton(
-            onPressed: onTap,
-            icon: Icon(icon),
-            iconSize: iconSize,
-            color: color,
-            style: ButtonStyle(
-              shape: WidgetStateProperty.all(
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-              ),
-              backgroundColor: WidgetStateProperty.all(
-                color.withValues(alpha: 0.08),
-              ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        IconButton(
+          onPressed: onTap,
+          icon: Icon(icon),
+          iconSize: iconSize,
+          color: color,
+          style: ButtonStyle(
+            shape: WidgetStateProperty.all(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            ),
+            backgroundColor: WidgetStateProperty.all(
+              color.withValues(alpha: 0.08),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            softWrap: true,
-            style: const TextStyle(
-              fontSize: 14,
-              height: 1.75, // Tighter line height helps fit more text
-            ),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          softWrap: true,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 12, height: 1.5),
+        ),
+      ],
     );
   }
 

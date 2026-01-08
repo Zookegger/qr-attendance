@@ -79,4 +79,20 @@ class AdminService {
       rethrow;
     }
   }
+
+  Future<User> getUserById(String id) async {
+    try {
+      final response = await _dio.get(ApiEndpoints.adminUser(id));
+
+      if (response.statusCode == 200) {
+        return User.fromJson(response.data as Map<String, dynamic>);
+      }
+
+      throw Exception('Failed to fetch user: ${response.statusCode}');
+    } on DioException catch (e) {
+      throw Exception('Network error while fetching user: ${e.message}');
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

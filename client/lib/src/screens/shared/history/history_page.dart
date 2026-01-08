@@ -1,4 +1,3 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../../models/attendance_record.dart';
@@ -65,60 +64,69 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final monthLabel =
-        '${_selectedMonth.month.toString().padLeft(2, '0')}/${_selectedMonth.year}';
     final stats = _buildStats();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Attendance history')),
+      appBar: AppBar(
+        title: const Text(
+          'Attendance History',
+          // style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        // backgroundColor: const Color(0xFF4A00E0),
+        elevation: 0,
+      ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
-          padding: const EdgeInsets.all(16),
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.chevron_left),
-                  onPressed: () => _changeMonth(-1),
-                ),
-                Text(
-                  monthLabel,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right),
-                  onPressed: () => _changeMonth(1),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildPie(stats),
-            const SizedBox(height: 12),
-            _buildStatsRow(stats),
-            const SizedBox(height: 12),
+            _buildMonthHeader(),
+            if (!_loading && _records.isNotEmpty) _buildQuickStats(stats),
             if (_loading)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: CircularProgressIndicator(),
-                ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: Center(child: CircularProgressIndicator()),
               ),
             if (_error != null)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                padding: const EdgeInsets.all(16),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Text(
+                    _error!,
+                    style: TextStyle(color: Colors.red.shade700),
+                  ),
+                ),
               ),
-            ..._records.map(_buildTile),
             if (!_loading && _records.isEmpty && _error == null)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40),
                 child: Center(
-                  child: Text('No attendance data for this month.'),
+                  child: Text(
+                    'No attendance records for ${_getMonthLabel()}',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                ),
+              ),
+            if (!_loading && _records.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Daily Records',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ..._records.map(_buildRecordTile),
+                  ],
                 ),
               ),
           ],
@@ -127,166 +135,157 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget _buildPie(Map<String, int> stats) {
-    final total = stats.values.fold<int>(0, (a, b) => a + b);
-    if (total == 0) {
-      return const SizedBox(
-        height: 180,
-        child: Center(child: Text('No data available for the chart.')),
-      );
-    }
-
-    final sections = <PieChartSectionData>[];
-
-    void addSection(String label, int value, Color color) {
-      if (value == 0) return;
-      sections.add(
-        PieChartSectionData(
-          value: value.toDouble(),
-          color: color,
-          title: '${((value / total) * 100).toStringAsFixed(0)}%',
-          radius: 52,
-          titleStyle: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      );
-    }
-
-    addSection('Present', stats['Present'] ?? 0, Colors.green);
-    addSection('Late', stats['Late'] ?? 0, Colors.orange);
-    addSection('Absent', stats['Absent'] ?? 0, Colors.red);
-
-    return SizedBox(
-      height: 220,
-      child: Card(
-        elevation: 1,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              Expanded(
-                child: PieChart(
-                  PieChartData(
-                    sections: sections,
-                    sectionsSpace: 2,
-                    centerSpaceRadius: 36,
-                  ),
-                ),
-              ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _legendDot(Colors.green, 'On time (${stats['Present']})'),
-                  _legendDot(Colors.orange, 'Late (${stats['Late']})'),
-                  _legendDot(Colors.red, 'Absent (${stats['Absent']})'),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatsRow(Map<String, int> stats) {
-    Color colorFor(String status) {
-      switch (status) {
-        case 'Present':
-          return Colors.green;
-        case 'Late':
-          return Colors.orange;
-        case 'Absent':
-          return Colors.red;
-        default:
-          return Colors.grey;
-      }
-    }
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: stats.entries
-          .map(
-            (e) => Chip(
-              backgroundColor: colorFor(e.key).withValues(alpha: 0.15),
-              label: Text('${e.key}: ${e.value}'),
-              labelStyle: TextStyle(color: colorFor(e.key)),
-            ),
-          )
-          .toList(),
-    );
-  }
-
-  Widget _legendDot(Color color, String label) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+  Widget _buildMonthHeader() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: const Color(0xFFF5F7FA),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: () => _changeMonth(-1),
           ),
-          const SizedBox(width: 8),
-          Text(label),
+          Text(
+            _getMonthLabel(),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: () => _changeMonth(1),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTile(AttendanceRecord record) {
+  Widget _buildQuickStats(Map<String, int> stats) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          _buildStatBubble('Present', stats['Present'] ?? 0, Colors.green),
+          const SizedBox(width: 12),
+          _buildStatBubble('Late', stats['Late'] ?? 0, Colors.orange),
+          const SizedBox(width: 12),
+          _buildStatBubble('Absent', stats['Absent'] ?? 0, Colors.red),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatBubble(String label, int count, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          children: [
+            Text(
+              count.toString(),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecordTile(AttendanceRecord record) {
     final dateLabel = _formatDate(record.date);
     final checkIn = _formatTime(record.checkInTime);
     final checkOut = _formatTime(record.checkOutTime);
 
-    Color badgeColor;
-    switch (record.status) {
-      case 'Present':
-        badgeColor = Colors.green;
-        break;
-      case 'Late':
-        badgeColor = Colors.orange;
-        break;
-      case 'Absent':
-        badgeColor = Colors.red;
-        break;
-      default:
-        badgeColor = Colors.grey;
-        break;
-    }
+    final statusColor = _getStatusColor(record.status);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
+        leading: Container(
+          width: 4,
+          decoration: BoxDecoration(
+            color: statusColor,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
         title: Text(
           dateLabel,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        subtitle: Row(
           children: [
-            const SizedBox(height: 4),
-            Text('Check-in: $checkIn'),
-            Text('Check-out: $checkOut'),
+            Expanded(child: Text('In: $checkIn')),
+            Expanded(child: Text('Out: $checkOut')),
           ],
         ),
         trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: badgeColor.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(12),
+            color: statusColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
             record.status,
-            style: TextStyle(color: badgeColor, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: statusColor,
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Present':
+        return Colors.green;
+      case 'Late':
+        return Colors.orange;
+      case 'Absent':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getMonthLabel() {
+    final monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return '${monthNames[_selectedMonth.month - 1]} ${_selectedMonth.year}';
   }
 
   String _formatDate(DateTime date) {

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../consts/api_endpoints.dart';
 import '../models/attendance_record.dart';
+import '../models/schedule.dart';
 import '../utils/api_client.dart';
 import 'auth.service.dart';
 
@@ -37,6 +38,29 @@ class AttendanceService {
     }
 
     throw AuthException('Invalid history data received.');
+  }
+
+  Future<Schedule?> fetchSchedule() async {
+    final token = await _auth.getAccessToken();
+    if (token == null || token.isEmpty) {
+      throw AuthException('Please sign in again to view schedule.');
+    }
+
+    try {
+      final response = await _dio.get(
+        ApiEndpoints.schedules,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data;
+      if (data is List && data.isNotEmpty) {
+        return Schedule.fromJson(data.first as Map<String, dynamic>);
+      }
+
+      return null;
+    } catch (e) {
+      throw Exception('Failed to fetch schedule: $e');
+    }
   }
 
   Future<void> checkIn({
