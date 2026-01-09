@@ -114,4 +114,52 @@ class AttendanceService {
       throw Exception('Check-out failed: ${e.message}');
     }
   }
+
+  Future<List<Map<String, dynamic>>> fetchDailyMonitor(DateTime date) async {
+    final token = await _auth.getAccessToken();
+    if (token == null) throw AuthException('Not authenticated');
+
+    final response = await _dio.get(
+      ApiEndpoints.monitor,
+      queryParameters: {'date': date.toIso8601String()},
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+
+    if (response.data is List) {
+      return List<Map<String, dynamic>>.from(response.data);
+    }
+    return [];
+  }
+
+  Future<void> manualEntry({
+    required String userId,
+    required DateTime date,
+    DateTime? checkInTime,
+    DateTime? checkOutTime,
+    String? notes,
+  }) async {
+    final token = await _auth.getAccessToken();
+    if (token == null) throw AuthException('Not authenticated');
+
+    try {
+      await _dio.post(
+        ApiEndpoints.manualEntry,
+        data: {
+          'userId': userId,
+          'date': date.toIso8601String().split('T')[0], // yyyy-MM-dd
+          if (checkInTime != null) 'checkInTime': checkInTime.toIso8601String(),
+          if (checkOutTime != null)
+            'checkOutTime': checkOutTime.toIso8601String(),
+          if (notes != null) 'notes': notes,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    } on DioException catch (e) {
+      if (e.response?.data != null && e.response?.data['message'] != null) {
+        throw Exception(e.response?.data['message']);
+      }
+      throw Exception('Manual entry failed: ${e.message}');
+    }
+  }
 }
+

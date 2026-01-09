@@ -447,6 +447,13 @@ class _HomePageState extends State<HomePage> {
           () => Navigator.pushNamed(context, '/employees'),
         ),
         _buildQuickActionButton(
+          "Daily Log",
+          Icons.fact_check_outlined,
+          48,
+          Colors.cyan,
+          () => Navigator.pushNamed(context, '/attendance/monitor'),
+        ),
+        _buildQuickActionButton(
           "Schedules",
           Icons.calendar_month,
           48,

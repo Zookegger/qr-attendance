@@ -1,9 +1,10 @@
 import { Router, RequestHandler } from "express";
 import { rateLimit } from "express-rate-limit";
 import { AttendanceController } from "../controllers/attendance.controller";
-import { authenticate } from "@middlewares/auth.middleware";
+import { authenticate, authorize } from "@middlewares/auth.middleware";
 import { errorHandler } from "@middlewares/error.middleware";
 import { checkInValidator, checkOutValidator } from "@middlewares/validators/attendance.validator";
+import { UserRole } from "@models/user";
 
 const attendanceRouter = Router();
 
@@ -43,6 +44,23 @@ attendanceRouter.get(
 	"/attendance/history",
 	authenticate,
 	AttendanceController.getHistory,
+	errorHandler
+);
+
+// --- Admin/Manager Routes ---
+attendanceRouter.get(
+	"/attendance/monitor",
+	authenticate,
+	authorize([UserRole.ADMIN, UserRole.MANAGER]),
+	AttendanceController.getDailyMonitor,
+	errorHandler
+);
+
+attendanceRouter.post(
+	"/attendance/manual",
+	authenticate,
+	authorize([UserRole.ADMIN, UserRole.MANAGER]),
+	AttendanceController.manualEntry,
 	errorHandler
 );
 

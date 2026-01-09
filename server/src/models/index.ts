@@ -37,6 +37,10 @@ Schedule.belongsTo(Workshift, { foreignKey: 'shiftId', as: 'Shift' });
 Schedule.hasMany(Attendance, { foreignKey: 'scheduleId', as: 'attendances' });
 Attendance.belongsTo(Schedule, { foreignKey: 'scheduleId', as: 'Schedule' });
 
+// User <-> Schedule
+User.hasMany(Schedule, { foreignKey: 'userId', as: 'schedules' });
+Schedule.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
 // Attendance <-> Workshift
 // Attendance <-> Request
 RequestModel.hasMany(Attendance, { foreignKey: 'requestId', as: 'attendances' });

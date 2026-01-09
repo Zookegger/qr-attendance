@@ -87,8 +87,30 @@ const getHistory = async (req: Request, res: Response, next: NextFunction) => {
 	}
 };
 
+const getDailyMonitor = async (req: Request, res: Response, next: NextFunction) => {
+	try {
+		const { date } = req.query;
+		const result = await AttendanceService.getDailyMonitor(date as string);
+		return res.json(result);
+	} catch (error) {
+		return next(error);
+	}
+};
+
+const manualEntry = async (req: Request, res: Response, next: NextFunction) => {
+	try {
+		// Expect body: { userId, date, checkInTime?, checkOutTime?, notes? }
+		const result = await AttendanceService.manualEntry(req.body);
+		return res.json({ message: "Manual entry successful", attendance: result });
+	} catch (error) {
+		return next(error);
+	}
+};
+
 export const AttendanceController = {
 	checkIn,
 	checkOut,
 	getHistory,
+	getDailyMonitor,
+	manualEntry,
 };

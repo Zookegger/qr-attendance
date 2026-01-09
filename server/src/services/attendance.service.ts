@@ -320,4 +320,119 @@ export default class AttendanceService {
 
 		return history;
 	}
+
+	static async getDailyMonitor(dateStr?: string) {
+		const targetDate = dateStr ? new Date(dateStr) : new Date();
+		const dateOnly = format(targetDate, "yyyy-MM-dd");
+
+		// Fetch users with their schedule and attendance for the specific date
+		const users = await User.findAll({
+			attributes: ['id', 'name', 'email', 'avatar', 'jobTitleId', 'departmentId'], // Minimal user info
+			include: [
+				{
+					model: Schedule,
+					as: 'schedules',
+					required: false, // Include all users, even if no schedule (optional, or true if only expected)
+					where: {
+						startDate: { [Op.lte]: dateOnly },
+						[Op.or]: [
+							{ endDate: null },
+							{ endDate: { [Op.gte]: dateOnly } },
+						],
+					},
+					include: [{
+						model: Workshift,
+						as: 'Shift',
+					}]
+				},
+				{
+					model: Attendance,
+					as: 'attendances',
+					required: false,
+					where: {
+						date: dateOnly
+					}
+				}
+			],
+			order: [['name', 'ASC']]
+		});
+
+		// Transform to flat structure
+		return users.map(user => {
+			const u = user.toJSON() as any;
+			const schedule = (u.schedules && u.schedules.length > 0) ? u.schedules[0] : null;
+			const attendance = (u.attendances && u.attendances.length > 0) ? u.attendances[0] : null; // Should be only one per day
+
+			// Determine status
+			let status = "No Schedule";
+			if (schedule) status = "Absent"; // Default if scheduled but no attendance
+			if (attendance) {
+				if (attendance.checkOutTime) status = "Checked Out";
+				else if (attendance.checkInTime) status = "Present";
+			}
+
+			return {
+				user: {
+					id: u.id,
+					name: u.name,
+					email: u.email,
+					avatar: u.avatar
+				},
+				schedule: schedule ? {
+					id: schedule.id,
+					shiftName: schedule.Shift?.name,
+					startTime: schedule.Shift?.startTime,
+					endTime: schedule.Shift?.endTime,
+				} : null,
+				attendance: attendance,
+				computedStatus: status
+			};
+		});
+	}
+
+	static async manualEntry(data: { userId: string, date: string, checkInTime?: string, checkOutTime?: string, notes?: string }) {
+		const { userId, date, checkInTime, checkOutTime, notes } = data;
+		
+		// Find existing or create
+		let attendance = await Attendance.findOne({
+			where: { userId, date }
+		});
+
+		const updateData: any = {};
+		if (checkInTime) updateData.checkInTime = new Date(checkInTime);
+		if (checkOutTime) updateData.checkOutTime = new Date(checkOutTime);
+		if (notes) updateData.notes = notes; // Assuming notes field exists or we ignore it
+		
+		// If creating new, set method and defaults
+		if (!attendance) {
+			// Resolve schedule for linkage if possible
+			const schedule = await Schedule.findOne({
+				where: {
+					userId: userId,
+					startDate: { [Op.lte]: date },
+					[Op.or]: [{ endDate: null }, { endDate: { [Op.gte]: date } }],
+				},
+			});
+
+			updateData.userId = userId;
+			updateData.date = date;
+			updateData.scheduleId = schedule?.id;
+			updateData.checkInMethod = AttendanceMethod.MANUAL;
+			updateData.checkInLocation = { latitude: 0, longitude: 0 }; // Manual
+			updateData.status = AttendanceStatus.PRESENT; // Default, intelligent calc is harder without full context
+			
+			attendance = await Attendance.create(updateData);
+		} else {
+			if (checkInTime && !attendance.checkInTime) {
+				updateData.checkInMethod = AttendanceMethod.MANUAL;
+				updateData.status = AttendanceStatus.PRESENT; 
+			}
+			if (checkOutTime && !attendance.checkOutTime) {
+				updateData.checkOutMethod = AttendanceMethod.MANUAL;
+			}
+			await attendance.update(updateData);
+		}
+
+		return attendance;
+	}
 }

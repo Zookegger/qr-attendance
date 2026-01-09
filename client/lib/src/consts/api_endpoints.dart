@@ -18,6 +18,8 @@ class ApiEndpoints {
   static const String checkIn = '/attendance/check-in';
   static const String checkOut = '/attendance/check-out';
   static const String history = '/attendance/history';
+  static const String monitor = '/attendance/monitor';
+  static const String manualEntry = '/attendance/manual';
   static const String request = '/requests';
 
   // Admin Routes
