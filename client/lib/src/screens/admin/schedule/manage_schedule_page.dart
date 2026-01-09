@@ -22,11 +22,17 @@ class _ManageEmployeeSchedulePageState extends State<ManageEmployeeSchedulePage>
   List<Schedule> _schedules = [];
   List<Workshift> _availableShifts = [];
   bool _isLoading = true;
+  DateTime _currentWeekStart = DateTime.now();
 
   @override
   void initState() {
     super.initState();
+    _currentWeekStart = _getMonday(DateTime.now());
     _loadData();
+  }
+
+  DateTime _getMonday(DateTime date) {
+    return date.subtract(Duration(days: date.weekday - 1));
   }
 
   Future<void> _loadData() async {
@@ -74,8 +80,23 @@ class _ManageEmployeeSchedulePageState extends State<ManageEmployeeSchedulePage>
     );
   }
 
+  List<Schedule> _getSchedulesForDay(DateTime day) {
+    return _schedules
+        .where((sch) {
+          final isAfterStart = !sch.startDate.isAfter(day);
+          final isBeforeEnd =
+              sch.endDate == null || !sch.endDate!.isBefore(day);
+          return isAfterStart && isBeforeEnd;
+        })
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final weekEnd = _currentWeekStart.add(const Duration(days: 6));
+    final weekLabel =
+        '${DateFormat('MMM dd').format(_currentWeekStart)} - ${DateFormat('MMM dd, yyyy').format(weekEnd)}';
+
     return Scaffold(
       appBar: AppBar(title: Text('${widget.user.name}\'s Schedule')),
       floatingActionButton: FloatingActionButton.extended(
@@ -86,34 +107,193 @@ class _ManageEmployeeSchedulePageState extends State<ManageEmployeeSchedulePage>
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _schedules.isEmpty
-          ? const Center(child: Text('No schedules assigned.'))
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _schedules.length,
-              itemBuilder: (context, index) {
-                final sch = _schedules[index];
-                final shiftName =
-                    sch.shift?.name ?? 'Unknown Shift #${sch.shiftId}';
-                final startFmt = DateFormat('yyyy-MM-dd').format(sch.startDate);
-                final endFmt = sch.endDate != null
-                    ? DateFormat('yyyy-MM-dd').format(sch.endDate!)
-                    : 'Indefinite';
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    leading: const CircleAvatar(child: Icon(Icons.access_time)),
-                    title: Text(shiftName),
-                    subtitle: Text('From: $startFmt\nTo: $endFmt'),
-                    isThreeLine: true,
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _deleteSchedule(sch.id),
+              ? const Center(child: Text('No schedules assigned.'))
+              : Column(
+                  children: [
+                    // Week navigation
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.chevron_left),
+                            onPressed: () {
+                              setState(() {
+                                _currentWeekStart = _currentWeekStart
+                                    .subtract(const Duration(days: 7));
+                              });
+                            },
+                          ),
+                          Column(
+                            children: [
+                              Text(
+                                weekLabel,
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              if (DateFormat('yyyy-MM-dd')
+                                      .format(_currentWeekStart) !=
+                                  DateFormat('yyyy-MM-dd')
+                                      .format(_getMonday(DateTime.now())))
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _currentWeekStart =
+                                          _getMonday(DateTime.now());
+                                    });
+                                  },
+                                  child: const Text('Today'),
+                                ),
+                            ],
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.chevron_right),
+                            onPressed: () {
+                              setState(() {
+                                _currentWeekStart = _currentWeekStart
+                                    .add(const Duration(days: 7));
+                              });
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
+                    // Weekly schedule grid
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: 7,
+                        itemBuilder: (context, dayIndex) {
+                          final day =
+                              _currentWeekStart.add(Duration(days: dayIndex));
+                          final dayOfWeek = DateFormat('EEEE').format(day);
+                          final dayDate = DateFormat('MMM dd').format(day);
+                          final schedulesForDay = _getSchedulesForDay(day);
+                          final isToday =
+                              DateFormat('yyyy-MM-dd').format(day) ==
+                                  DateFormat('yyyy-MM-dd')
+                                      .format(DateTime.now());
+
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            color: isToday
+                                ? Colors.blue.shade50
+                                : Colors.white,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: isToday
+                                        ? Colors.blue
+                                        : Colors.grey.shade200,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        dayOfWeek,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          color: isToday
+                                              ? Colors.white
+                                              : Colors.black,
+                                        ),
+                                      ),
+                                      Text(
+                                        dayDate,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: isToday
+                                              ? Colors.white70
+                                              : Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (schedulesForDay.isEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Text(
+                                      'No shifts assigned',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade500,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: schedulesForDay.length,
+                                    itemBuilder: (context, index) {
+                                      final sch = schedulesForDay[index];
+                                      final shiftName = sch.shift?.name ??
+                                          'Unknown Shift #${sch.shiftId}';
+
+                                      return Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    shiftName,
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                  if (sch.shift != null)
+                                                    Text(
+                                                      '${sch.shift!.startTime} - ${sch.shift!.endTime}',
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        color: Colors
+                                                            .grey.shade600,
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.delete,
+                                                color: Colors.red,
+                                                size: 18,
+                                              ),
+                                              onPressed: () =>
+                                                  _deleteSchedule(sch.id),
+                                              constraints: const BoxConstraints(
+                                                minWidth: 0,
+                                                minHeight: 0,
+                                              ),
+                                              padding: EdgeInsets.zero,
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
     );
   }
 }

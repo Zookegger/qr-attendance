@@ -6,6 +6,8 @@ import 'package:qr_attendance_frontend/src/services/kiosk.service.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_attendance_frontend/src/screens/admin/kiosk/kiosk_active_guard.dart';
 import 'package:qr_attendance_frontend/src/services/auth.service.dart';
+import 'package:qr_attendance_frontend/src/services/attendance.service.dart';
+import 'package:qr_attendance_frontend/src/services/office_config.service.dart';
 
 class KioskPage extends StatefulWidget {
   const KioskPage({super.key});
@@ -23,6 +25,7 @@ class _KioskPageState extends State<KioskPage> with TickerProviderStateMixin {
   String? _lastLog;
   Timer? _logTimer;
   late AnimationController _progressController;
+  bool _hostAutoCheckedIn = false;
 
   StreamSubscription? _qrSub;
   StreamSubscription? _logSub;
@@ -50,6 +53,16 @@ class _KioskPageState extends State<KioskPage> with TickerProviderStateMixin {
           _progressController.reset();
           _progressController.forward();
         });
+        // Attempt auto check-in for kiosk host the first time we receive a QR
+        try {
+          final officeId = data['officeId'];
+          if (!_hostAutoCheckedIn && officeId != null && _qrData != null) {
+            _hostAutoCheckedIn = true;
+            _autoCheckInHost(code: _qrData!, officeId: officeId);
+          }
+        } catch (e) {
+          debugPrint('Auto check-in error: $e');
+        }
       }
     });
 
@@ -123,6 +136,33 @@ class _KioskPageState extends State<KioskPage> with TickerProviderStateMixin {
           );
         }
       }
+    }
+  }
+
+  Future<void> _autoCheckInHost({required String code, required dynamic officeId}) async {
+    try {
+      final authService = AuthenticationService();
+      final user = await authService.getCachedUser();
+      if (user == null) return;
+
+      final officeService = OfficeConfigService();
+      final offices = await officeService.getOfficeConfigs();
+      final matches = offices.where((o) => o.id == officeId).toList();
+      if (matches.isEmpty) return;
+      final office = matches.first;
+
+      final lat = office.latitude;
+      final lon = office.longitude;
+
+      await AttendanceService().checkIn(code: code, latitude: lat, longitude: lon);
+
+      if (mounted) {
+        setState(() {
+          _lastLog = '${user.name} - Auto Check In';
+        });
+      }
+    } catch (e) {
+      debugPrint('Auto check-in failed: $e');
     }
   }
 

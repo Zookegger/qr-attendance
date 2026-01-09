@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import '../consts/api_endpoints.dart';
 import '../utils/api_client.dart';
-import 'auth.service.dart';
 
 class PersonalStats {
   final String? checkInTime;
@@ -126,12 +125,10 @@ class TeamAttendanceDetail {
 }
 
 class StatisticsService {
-  StatisticsService({Dio? dio, AuthenticationService? auth})
-      : _dio = dio ?? ApiClient().client,
-        _auth = auth ?? AuthenticationService();
+  StatisticsService({Dio? dio})
+      : _dio = dio ?? ApiClient().client;
 
   final Dio _dio;
-  final AuthenticationService _auth;
 
   /// Get personal statistics for a user
   Future<PersonalStats> getPersonalStats(

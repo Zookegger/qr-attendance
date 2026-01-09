@@ -1,60 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../blocs/attendance/attendance_bloc.dart';
+import '../../../blocs/attendance/attendance_event.dart';
+import '../../../blocs/attendance/attendance_state.dart';
 import '../../../models/attendance_record.dart';
-import '../../../services/attendance.service.dart';
 
-class HistoryPage extends StatefulWidget {
+class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key});
 
   @override
-  State<HistoryPage> createState() => _HistoryPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => AttendanceBloc()
+        ..add(AttendanceFetchHistory(
+          startDate: DateTime(DateTime.now().year, DateTime.now().month),
+        )),
+      child: const _HistoryPageContent(),
+    );
+  }
 }
 
-class _HistoryPageState extends State<HistoryPage> {
-  final AttendanceService _service = AttendanceService();
-  final List<AttendanceRecord> _records = [];
-
-  DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
-  bool _loading = false;
-  String? _error;
+class _HistoryPageContent extends StatefulWidget {
+  const _HistoryPageContent();
 
   @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  State<_HistoryPageContent> createState() => _HistoryPageContentState();
+}
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
-    try {
-      final data = await _service.fetchHistory(month: _selectedMonth);
-      if (!mounted) return;
-      _records
-        ..clear()
-        ..addAll(data);
-    } catch (e) {
-      if (!mounted) return;
-      _error = e.toString();
-    } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
-    }
-  }
+class _HistoryPageContentState extends State<_HistoryPageContent> {
+  DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
 
   void _changeMonth(int delta) {
     final next = DateTime(_selectedMonth.year, _selectedMonth.month + delta, 1);
     setState(() => _selectedMonth = next);
-    _load();
+    context.read<AttendanceBloc>().add(AttendanceFetchHistory(
+      startDate: next,
+    ));
   }
 
-  Map<String, int> _buildStats() {
+  Map<String, int> _buildStats(List<AttendanceRecord> records) {
     final stats = <String, int>{'Present': 0, 'Late': 0, 'Absent': 0};
-    for (final r in _records) {
+    for (final r in records) {
       if (stats.containsKey(r.status)) {
         stats[r.status] = stats[r.status]! + 1;
       }
@@ -64,73 +51,76 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final stats = _buildStats();
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Attendance History',
-          // style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        // backgroundColor: const Color(0xFF4A00E0),
+        title: const Text('Attendance History'),
         elevation: 0,
       ),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
-          children: [
-            _buildMonthHeader(),
-            if (!_loading && _records.isNotEmpty) _buildQuickStats(stats),
-            if (_loading)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 40),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.shade200),
+      body: BlocConsumer<AttendanceBloc, AttendanceState>(
+        listener: (context, state) {
+          if (state is AttendanceError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          }
+        },
+        builder: (context, state) {
+          return RefreshIndicator(
+            onRefresh: () async {
+              context.read<AttendanceBloc>().add(
+                AttendanceFetchHistory(startDate: _selectedMonth),
+              );
+            },
+            child: ListView(
+              children: [
+                _buildMonthHeader(),
+                if (state is AttendanceLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40),
+                    child: Center(child: CircularProgressIndicator()),
                   ),
-                  child: Text(
-                    _error!,
-                    style: TextStyle(color: Colors.red.shade700),
-                  ),
-                ),
-              ),
-            if (!_loading && _records.isEmpty && _error == null)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 40),
-                child: Center(
-                  child: Text(
-                    'No attendance records for ${_getMonthLabel()}',
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
-                ),
-              ),
-            if (!_loading && _records.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Daily Records',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                if (state is AttendanceHistoryLoaded) ...[
+                  if (state.records.isNotEmpty)
+                    _buildQuickStats(_buildStats(
+                      state.records.cast<AttendanceRecord>(),
+                    )),
+                  if (state.records.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 40),
+                      child: Center(
+                        child: Text(
+                          'No attendance records for ${_getMonthLabel()}',
+                          style: TextStyle(color: Colors.grey.shade600),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    ..._records.map(_buildRecordTile),
-                  ],
-                ),
-              ),
-          ],
-        ),
+                  if (state.records.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Daily Records',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 12),
+                          ...state.records
+                              .cast<AttendanceRecord>()
+                              .map(_buildRecordTile),
+                        ],
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          );
+        },
       ),
     );
   }

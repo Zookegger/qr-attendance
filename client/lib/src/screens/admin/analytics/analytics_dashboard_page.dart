@@ -271,6 +271,10 @@ class _AnalyticsDashboardPageState extends State<AnalyticsDashboardPage> {
                     const SizedBox(height: 12),
                     _buildChartsSection(),
                     const SizedBox(height: 24),
+                    _buildSectionTitle('Team Attendance Summary'),
+                    const SizedBox(height: 12),
+                    _buildTeamAttendanceDetails(),
+                    const SizedBox(height: 24),
                     _buildSectionTitle('Detailed Records'),
                     const SizedBox(height: 12),
                     _buildDetailedTable(),
@@ -527,6 +531,153 @@ class _AnalyticsDashboardPageState extends State<AnalyticsDashboardPage> {
         const SizedBox(height: 16),
         _buildDailyTrendChart(),
       ],
+    );
+  }
+
+  Widget _buildTeamAttendanceDetails() {
+    if (_teamDetails.isEmpty) {
+      return _buildEmptyState('No team attendance data available');
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            spreadRadius: 1,
+            blurRadius: 5,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Table header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: const Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Name',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Department',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: Text(
+                    'Status',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Check-in',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Table rows
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _teamDetails.length,
+            separatorBuilder: (_, __) =>
+                Divider(height: 1, color: Colors.grey.shade200),
+            itemBuilder: (context, index) {
+              final detail = _teamDetails[index];
+              final statusColor = detail.isCheckedIn ? Colors.green : Colors.orange;
+
+              return Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            detail.userName,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (detail.position != null)
+                            Text(
+                              detail.position!,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        detail.department ?? '--',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          detail.status,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: statusColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        detail.checkInTime ?? '--:--',
+                        style: const TextStyle(fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 

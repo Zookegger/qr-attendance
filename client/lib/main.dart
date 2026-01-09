@@ -3,6 +3,11 @@ import 'dart:developer';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:qr_attendance_frontend/src/blocs/attendance/attendance_bloc.dart';
+import 'package:qr_attendance_frontend/src/blocs/auth/auth_bloc.dart';
+import 'package:qr_attendance_frontend/src/blocs/request/request_bloc.dart';
+import 'package:qr_attendance_frontend/src/blocs/schedule/schedule_bloc.dart';
 import 'package:qr_attendance_frontend/src/services/config.service.dart';
 import 'package:qr_attendance_frontend/src/services/notification.service.dart';
 import 'src/app.dart';
@@ -37,6 +42,22 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const App();
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthBloc>(
+          create: (context) => AuthBloc(),
+        ),
+        BlocProvider<ScheduleBloc>(
+          create: (context) => ScheduleBloc(),
+        ),
+        BlocProvider<RequestBloc>(
+          create: (context) => RequestBloc(),
+        ),
+        BlocProvider<AttendanceBloc>(
+          create: (context) => AttendanceBloc(),
+        ),
+      ],
+      child: const App(),
+    );
   }
 }

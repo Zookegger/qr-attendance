@@ -1,29 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:qr_attendance_frontend/src/blocs/request/request_bloc.dart';
+import 'package:qr_attendance_frontend/src/blocs/request/request_event.dart';
+import 'package:qr_attendance_frontend/src/blocs/request/request_state.dart';
 import 'package:qr_attendance_frontend/src/models/request.dart';
-import 'package:qr_attendance_frontend/src/models/user.dart';
-import 'package:qr_attendance_frontend/src/services/request.service.dart';
-import 'package:qr_attendance_frontend/src/services/auth.service.dart';
 import 'package:qr_attendance_frontend/src/screens/user/requests/request_detail_page.dart';
 
-class RequestListPage extends StatefulWidget {
+class RequestListPage extends StatelessWidget {
   const RequestListPage({super.key});
 
   @override
-  State<RequestListPage> createState() => _RequestListPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => RequestBloc()..add(const RequestsFetchByUser(userId: '')),
+      child: const _RequestListPageContent(),
+    );
+  }
 }
 
-class _RequestListPageState extends State<RequestListPage>
+class _RequestListPageContent extends StatefulWidget {
+  const _RequestListPageContent();
+
+  @override
+  State<_RequestListPageContent> createState() => _RequestListPageContentState();
+}
+
+class _RequestListPageContentState extends State<_RequestListPageContent>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-
-  bool _isLoading = true;
-  List<Request> _allRequests = [];
-  List<Request> _filteredRequests = [];
-
   String _filterType = 'All';
-
-  final AuthenticationService _auth = AuthenticationService();
 
   final List<String> _types = [
     'All',
@@ -35,7 +41,6 @@ class _RequestListPageState extends State<RequestListPage>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(_applyFilters);
-    _loadRequests();
   }
 
   @override
@@ -44,53 +49,26 @@ class _RequestListPageState extends State<RequestListPage>
     super.dispose();
   }
 
-  // ================= LOAD DATA =================
-  Future<void> _loadRequests() async {
-    try {
-      final User user = await _auth.getCachedUser() ?? await _auth.me();
-      final data = await RequestService().listRequests(userId: user.id);
-      
-      if (mounted) {
-        setState(() {
-          _allRequests = data;
-          _isLoading = false;
-        });
-        _applyFilters();
-      }
-    } catch (e, s) {
-      debugPrint('Load history error: $e');
-      debugPrint('Stacktrace: $s');
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to load requests: $e')));
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
   // ================= FILTER LOGIC =================
   void _applyFilters() {
-    if (!mounted) return; // Safety check
+    if (!mounted) return;
 
-    List<Request> list = [..._allRequests];
-
-    // Filter by TAB
+    String? statusFilter;
     switch (_tabController.index) {
-      case 1: // Submitted
-        list = list.where((r) => r.status == RequestStatus.PENDING).toList();
+      case 1:
+        statusFilter = 'PENDING';
         break;
-      case 2: // Approved
-        list = list.where((r) => r.status == RequestStatus.APPROVED).toList();
+      case 2:
+        statusFilter = 'APPROVED';
         break;
     }
 
-    // Filter by TYPE
-    if (_filterType != 'All') {
-      list = list.where((r) => r.type.toTextString() == _filterType).toList();
-    }
-
-    setState(() => _filteredRequests = list);
+    final typeFilter = _filterType == 'All' ? null : _filterType;
+    
+    context.read<RequestBloc>().add(RequestFilterChanged(
+      status: statusFilter,
+      type: typeFilter,
+    ));
   }
 
   // ================= UI =================
@@ -106,7 +84,6 @@ class _RequestListPageState extends State<RequestListPage>
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,
-        // --- ACTION BUTTON ADDED HERE ---
         actions: [
           PopupMenuButton<String>(
             icon: Icon(
@@ -147,7 +124,6 @@ class _RequestListPageState extends State<RequestListPage>
           ),
           const SizedBox(width: 8),
         ],
-        // --------------------------------
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.green,
@@ -160,10 +136,26 @@ class _RequestListPageState extends State<RequestListPage>
           ],
         ),
       ),
-      // Cleaned up body: No more Column/Expanded needed
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildList(),
+      body: BlocConsumer<RequestBloc, RequestState>(
+        listener: (context, state) {
+          if (state is RequestError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          }
+        },
+        builder: (context, state) {
+          if (state is RequestLoading || state is RequestInitial) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          
+          if (state is RequestLoaded) {
+            return _buildList(state.filteredRequests);
+          }
+          
+          return const Center(child: Text('Something went wrong'));
+        },
+      ),
       floatingActionButton: _buildNewRequestButton(context),
     );
   }
@@ -175,8 +167,9 @@ class _RequestListPageState extends State<RequestListPage>
       child: FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.pushNamed(context, '/user/requests/form');
-          if (result == true)
-            await _loadRequests();
+          if (result == true && context.mounted) {
+            context.read<RequestBloc>().add(const RequestsFetchByUser(userId: ''));
+          }
         },
         elevation: 1,
         clipBehavior: Clip.hardEdge,
@@ -186,8 +179,8 @@ class _RequestListPageState extends State<RequestListPage>
   }
 
   // ================= LIST =================
-  Widget _buildList() {
-    if (_filteredRequests.isEmpty) {
+  Widget _buildList(List<dynamic> filteredRequests) {
+    if (filteredRequests.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -206,12 +199,14 @@ class _RequestListPageState extends State<RequestListPage>
     }
 
     return RefreshIndicator(
-      onRefresh: _loadRequests,
+      onRefresh: () async {
+        context.read<RequestBloc>().add(const RequestsFetchByUser(userId: ''));
+      },
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
-        itemCount: _filteredRequests.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (_, index) => _buildRequestItem(_filteredRequests[index]),
+        itemCount: filteredRequests.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (_, index) => _buildRequestItem(filteredRequests[index] as Request),
       ),
     );
   }
@@ -227,8 +222,8 @@ class _RequestListPageState extends State<RequestListPage>
           ),
         );
         // Reload list if changes occurred
-        if (result == true) {
-          _loadRequests();
+        if (result == true && context.mounted) {
+          context.read<RequestBloc>().add(const RequestsFetchByUser(userId: ''));
         }
       },
       child: Container(

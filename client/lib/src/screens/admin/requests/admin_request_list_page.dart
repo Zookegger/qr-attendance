@@ -1,38 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import '../../../blocs/request/request_bloc.dart';
+import '../../../blocs/request/request_event.dart';
+import '../../../blocs/request/request_state.dart';
 import '../../../models/request.dart';
 import '../../../models/user.dart';
 import '../../../services/admin.service.dart';
-import '../../../services/request.service.dart';
-import 'admin_request_detail_page.dart';  
+import 'admin_request_detail_page.dart';
 
-class AdminRequestListPage extends StatefulWidget {
+class AdminRequestListPage extends StatelessWidget {
   const AdminRequestListPage({super.key});
 
   @override
-  State<AdminRequestListPage> createState() => _AdminRequestListPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => RequestBloc()..add(const RequestsFetchAll()),
+      child: const _AdminRequestListPageContent(),
+    );
+  }
 }
 
-class _AdminRequestListPageState extends State<AdminRequestListPage>
+class _AdminRequestListPageContent extends StatefulWidget {
+  const _AdminRequestListPageContent();
+
+  @override
+  State<_AdminRequestListPageContent> createState() =>
+      _AdminRequestListPageContentState();
+}
+
+class _AdminRequestListPageContentState
+    extends State<_AdminRequestListPageContent>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
-  // Data State
-  bool _isLoading = true;
-  List<Request> _allRequests = [];
-  List<Request> _filteredRequests = [];
-  Map<String, User> _userMap = {}; // Cache users to display names
-
-  final RequestService _requestService = RequestService();
-  final AdminService _adminService = AdminService();
+  Map<String, User> _userMap = {};
+  bool _usersLoaded = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(_filterRequests);
-    _loadData();
+    _loadUsers();
   }
 
   @override
@@ -41,61 +51,37 @@ class _AdminRequestListPageState extends State<AdminRequestListPage>
     super.dispose();
   }
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadUsers() async {
     try {
-      // 1. Fetch all users to map IDs to Names
-      final users = await _adminService.getUsers();
-      _userMap = {for (var u in users) u.id: u};
-
-      // 2. Fetch all requests (passing null to userId implies fetching all if backend supports it)
-      // Note: Ensure your backend listRequests returns all records for admins
-      final requests = await _requestService.listRequests(); 
-      
-      // Sort: Pending first, then by date descending
-      requests.sort((a, b) {
-        if (a.status == RequestStatus.PENDING && b.status != RequestStatus.PENDING) return -1;
-        if (a.status != RequestStatus.PENDING && b.status == RequestStatus.PENDING) return 1;
-        return (b.createdAt ?? DateTime.now()).compareTo(a.createdAt ?? DateTime.now());
-      });
-
+      final users = await AdminService().getUsers();
       if (mounted) {
         setState(() {
-          _allRequests = requests;
-          _isLoading = false;
+          _userMap = {for (var u in users) u.id: u};
+          _usersLoaded = true;
         });
-        _filterRequests();
       }
     } catch (e) {
-      debugPrint('Error loading admin requests: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load data: $e')),
-        );
-        setState(() => _isLoading = false);
-      }
+      debugPrint('Error loading users: $e');
     }
   }
 
   void _filterRequests() {
     if (!mounted) return;
-    List<Request> list = [];
 
+    String? statusFilter;
     switch (_tabController.index) {
-      case 0: // Pending
-        list = _allRequests.where((r) => r.status == RequestStatus.PENDING).toList();
+      case 0:
+        statusFilter = 'PENDING';
         break;
-      case 1: // Approved
-        list = _allRequests.where((r) => r.status == RequestStatus.APPROVED).toList();
+      case 1:
+        statusFilter = 'APPROVED';
         break;
-      case 2: // Rejected
-        list = _allRequests.where((r) => r.status == RequestStatus.REJECTED).toList();
+      case 2:
+        statusFilter = 'REJECTED';
         break;
     }
 
-    setState(() {
-      _filteredRequests = list;
-    });
+    context.read<RequestBloc>().add(RequestFilterChanged(status: statusFilter));
   }
 
   void _showRequestDetail(Request request) async {
@@ -109,13 +95,20 @@ class _AdminRequestListPageState extends State<AdminRequestListPage>
       ),
     );
 
-    if (result == true) {
-      _loadData();
+    if (result == true && context.mounted) {
+      context.read<RequestBloc>().add(const RequestsFetchAll());
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_usersLoaded) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Request Management')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -135,23 +128,42 @@ class _AdminRequestListPageState extends State<AdminRequestListPage>
           ],
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _filteredRequests.isEmpty
-              ? _buildEmptyState()
-              : ListView.separated(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: _filteredRequests.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final req = _filteredRequests[index];
-                    return _AdminRequestTile(
-                      request: req,
-                      user: _userMap[req.userId],
-                      onTap: () => _showRequestDetail(req),
-                    );
-                  },
-                ),
+      body: BlocConsumer<RequestBloc, RequestState>(
+        listener: (context, state) {
+          if (state is RequestError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          }
+        },
+        builder: (context, state) {
+          if (state is RequestLoading || state is RequestInitial) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (state is RequestLoaded) {
+            if (state.filteredRequests.isEmpty) {
+              return _buildEmptyState();
+            }
+
+            return ListView.separated(
+              padding: const EdgeInsets.all(12),
+              itemCount: state.filteredRequests.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final req = state.filteredRequests[index] as Request;
+                return _AdminRequestTile(
+                  request: req,
+                  user: _userMap[req.userId],
+                  onTap: () => _showRequestDetail(req),
+                );
+              },
+            );
+          }
+
+          return const Center(child: Text('Something went wrong'));
+        },
+      ),
     );
   }
 

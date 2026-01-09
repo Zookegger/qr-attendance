@@ -162,54 +162,55 @@ class _KioskActiveGuardState extends State<KioskActiveGuard> {
         children: [
           widget.child,
 
-          Container(
-            color: Colors.black.withValues(alpha: 0.95),
-            width: double.infinity,
-            height: double.infinity,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.nightlight_round,
-                    color: Colors.blueGrey,
-                    size: 80,
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    "Shift Ended",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
+          if (_isLocked)
+            Container(
+              color: Colors.black.withValues(alpha: 0.95),
+              width: double.infinity,
+              height: double.infinity,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.nightlight_round,
+                      color: Colors.blueGrey,
+                      size: 80,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    "Station is locked until ${widget.startHour}:00",
-                    style: const TextStyle(color: Colors.grey, fontSize: 18),
-                  ),
-                  const SizedBox(height: 48),
-                  if (_isAuthenticating)
-                    const CircularProgressIndicator()
-                  else
-                    ElevatedButton.icon(
-                      onPressed: _handleUnlock,
-                      icon: const Icon(Icons.lock_open),
-                      label: const Text("Unlock Station"),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
-                        ),
-                        textStyle: const TextStyle(fontSize: 18),
+                    const SizedBox(height: 24),
+                    const Text(
+                      "Shift Ended",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
                       ),
                     ),
-                ],
+                    const SizedBox(height: 16),
+                    Text(
+                      "Station is locked until ${widget.startHour}:00",
+                      style: const TextStyle(color: Colors.grey, fontSize: 18),
+                    ),
+                    const SizedBox(height: 48),
+                    if (_isAuthenticating)
+                      const CircularProgressIndicator()
+                    else
+                      ElevatedButton.icon(
+                        onPressed: _handleUnlock,
+                        icon: const Icon(Icons.lock_open),
+                        label: const Text("Unlock Station"),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 16,
+                          ),
+                          textStyle: const TextStyle(fontSize: 18),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
