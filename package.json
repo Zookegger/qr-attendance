@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "express-rate-limit": "^8.2.1"
+  },
+  "devDependencies": {
+    "@types/express-rate-limit": "^5.1.3"
+  }
+}

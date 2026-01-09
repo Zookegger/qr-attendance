@@ -18,17 +18,6 @@ export default class AttendanceService {
 	static async checkIn(dto: CheckInOutDTO) {
 		const { userId, code, latitude, longitude, officeId } = dto;
 
-		// 0. Rate limiting by strikes
-		const strikesKey = `checkin:strikes:${userId}`;
-		const strikesVal = await redis.get(strikesKey);
-		const strikes = strikesVal ? parseInt(strikesVal, 10) : 0;
-		if (strikes >= 3) {
-			const err = new Error('Too many failed check-in attempts') as HttpError;
-			err.status = 429;
-			throw err;
-		}
-
-
 		// 2. Resolve today's Schedule -> Workshift -> OfficeConfig
 		const today = new Date();
 		const todayStr = format(today, "yyyy-MM-dd");
@@ -73,8 +62,6 @@ export default class AttendanceService {
 		const redisKey = `checkin:office:${officeIdToUse}:code:${code}`;
 		const ok = await redis.get(redisKey);
 		if (!ok) {
-			// increment strikes with sliding TTL (10 minutes)
-			await redis.multi().incr(strikesKey).expire(strikesKey, 600).exec();
 			const err = new Error('Invalid or expired code') as HttpError;
 			err.status = 400;
 			throw err;
@@ -82,9 +69,6 @@ export default class AttendanceService {
 
 		// Consume the code to prevent reuse
 		await redis.del(redisKey);
-
-		// on success, clear strikes
-		await redis.del(strikesKey);
 
 		// Geofence Validation
 		const userLocation: Point = { latitude, longitude };
@@ -179,16 +163,6 @@ export default class AttendanceService {
 	static async checkOut(dto: CheckInOutDTO) {
 		const { userId, code, latitude, longitude, officeId } = dto;
 
-		// Rate limiting
-		const strikesKey = `checkin:strikes:${userId}`;
-		const strikesVal = await redis.get(strikesKey);
-		const strikes = strikesVal ? parseInt(strikesVal, 10) : 0;
-		if (strikes >= 3) {
-			const err = new Error('Too many failed check-out attempts') as HttpError;
-			err.status = 429;
-			throw err;
-		}
-
 		// 2. Resolve today's Schedule -> Workshift -> OfficeConfig for check-out validation
 		const today = new Date();
 		const todayStr = format(today, "yyyy-MM-dd");
@@ -232,15 +206,13 @@ export default class AttendanceService {
 		const redisKey = `checkin:office:${officeIdToUse}:code:${code}`;
 		const ok = await redis.get(redisKey);
 		if (!ok) {
-			await redis.multi().incr(strikesKey).expire(strikesKey, 600).exec();
 			const err = new Error('Invalid or expired code') as HttpError;
 			err.status = 400;
 			throw err;
 		}
 
-		// consume code and clear strikes
+		// consume code
 		await redis.del(redisKey);
-		await redis.del(strikesKey);
 
 		const userLocation: Point = { latitude, longitude };
 		const officeLocation: Point = { latitude: officeConfig.latitude, longitude: officeConfig.longitude };
